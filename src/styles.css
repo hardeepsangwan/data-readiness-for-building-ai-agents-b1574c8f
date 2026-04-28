@@ -148,7 +148,15 @@
 @layer base {
   * {
     border-color: var(--color-border);
-  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .print-break { page-break-before: always; }
+  body { background: white; }
+  .print-shadow-none { box-shadow: none !important; }
+}
+
 
   body {
     background-color: var(--color-background);
