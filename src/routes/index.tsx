@@ -7,7 +7,7 @@ import { DIMENSIONS, TOTAL_QUESTIONS } from "@/lib/assessment-data";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Fabric Data Readiness Assessment for AI" },
+      { title: "Fabric Data readiness assessment for AI agents" },
       { name: "description", content: "Assess your data landscape across 6 dimensions to enable AI use cases on Microsoft Fabric, Copilot Studio and Azure Foundry." },
     ],
   }),
@@ -34,7 +34,7 @@ function Index() {
               Microsoft Fabric · Copilot Studio · Foundry
             </div>
             <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              Data Readiness Assessment for AI
+              Data readiness assessment for AI agents
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-white/85 md:text-xl">
               Evaluate your data landscape across six dimensions and produce a current-state vs.
