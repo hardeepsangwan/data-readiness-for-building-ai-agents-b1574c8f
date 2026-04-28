@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICONS: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Download: Database, Cpu, Sparkles, ShieldCheck, Lock, GitBranch,
 };
 
