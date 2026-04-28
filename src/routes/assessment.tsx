@@ -77,8 +77,8 @@ function AssessmentPage() {
             dimension={dimension}
             answers={state.answers}
             setAnswer={setAnswer}
-            onBack={() => setStep((s) => s - 1)}
-            onNext={() => setStep((s) => s + 1)}
+            onBack={() => { setStep((s) => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onNext={() => { setStep((s) => s + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             isLast={step === DIMENSIONS.length - 1}
           />
         )}
