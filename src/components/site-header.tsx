@@ -11,7 +11,7 @@ export function SiteHeader() {
           </div>
           <div className="leading-tight">
             <div className="text-sm font-semibold tracking-tight">Fabric Data Readiness</div>
-            <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">AI Assessment</div>
+            <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Data Readiness for AI agents</div>
           </div>
         </Link>
         <nav className="hidden items-center gap-6 text-sm md:flex">
