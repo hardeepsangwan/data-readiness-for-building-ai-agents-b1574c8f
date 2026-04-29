@@ -4,6 +4,7 @@ import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle } from "l
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { MaturityRadar } from "@/components/maturity-radar";
+import targetStateArchitecture from "@/assets/target-state-architecture.png";
 import { DIMENSIONS, MATURITY_LEVELS, TOTAL_QUESTIONS, type MaturityLevel } from "@/lib/assessment-data";
 import { useAssessment } from "@/lib/assessment-store";
 
@@ -134,6 +135,27 @@ function ReportPage() {
                 Average gap: <span className="font-medium text-foreground">{(overallTarget - overallCurrent).toFixed(1)}</span> levels
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Target State Architecture */}
+        <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
+          <SectionHeader
+            kicker="Reference architecture"
+            title="Target state — Data & AI architecture"
+          />
+          <p className="mb-5 max-w-3xl text-sm text-muted-foreground">
+            Unified data platform on Microsoft Fabric powering AI agents through Fabric IQ,
+            Foundry IQ and M365 Work IQ — with Microsoft Agent 365 controlling all agent
+            governance, access and security across the estate.
+          </p>
+          <div className="overflow-hidden rounded-lg border border-border bg-white">
+            <img
+              src={targetStateArchitecture}
+              alt="Target state — Unified data platform for AI and Analytics on Microsoft Fabric, showing data ingestion from Excel, Anaplan, D365 F&O and other sources through OneLake medallion layers, Fabric IQ and Foundry IQ grounding, and consumption by Power BI, M365 Copilot, Copilot Studio and Foundry Agents — all governed by Microsoft Agent 365 and Purview."
+              className="block h-auto w-full"
+              loading="lazy"
+            />
           </div>
         </section>
 
