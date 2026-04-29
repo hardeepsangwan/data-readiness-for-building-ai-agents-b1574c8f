@@ -211,7 +211,7 @@ function ReportPage() {
         {/* Target State Architecture */}
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
           <SectionHeader
-            kicker="Reference architecture"
+            kicker="Target architecture"
             title="Target architecture"
           />
           <p className="mb-5 max-w-3xl text-sm text-muted-foreground">
