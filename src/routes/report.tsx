@@ -138,27 +138,6 @@ function ReportPage() {
           </div>
         </section>
 
-        {/* Target State Architecture */}
-        <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
-          <SectionHeader
-            kicker="Reference architecture"
-            title="Target state — Data & AI architecture"
-          />
-          <p className="mb-5 max-w-3xl text-sm text-muted-foreground">
-            Unified data platform on Microsoft Fabric powering AI agents through Fabric IQ,
-            Foundry IQ and M365 Work IQ — with Microsoft Agent 365 controlling all agent
-            governance, access and security across the estate.
-          </p>
-          <div className="overflow-hidden rounded-lg border border-border bg-white">
-            <img
-              src={targetStateArchitecture}
-              alt="Target state — Unified data platform for AI and Analytics on Microsoft Fabric, showing data ingestion from Excel, Anaplan, D365 F&O and other sources through OneLake medallion layers, Fabric IQ and Foundry IQ grounding, and consumption by Power BI, M365 Copilot, Copilot Studio and Foundry Agents — all governed by Microsoft Agent 365 and Purview."
-              className="block h-auto w-full"
-              loading="lazy"
-            />
-          </div>
-        </section>
-
         {/* Radar */}
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8">
           <SectionHeader kicker="Radar" title="Current vs. target across the 6 dimensions" />
@@ -196,50 +175,7 @@ function ReportPage() {
           </div>
         </section>
 
-        {/* Detailed answers */}
-        <section className="mt-10 print-break">
-          <SectionHeader kicker="Assessment detail" title="Questions, answers and recommendations" />
-          <div className="space-y-8">
-            {DIMENSIONS.map((d) => (
-              <div key={d.id} className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8">
-                <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: d.color }}>
-                  Dimension
-                </div>
-                <h3 className="mt-1 text-xl font-bold tracking-tight">{d.name}</h3>
-                <div className="mt-6 space-y-6">
-                  {d.questions.map((q, i) => {
-                    const a = state.answers[q.id];
-                    return (
-                      <div key={q.id} className="border-l-2 border-border pl-5">
-                        <div className="text-xs font-mono text-muted-foreground">Q{i + 1}</div>
-                        <div className="font-medium leading-snug">{q.text}</div>
-                        <div className="mt-3 grid gap-3 md:grid-cols-2">
-                          <AnswerBlock
-                            label="Current"
-                            level={a?.current}
-                            text={a !== undefined ? q.options[a.current].description : "Not answered"}
-                            accent="oklch(0.55 0.20 30)"
-                          />
-                          <AnswerBlock
-                            label="Target"
-                            level={a?.target}
-                            text={a !== undefined ? q.options[a.target].description : "Not answered"}
-                            accent="oklch(0.45 0.18 255)"
-                          />
-                        </div>
-                        <div className="mt-3 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">Why it matters: </span>{q.relevance}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Recommendations */}
+        {/* Recommendations / Next steps */}
         <section className="mt-10 print-break">
           <SectionHeader kicker="Next steps" title="Prioritised recommendations" />
           <div className="grid gap-4 md:grid-cols-2">
@@ -269,6 +205,27 @@ function ReportPage() {
                   </p>
                 </div>
               ))}
+          </div>
+        </section>
+
+        {/* Target State Architecture */}
+        <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
+          <SectionHeader
+            kicker="Reference architecture"
+            title="Target architecture"
+          />
+          <p className="mb-5 max-w-3xl text-sm text-muted-foreground">
+            Unified data platform on Microsoft Fabric powering AI agents through Fabric IQ,
+            Foundry IQ and M365 Work IQ — with Microsoft Agent 365 controlling all agent
+            governance, access and security across the estate.
+          </p>
+          <div className="overflow-hidden rounded-lg border border-border bg-white">
+            <img
+              src={targetStateArchitecture}
+              alt="Target state — Unified data platform for AI and Analytics on Microsoft Fabric, showing data ingestion from Excel, Anaplan, D365 F&O and other sources through OneLake medallion layers, Fabric IQ and Foundry IQ grounding, and consumption by Power BI, M365 Copilot, Copilot Studio and Foundry Agents — all governed by Microsoft Agent 365 and Purview."
+              className="block h-auto w-full"
+              loading="lazy"
+            />
           </div>
         </section>
 
