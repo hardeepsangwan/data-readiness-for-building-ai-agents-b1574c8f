@@ -145,6 +145,17 @@ function ReportPage() {
           <MaturityRadar state={state} />
         </section>
 
+        {/* Pain-point heat map / magic quadrant */}
+        <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
+          <SectionHeader kicker="Pain points" title="Magic quadrant — where to focus first" />
+          <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+            Each dimension plotted by <strong>current maturity</strong> (horizontal) and the{" "}
+            <strong>gap to target</strong> (vertical). The hotter the cell, the bigger the pain.
+            Top-left dimensions are highest priority — low maturity today and a large gap to your AI target.
+          </p>
+          <PainPointQuadrant points={buildQuadrantPoints(state.answers)} />
+        </section>
+
         {/* Per-dimension breakdown */}
         <section className="mt-10 print-break">
           <SectionHeader kicker="Breakdown" title="Maturity by dimension" />
