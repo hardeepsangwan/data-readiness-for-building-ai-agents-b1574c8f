@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, FileText } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { HorizontalStepper } from "@/components/horizontal-stepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { DIMENSIONS, MATURITY_LEVELS, TOTAL_QUESTIONS, type MaturityLevel } from "@/lib/assessment-data";
 import { useAssessment } from "@/lib/assessment-store";
+import { useAuth } from "@/lib/auth-store";
+import { saveSubmission } from "@/lib/submissions-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assessment")({
