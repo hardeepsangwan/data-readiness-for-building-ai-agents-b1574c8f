@@ -220,7 +220,10 @@ function ReportPage() {
           </div>
         </section>
 
-        {/* Target State Architecture */}
+        {/* Ontology / AI-agent readiness gap */}
+        <OntologyGapSection answers={state.answers} />
+
+
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
           <SectionHeader
             kicker="Target architecture"
