@@ -26,9 +26,14 @@ export const Route = createFileRoute("/assessment")({
 
 function AssessmentPage() {
   const { state, hydrated, setAnswer, setOrg, reset } = useAssessment();
+  const { user, hydrated: authHydrated } = useAuth();
   const navigate = useNavigate();
   // -1 = intro, 0..n = dimensions, n = summary
   const [step, setStep] = useState(-1);
+
+  useEffect(() => {
+    if (authHydrated && !user) navigate({ to: "/login" });
+  }, [authHydrated, user, navigate]);
 
   const dimIndex = step;
   const dimension = dimIndex >= 0 && dimIndex < DIMENSIONS.length ? DIMENSIONS[dimIndex] : null;
@@ -39,7 +44,19 @@ function AssessmentPage() {
   );
   const progress = Math.round((answeredCount / TOTAL_QUESTIONS) * 100);
 
-  if (!hydrated) {
+  // Build stepper data based on per-dimension completion + current step
+  const stepperSteps = useMemo(() => {
+    return DIMENSIONS.map((d, i) => {
+      const allAnswered = d.questions.every((q) => state.answers[q.id]);
+      let status: "done" | "current" | "todo" = "todo";
+      if (i < step && allAnswered) status = "done";
+      else if (i === step) status = "current";
+      else if (allAnswered) status = "done";
+      return { label: d.name, short: d.name, status };
+    });
+  }, [state.answers, step]);
+
+  if (!hydrated || !authHydrated || !user) {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
@@ -47,10 +64,39 @@ function AssessmentPage() {
     );
   }
 
+  const persistSubmission = () => {
+    const summary = DIMENSIONS.map((d) => {
+      const answered = d.questions.filter((q) => state.answers[q.id]);
+      const cur = answered.length
+        ? answered.reduce((s, q) => s + state.answers[q.id].current, 0) / answered.length
+        : 0;
+      const tgt = answered.length
+        ? answered.reduce((s, q) => s + state.answers[q.id].target, 0) / answered.length
+        : 0;
+      return { cur, tgt };
+    });
+    const overallCurrent = summary.reduce((s, x) => s + x.cur, 0) / summary.length;
+    const overallTarget = summary.reduce((s, x) => s + x.tgt, 0) / summary.length;
+    saveSubmission({
+      id: `${user.email}-${Date.now()}`,
+      email: user.email,
+      role: user.role,
+      submittedAt: new Date().toISOString(),
+      state,
+      overallCurrent,
+      overallTarget,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[image:var(--gradient-subtle)]">
       <SiteHeader />
       <div className="mx-auto max-w-5xl px-6 py-10">
+        {/* Horizontal stepper across all dimensions */}
+        <div className="mb-8 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
+          <HorizontalStepper steps={stepperSteps} introActive={step === -1} />
+        </div>
+
         {/* Progress */}
         {step >= 0 && step < DIMENSIONS.length && (
           <div className="mb-8">
@@ -81,7 +127,12 @@ function AssessmentPage() {
             answers={state.answers}
             setAnswer={setAnswer}
             onBack={() => { setStep((s) => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            onNext={() => { setStep((s) => s + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onNext={() => {
+              setStep((s) => s + 1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              // If this was the last dimension, persist the submission
+              if (step === DIMENSIONS.length - 1) persistSubmission();
+            }}
             isLast={step === DIMENSIONS.length - 1}
           />
         )}
@@ -90,7 +141,7 @@ function AssessmentPage() {
           <FinishStep
             answeredCount={answeredCount}
             onBack={() => setStep(DIMENSIONS.length - 1)}
-            onView={() => navigate({ to: "/report" })}
+            onView={() => { persistSubmission(); navigate({ to: "/report" }); }}
           />
         )}
       </div>
