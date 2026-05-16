@@ -26,7 +26,10 @@ export function MaturityRadar({ state, height = 460 }: Props) {
       ? answered.reduce((s, q) => s + state.answers[q.id].target, 0) / answered.length
       : 0;
     return {
-      dimension: d.short,
+      dimension:
+        d.short === "CI/CD"
+          ? "Code Promotion (CI/CD)"
+          : `Data ${d.short}`,
       Current: Number(cur.toFixed(2)),
       Target: Number(tgt.toFixed(2)),
     };
