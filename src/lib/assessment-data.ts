@@ -28,8 +28,8 @@ export const MATURITY_LEVELS: { level: MaturityLevel; name: string; description:
   { level: 0, name: "No Capability", description: "The organization is either not aware or has any processes, tools or resources to support this capability." },
   { level: 1, name: "Limited Awareness", description: "Some tools and processes may exist. However, there is limited awareness for the importance of managing this capability across the Data and Analytics solution." },
   { level: 2, name: "Foundational", description: "Foundations of tools and technologies to manage this capability exist and are operational. There is very limited implementation or minor initiatives that demonstrate the organizations' capability to sustain this across the Data and Analytics solution." },
-  { level: 3, name: "Opportunistic", description: "Comprehensive awareness exists. Tools, technology to support the capability exist. Some resource contention. However, the implementation of the capability is not widely deployed. Implementation varied between various business areas in the Data and Analytics solution as well not across the enterprise and not enforced by policies." },
-  { level: 4, name: "Enterprise", description: "Tools, technology, processes and resources exist. Standards are defined. The capability is enforced through all business areas in the Data and Analytics solution, and enforced by policy throughout new implementations. However, there is no transformational change due to the implementation of this capability." },
+  { level: 3, name: "Developing", description: "Comprehensive awareness exists. Tools, technology to support the capability exist. Some resource contention. However, the implementation of the capability is not widely deployed. Implementation varied between various business areas in the Data and Analytics solution as well not across the enterprise and not enforced by policies." },
+  { level: 4, name: "Established", description: "Tools, technology, processes and resources exist. Standards are defined. The capability is enforced through all business areas in the Data and Analytics solution, and enforced by policy throughout new implementations. However, there is no transformational change due to the implementation of this capability." },
   { level: 5, name: "Transformational", description: "The capability is fully implemented and enforced throughout the Data and Analytics solution. The deployment of this capability is considered as transforming the analytical business as well as expanding the analytics capability that could not be achieved prior to this deployment." },
 ];
 
@@ -37,8 +37,8 @@ const std = (specifics: [string, string, string, string, string, string]): Matur
   { level: 0, label: "No capability yet", description: specifics[0] },
   { level: 1, label: "Limited awareness", description: specifics[1] },
   { level: 2, label: "Foundational", description: specifics[2] },
-  { level: 3, label: "Opportunistic", description: specifics[3] },
-  { level: 4, label: "Enterprise", description: specifics[4] },
+  { level: 3, label: "Developing", description: specifics[3] },
+  { level: 4, label: "Established", description: specifics[4] },
   { level: 5, label: "Transformational", description: specifics[5] },
 ];
 

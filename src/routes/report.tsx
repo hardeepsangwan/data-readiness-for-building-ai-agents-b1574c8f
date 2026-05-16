@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle } from "lucide-react";
+import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle, Network } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { MaturityRadar } from "@/components/maturity-radar";
+import { PainPointQuadrant, buildQuadrantPoints } from "@/components/pain-point-quadrant";
 import targetStateArchitecture from "@/assets/target-state-architecture.png";
 import { DIMENSIONS, MATURITY_LEVELS, TOTAL_QUESTIONS, type MaturityLevel } from "@/lib/assessment-data";
 import { useAssessment } from "@/lib/assessment-store";
@@ -144,6 +145,17 @@ function ReportPage() {
           <MaturityRadar state={state} />
         </section>
 
+        {/* Pain-point heat map / magic quadrant */}
+        <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
+          <SectionHeader kicker="Pain points" title="Magic quadrant — where to focus first" />
+          <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+            Each dimension plotted by <strong>current maturity</strong> (horizontal) and the{" "}
+            <strong>gap to target</strong> (vertical). The hotter the cell, the bigger the pain.
+            Top-left dimensions are highest priority — low maturity today and a large gap to your AI target.
+          </p>
+          <PainPointQuadrant points={buildQuadrantPoints(state.answers)} />
+        </section>
+
         {/* Per-dimension breakdown */}
         <section className="mt-10 print-break">
           <SectionHeader kicker="Breakdown" title="Maturity by dimension" />
@@ -208,7 +220,10 @@ function ReportPage() {
           </div>
         </section>
 
-        {/* Target State Architecture */}
+        {/* Ontology / AI-agent readiness gap */}
+        <OntologyGapSection answers={state.answers} />
+
+
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
           <SectionHeader
             kicker="Target architecture"
@@ -314,4 +329,134 @@ function recommendationText(dimId: string, gap: number): string {
   const base = tips[dimId] ?? "";
   if (gap <= 0) return "Maintain the current state and look for opportunities to extend this capability further.";
   return base;
+}
+
+function OntologyGapSection({
+  answers,
+}: {
+  answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
+}) {
+  // Ontology question is con-1 in the Consumption dimension
+  const ontology = answers["con-1"];
+  const hasOntology = !!ontology && ontology.current >= 3;
+  const ontologyGap = ontology ? ontology.target - ontology.current : 0;
+
+  // Surface the worst-gap question across all dimensions as the top pain points
+  const allGaps = DIMENSIONS.flatMap((d) =>
+    d.questions
+      .filter((q) => answers[q.id])
+      .map((q) => ({
+        dim: d,
+        q,
+        gap: answers[q.id].target - answers[q.id].current,
+        current: answers[q.id].current,
+        target: answers[q.id].target,
+      })),
+  )
+    .filter((x) => x.gap > 0)
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 5);
+
+  const useCases: { title: string; steps: string[] }[] = [
+    {
+      title: "Copilot Studio agent over Finance / Operations data",
+      steps: [
+        "Define an ontology for the Finance domain (entities: Customer, Vendor, Invoice, GL Account) with relationships and metrics.",
+        "Publish a certified Direct Lake semantic model in Fabric and expose it as a Fabric IQ data agent.",
+        "Add business descriptions and synonyms for all measures so Copilot can map natural language to fields.",
+        "Apply RLS aligned to Entra groups so the agent inherits caller permissions.",
+      ],
+    },
+    {
+      title: "M365 / Work IQ agent over SharePoint, Teams, Outlook",
+      steps: [
+        "Inventory the content sources via Graph connectors and tag them with sensitivity labels in Purview.",
+        "Curate the corpus: certify owners, retire stale documents, deduplicate.",
+        "Use Foundry IQ / Fabric IQ indexes with standardised chunking + embeddings.",
+        "Register the agent in Microsoft Agent 365 with scoped Graph permissions and DLP policies.",
+      ],
+    },
+    {
+      title: "Foundry agent grounded on enterprise knowledge",
+      steps: [
+        "Build a Foundry IQ index referencing curated OneLake gold tables and unstructured stores.",
+        "Wire the agent to the ontology so retrieval is entity-aware, not just keyword based.",
+        "Add agent eval suites (groundedness, accuracy, safety) as CI/CD release gates.",
+        "Enforce Agent 365 Access Control: identity, data scope and tool scopes per caller.",
+      ],
+    },
+  ];
+
+  return (
+    <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
+      <SectionHeader
+        kicker="AI agent readiness"
+        title="Ontology layer & gap remediation"
+      />
+      <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
+        <div className="rounded-lg border border-border bg-muted/30 p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Network className="h-4 w-4 text-primary" />
+            Do you have an ontology layer?
+          </div>
+          {ontology ? (
+            <>
+              <div className="mt-3 text-3xl font-bold tracking-tight">
+                {hasOntology ? "Yes — partial" : "No — critical gap"}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Current ontology maturity is <strong>Level {ontology.current} · {MATURITY_LEVELS[ontology.current].name}</strong>;
+                target is <strong>Level {ontology.target} · {MATURITY_LEVELS[ontology.target].name}</strong>
+                {" "}(gap of {ontologyGap.toFixed(1)} level{ontologyGap === 1 ? "" : "s"}).
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                An ontology is the semantic backbone for AI agents — without it, Copilot Studio,
+                M365 and Foundry agents return inconsistent or wrong answers because they cannot
+                reason about business entities, relationships and metrics consistently.
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">No answer recorded for the ontology question yet.</p>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-border bg-muted/30 p-5">
+          <div className="text-sm font-semibold">Top pain points to fix first</div>
+          {allGaps.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">No outstanding gaps detected. Maintain current state.</p>
+          ) : (
+            <ol className="mt-3 space-y-2">
+              {allGaps.map(({ dim, q, gap }) => (
+                <li key={q.id} className="flex items-start gap-2 text-sm">
+                  <span
+                    className="mt-0.5 inline-flex h-5 shrink-0 items-center rounded px-1.5 text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ background: `color-mix(in oklab, ${dim.color} 15%, white)`, color: dim.color }}
+                  >
+                    {dim.short}
+                  </span>
+                  <span className="text-foreground/90">
+                    {q.text} <span className="text-muted-foreground">— gap {gap.toFixed(1)}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Steps by business use case</div>
+        <div className="mt-3 grid gap-4 md:grid-cols-3">
+          {useCases.map((uc) => (
+            <div key={uc.title} className="rounded-lg border border-border bg-card p-4">
+              <div className="text-sm font-semibold">{uc.title}</div>
+              <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-xs text-muted-foreground">
+                {uc.steps.map((s, i) => <li key={i}>{s}</li>)}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
