@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle } from "lucide-react";
+import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle, Network } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { MaturityRadar } from "@/components/maturity-radar";
+import { PainPointQuadrant, buildQuadrantPoints } from "@/components/pain-point-quadrant";
 import targetStateArchitecture from "@/assets/target-state-architecture.png";
 import { DIMENSIONS, MATURITY_LEVELS, TOTAL_QUESTIONS, type MaturityLevel } from "@/lib/assessment-data";
 import { useAssessment } from "@/lib/assessment-store";
