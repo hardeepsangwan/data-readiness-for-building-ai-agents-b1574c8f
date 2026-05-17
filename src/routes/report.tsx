@@ -386,16 +386,16 @@ function OntologyGapSection({
     .sort((a, b) => b.gap - a.gap)
     .slice(0, 5);
 
-  const bizFn = org.businessFunction || "Finance & FP&A";
+  const bizFn = org.businessFunction || "your business function";
   const bizProc = org.businessProcess || "the pilot business process";
 
   // Concrete next steps grounded in the client's 3 source systems
   const concreteNextSteps: string[] = [
-    `Ingest data for ${bizFn} (${bizProc}) from the 3 current source systems — Anaplan (plan), D365 Finance & Operations (actuals) and the FP&A Excel working files — into Microsoft Fabric OneLake using a metadata-driven framework.`,
+    `Ingest data for ${bizFn} (${bizProc}) from the current source systems into Microsoft Fabric OneLake using a metadata-driven framework.`,
     `Land each source in the Bronze layer with full source identity, sensitivity labels and lineage preserved; standardise the load pattern (full vs incremental vs CDC) per source.`,
-    `Reconcile Anaplan plan vs D365 F&O actuals vs Excel adjustments in the Silver layer so the agent never sees unreconciled FP&A facts.`,
+    `Reconcile source systems in the Silver layer so the agent never sees unreconciled ${bizFn} facts.`,
     `Apply data quality rules (completeness, validity, freshness, uniqueness) on the Silver → Gold transition and block the AI-grounding surface if SLAs are breached.`,
-    `Build an ontology layer (entities, relationships, metrics) for ${bizFn} — Plan, Actual, Variance, Cost Centre, GL Account, Scenario, Period — and publish a certified Direct Lake semantic model on top.`,
+    `Build an ontology layer (entities, relationships, metrics) for ${bizFn} — and publish a certified Direct Lake semantic model on top.`,
     `Expose the ontology as a Fabric IQ data agent and / or Foundry IQ knowledge source so Copilot Studio / Foundry agents ground their answers in governed enterprise context, not raw tables.`,
     `Register the agent in Microsoft Agent 365: assign owner, scope tools, inherit caller identity, enforce DLP and add groundedness / accuracy eval suites as release gates.`,
   ];
@@ -404,9 +404,9 @@ function OntologyGapSection({
     {
       title: `Copilot Studio agent over ${bizFn} (${bizProc})`,
       steps: [
-        "Ingest Anaplan, D365 F&O and FP&A Excel into OneLake via the metadata-driven framework.",
+        `Ingest the ${bizFn} source systems into OneLake via the metadata-driven framework.`,
         "Apply DQ rules and reconciliation so the agent only sees trusted, reconciled facts.",
-        "Define an FP&A ontology (Plan, Actual, Variance, Cost Centre, GL Account) and publish a certified Direct Lake semantic model.",
+        `Define a ${bizFn} ontology (key entities, relationships and metrics) and publish a certified Direct Lake semantic model.`,
         "Expose it as a Fabric IQ data agent with synonyms, descriptions and RLS by Entra group.",
       ],
     },
@@ -423,7 +423,7 @@ function OntologyGapSection({
       title: "Foundry agent grounded on enterprise knowledge",
       steps: [
         "Build a Foundry IQ index referencing curated OneLake gold tables and unstructured stores.",
-        "Wire the agent to the FP&A ontology so retrieval is entity-aware, not just keyword based.",
+        `Wire the agent to the ${bizFn} ontology so retrieval is entity-aware, not just keyword based.`,
         "Add agent eval suites (groundedness, accuracy, safety) as CI/CD release gates.",
         "Enforce Agent 365 Access Control: identity, data scope and tool scopes per caller.",
       ],
@@ -492,10 +492,7 @@ function OntologyGapSection({
           Next steps for {bizFn}{bizProc ? ` — ${bizProc}` : ""}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Current state: 3 source systems for the pilot — <strong>Anaplan</strong> (plan),{" "}
-          <strong>D365 Finance &amp; Operations</strong> (actuals) and an{" "}
-          <strong>Excel working file</strong> for FP&amp;A. Below is the recommended sequence to
-          make this data ready for AI agents.
+          Recommended sequence to make {bizFn}{bizProc ? ` (${bizProc})` : ""} data ready for AI agents.
         </p>
         <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-foreground/90">
           {concreteNextSteps.map((s, i) => <li key={i}>{s}</li>)}
