@@ -53,15 +53,15 @@ export const DIMENSIONS: Dimension[] = [
     questions: [
       {
         id: "ing-1",
-        text: "Do you have a metadata-driven ingestion framework in Microsoft Fabric capable of ingesting data from Excel, Anaplan and D365 F&O — and easily extensible to new sources?",
-        relevance: "A metadata-driven framework removes hard-coded pipelines, accelerates onboarding of new sources for AI use cases, and ensures consistent landing-zone patterns in OneLake.",
+        text: "For the business process being assessed (e.g. FP&A), from which source systems are you picking data — and is it ingested into OneLake via a metadata-driven framework?",
+        relevance: "AI agents for a business process need to know exactly which systems hold the source of truth (e.g. Anaplan for planning, D365 F&O for actuals, Excel for FP&A working files). Landing all of these in OneLake through a metadata-driven framework is the prerequisite to applying data quality rules and building an ontology layer for agent grounding.",
         options: std([
-          "We build one-off pipelines per source. No metadata catalog driving ingestion.",
-          "Some pipelines exist but each source is hand-built; no shared config tables.",
-          "A basic config-driven pipeline exists for one or two sources (e.g. Excel) but not generalised.",
-          "A reusable framework exists for Excel, Anaplan and F&O but extending it to a new source still requires significant rework.",
-          "Enterprise metadata-driven framework covers all current sources and onboarding a new source is a config change enforced by standards.",
-          "Self-service ingestion: business users register a new source via metadata and the framework auto-deploys pipelines, monitoring and lineage.",
+          "Sources are not catalogued. Data lives in spreadsheets / source apps. Nothing in OneLake.",
+          "We know the sources informally (Anaplan, D365 F&O, Excel) but ingest them ad-hoc per request; no OneLake landing zone.",
+          "One source (e.g. Excel for FP&A) is ingested into OneLake with a hand-built pipeline. Others still siloed.",
+          "All three sources (Anaplan, D365 F&O, Excel) are catalogued and landed in OneLake; pipelines are reusable but not fully metadata-driven.",
+          "Enterprise metadata-driven framework lands every business-process source into OneLake with standard patterns, monitoring and lineage; new sources added by config.",
+          "Self-service: business owners register a new source for a process; the framework auto-deploys pipelines, monitoring and lineage into OneLake ready for ontology + agent grounding.",
         ]),
       },
       {
@@ -127,6 +127,19 @@ export const DIMENSIONS: Dimension[] = [
           "Identity, owner and labels captured for most pipelines; ACLs partially preserved.",
           "Full metadata (owner, label, source ACL, lineage) preserved enterprise-wide.",
           "Metadata flows end-to-end into Purview, Fabric IQ and Foundry IQ and drives runtime access decisions for agents.",
+        ]),
+      },
+      {
+        id: "ing-7",
+        text: "For the FP&A pilot, is finance-grade reconciliation done at ingestion (Anaplan plan vs D365 F&O actuals vs Excel adjustments) before data is exposed to AI agents?",
+        relevance: "FP&A agents must not give answers that disagree with the closed books. Reconciliation at ingestion prevents agents quoting numbers that conflict between planning, ERP and working files.",
+        options: std([
+          "No reconciliation; agents could read any source.",
+          "Reconciliation done manually outside the platform; not enforced for AI surfaces.",
+          "Reconciliation rules exist for one or two accounts; gaps not surfaced.",
+          "Reconciliation runs for most FP&A entities; breaks are reported but agents still see unreconciled data.",
+          "Reconciliation gates the gold layer; agents only see reconciled FP&A facts.",
+          "Continuous reconciliation with auto-explained variances surfaced as grounded context to the agent.",
         ]),
       },
     ],

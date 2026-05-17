@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle, Network } from "lucide-react";
+import { ArrowLeft, Printer, FileText, TrendingUp, Target, AlertCircle, Network, FileSpreadsheet } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { MaturityRadar } from "@/components/maturity-radar";
-import { PainPointQuadrant, buildQuadrantPoints } from "@/components/pain-point-quadrant";
+import { DimensionMaturityTable } from "@/components/dimension-maturity-table";
+import { DimensionHorizontalChart } from "@/components/dimension-horizontal-chart";
 import targetStateArchitecture from "@/assets/target-state-architecture.png";
 import { DIMENSIONS, MATURITY_LEVELS, TOTAL_QUESTIONS, type MaturityLevel } from "@/lib/assessment-data";
 import { useAssessment } from "@/lib/assessment-store";
+import { downloadAssessmentExcel } from "@/lib/excel-export";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
@@ -59,13 +61,18 @@ function ReportPage() {
 
       {/* Toolbar */}
       <div className="no-print border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-3">
           <Button asChild variant="ghost" size="sm">
             <Link to="/assessment"><ArrowLeft className="mr-1 h-4 w-4" /> Back to assessment</Link>
           </Button>
-          <Button size="sm" onClick={() => typeof window !== "undefined" && window.print()}>
-            <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => downloadAssessmentExcel(state)}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Download Excel
+            </Button>
+            <Button size="sm" onClick={() => typeof window !== "undefined" && window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -82,9 +89,11 @@ function ReportPage() {
             Current state vs. target state maturity across six data dimensions required to enable
             AI use cases on Microsoft Fabric, Copilot Studio and Azure Foundry.
           </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
             <CoverField label="Organization" value={state.org.name || "—"} />
             <CoverField label="Respondent" value={state.org.respondent || "—"} />
+            <CoverField label="Business function" value={state.org.businessFunction || "—"} />
+            <CoverField label="Business process" value={state.org.businessProcess || "—"} />
             <CoverField label="Date" value={state.org.date || "—"} />
           </div>
         </div>
@@ -145,15 +154,33 @@ function ReportPage() {
           <MaturityRadar state={state} />
         </section>
 
-        {/* Pain-point heat map / magic quadrant */}
+        {/* Horizontal stacked chart complementing the radar */}
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
-          <SectionHeader kicker="Pain points" title="Magic quadrant — where to focus first" />
+          <SectionHeader kicker="Side-by-side" title="Current vs. target — horizontal view" />
           <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
-            Each dimension plotted by <strong>current maturity</strong> (horizontal) and the{" "}
-            <strong>gap to target</strong> (vertical). The hotter the cell, the bigger the pain.
-            Top-left dimensions are highest priority — low maturity today and a large gap to your AI target.
+            The same dimension scores as the radar, plotted as horizontal bars so current and
+            target maturity can be compared at a glance.
           </p>
-          <PainPointQuadrant points={buildQuadrantPoints(state.answers)} />
+          <DimensionHorizontalChart state={state} />
+        </section>
+
+        {/* Dimension maturity table (replaces magic quadrant heat map) */}
+        <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
+          <SectionHeader kicker="Maturity table" title="Dimension ranking across maturity levels" />
+          <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+            One row per dimension, six columns for the maturity levels (L0 No Capability →
+            L5 Transformational). The filled cell shows the current state and the dashed cell
+            shows the target.
+          </p>
+          <DimensionMaturityTable
+            rows={summary.map(({ dim, current, target }) => ({
+              id: dim.id,
+              name: dim.name,
+              color: dim.color,
+              current,
+              target,
+            }))}
+          />
         </section>
 
         {/* Per-dimension breakdown */}
@@ -221,7 +248,7 @@ function ReportPage() {
         </section>
 
         {/* Ontology / AI-agent readiness gap */}
-        <OntologyGapSection answers={state.answers} />
+        <OntologyGapSection answers={state.answers} org={state.org} />
 
 
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
@@ -333,8 +360,10 @@ function recommendationText(dimId: string, gap: number): string {
 
 function OntologyGapSection({
   answers,
+  org,
 }: {
   answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
+  org: { name: string; respondent: string; date: string; businessFunction: string; businessProcess: string };
 }) {
   // Ontology question is con-1 in the Consumption dimension
   const ontology = answers["con-1"];
@@ -357,14 +386,28 @@ function OntologyGapSection({
     .sort((a, b) => b.gap - a.gap)
     .slice(0, 5);
 
+  const bizFn = org.businessFunction || "Finance & FP&A";
+  const bizProc = org.businessProcess || "the pilot business process";
+
+  // Concrete next steps grounded in the client's 3 source systems
+  const concreteNextSteps: string[] = [
+    `Ingest data for ${bizFn} (${bizProc}) from the 3 current source systems — Anaplan (plan), D365 Finance & Operations (actuals) and the FP&A Excel working files — into Microsoft Fabric OneLake using a metadata-driven framework.`,
+    `Land each source in the Bronze layer with full source identity, sensitivity labels and lineage preserved; standardise the load pattern (full vs incremental vs CDC) per source.`,
+    `Reconcile Anaplan plan vs D365 F&O actuals vs Excel adjustments in the Silver layer so the agent never sees unreconciled FP&A facts.`,
+    `Apply data quality rules (completeness, validity, freshness, uniqueness) on the Silver → Gold transition and block the AI-grounding surface if SLAs are breached.`,
+    `Build an ontology layer (entities, relationships, metrics) for ${bizFn} — Plan, Actual, Variance, Cost Centre, GL Account, Scenario, Period — and publish a certified Direct Lake semantic model on top.`,
+    `Expose the ontology as a Fabric IQ data agent and / or Foundry IQ knowledge source so Copilot Studio / Foundry agents ground their answers in governed enterprise context, not raw tables.`,
+    `Register the agent in Microsoft Agent 365: assign owner, scope tools, inherit caller identity, enforce DLP and add groundedness / accuracy eval suites as release gates.`,
+  ];
+
   const useCases: { title: string; steps: string[] }[] = [
     {
-      title: "Copilot Studio agent over Finance / Operations data",
+      title: `Copilot Studio agent over ${bizFn} (${bizProc})`,
       steps: [
-        "Define an ontology for the Finance domain (entities: Customer, Vendor, Invoice, GL Account) with relationships and metrics.",
-        "Publish a certified Direct Lake semantic model in Fabric and expose it as a Fabric IQ data agent.",
-        "Add business descriptions and synonyms for all measures so Copilot can map natural language to fields.",
-        "Apply RLS aligned to Entra groups so the agent inherits caller permissions.",
+        "Ingest Anaplan, D365 F&O and FP&A Excel into OneLake via the metadata-driven framework.",
+        "Apply DQ rules and reconciliation so the agent only sees trusted, reconciled facts.",
+        "Define an FP&A ontology (Plan, Actual, Variance, Cost Centre, GL Account) and publish a certified Direct Lake semantic model.",
+        "Expose it as a Fabric IQ data agent with synonyms, descriptions and RLS by Entra group.",
       ],
     },
     {
@@ -380,7 +423,7 @@ function OntologyGapSection({
       title: "Foundry agent grounded on enterprise knowledge",
       steps: [
         "Build a Foundry IQ index referencing curated OneLake gold tables and unstructured stores.",
-        "Wire the agent to the ontology so retrieval is entity-aware, not just keyword based.",
+        "Wire the agent to the FP&A ontology so retrieval is entity-aware, not just keyword based.",
         "Add agent eval suites (groundedness, accuracy, safety) as CI/CD release gates.",
         "Enforce Agent 365 Access Control: identity, data scope and tool scopes per caller.",
       ],
@@ -442,6 +485,21 @@ function OntologyGapSection({
             </ol>
           )}
         </div>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-primary/20 bg-primary/[0.04] p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+          Next steps for {bizFn}{bizProc ? ` — ${bizProc}` : ""}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Current state: 3 source systems for the pilot — <strong>Anaplan</strong> (plan),{" "}
+          <strong>D365 Finance &amp; Operations</strong> (actuals) and an{" "}
+          <strong>Excel working file</strong> for FP&amp;A. Below is the recommended sequence to
+          make this data ready for AI agents.
+        </p>
+        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-foreground/90">
+          {concreteNextSteps.map((s, i) => <li key={i}>{s}</li>)}
+        </ol>
       </div>
 
       <div className="mt-6">

@@ -7,40 +7,69 @@ export interface AnswerEntry {
 }
 
 export interface AssessmentState {
-  org: { name: string; respondent: string; date: string };
+  org: {
+    name: string;
+    respondent: string;
+    date: string;
+    businessFunction: string;
+    businessProcess: string;
+  };
   answers: Record<string, AnswerEntry>;
+  workshopId?: string | null;
 }
 
-const KEY = "fabric-data-assessment-v1";
+const KEY_BASE = "fabric-data-assessment-v2";
 
-const initial: AssessmentState = {
-  org: { name: "", respondent: "", date: new Date().toISOString().slice(0, 10) },
+const makeInitial = (): AssessmentState => ({
+  org: {
+    name: "",
+    respondent: "",
+    date: new Date().toISOString().slice(0, 10),
+    businessFunction: "Finance & FP&A",
+    businessProcess: "",
+  },
   answers: {},
-};
+  workshopId: null,
+});
+
+function getKey(): string {
+  if (typeof window === "undefined") return KEY_BASE;
+  const wid = localStorage.getItem("fabric-current-workshop-v1");
+  return wid ? `${KEY_BASE}::${wid}` : KEY_BASE;
+}
 
 function read(): AssessmentState {
-  if (typeof window === "undefined") return initial;
+  const init = makeInitial();
+  if (typeof window === "undefined") return init;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return initial;
-    return { ...initial, ...JSON.parse(raw) };
+    const raw = localStorage.getItem(getKey());
+    if (!raw) return init;
+    const parsed = JSON.parse(raw);
+    return { ...init, ...parsed, org: { ...init.org, ...(parsed.org || {}) } };
   } catch {
-    return initial;
+    return init;
   }
 }
 
 function write(s: AssessmentState) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(s));
+  localStorage.setItem(getKey(), JSON.stringify(s));
 }
 
 export function useAssessment() {
-  const [state, setState] = useState<AssessmentState>(initial);
+  const [state, setState] = useState<AssessmentState>(() => makeInitial());
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setState(read());
     setHydrated(true);
+    const onChange = () => setState(read());
+    window.addEventListener("workshops-changed", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("workshops-changed", onChange);
+      window.removeEventListener("storage", onChange);
+    };
   }, []);
 
   const update = (updater: (s: AssessmentState) => AssessmentState) => {
@@ -58,8 +87,9 @@ export function useAssessment() {
     update((s) => ({ ...s, org: { ...s.org, ...org } }));
 
   const reset = () => {
-    write(initial);
-    setState(initial);
+    const init = makeInitial();
+    write(init);
+    setState(init);
   };
 
   return { state, hydrated, setAnswer, setOrg, reset };
