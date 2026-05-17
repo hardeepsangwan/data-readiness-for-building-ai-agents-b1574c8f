@@ -128,8 +128,8 @@ function Index() {
             ["0", "No capability"],
             ["1", "Limited awareness"],
             ["2", "Foundational"],
-            ["3", "Opportunistic"],
-            ["4", "Enterprise"],
+            ["3", "Developing"],
+            ["4", "Established"],
             ["5", "Transformational"],
           ].map(([n, t]) => (
             <div key={n} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
