@@ -20,7 +20,7 @@ export interface AssessmentState {
 
 const KEY_BASE = "fabric-data-assessment-v2";
 
-const initial: AssessmentState = {
+const makeInitial = (): AssessmentState => ({
   org: {
     name: "",
     respondent: "",
@@ -30,25 +30,24 @@ const initial: AssessmentState = {
   },
   answers: {},
   workshopId: null,
-};
+});
 
 function getKey(): string {
   if (typeof window === "undefined") return KEY_BASE;
   const wid = localStorage.getItem("fabric-current-workshop-v1");
   return wid ? `${KEY_BASE}::${wid}` : KEY_BASE;
 }
-const KEY = KEY_BASE; // legacy fallback name (unused for reads)
-void KEY;
 
 function read(): AssessmentState {
-  if (typeof window === "undefined") return initial;
+  const init = makeInitial();
+  if (typeof window === "undefined") return init;
   try {
     const raw = localStorage.getItem(getKey());
-    if (!raw) return { ...initial, org: { ...initial.org, date: new Date().toISOString().slice(0, 10) } };
+    if (!raw) return init;
     const parsed = JSON.parse(raw);
-    return { ...initial, ...parsed, org: { ...initial.org, ...(parsed.org || {}) } };
+    return { ...init, ...parsed, org: { ...init.org, ...(parsed.org || {}) } };
   } catch {
-    return initial;
+    return init;
   }
 }
 
@@ -58,7 +57,7 @@ function write(s: AssessmentState) {
 }
 
 export function useAssessment() {
-  const [state, setState] = useState<AssessmentState>(initial);
+  const [state, setState] = useState<AssessmentState>(() => makeInitial());
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -88,8 +87,9 @@ export function useAssessment() {
     update((s) => ({ ...s, org: { ...s.org, ...org } }));
 
   const reset = () => {
-    write(initial);
-    setState(initial);
+    const init = makeInitial();
+    write(init);
+    setState(init);
   };
 
   return { state, hydrated, setAnswer, setOrg, reset };

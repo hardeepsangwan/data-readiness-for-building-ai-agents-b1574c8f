@@ -45,10 +45,10 @@ function LoginPage() {
       <div className="mx-auto flex max-w-md flex-col px-6 py-16">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-soft)]">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Sign in</div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Access the assessment</h1>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight">Access the assessment to identify data readiness for building AI agents</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Enter your work email and choose your role. Facilitators (admin) can audit all
-            submissions; users complete the readiness assessment.
+            submissions and create workshops; users complete the readiness assessment.
           </p>
 
           <form className="mt-6 space-y-5" onSubmit={submit}>
