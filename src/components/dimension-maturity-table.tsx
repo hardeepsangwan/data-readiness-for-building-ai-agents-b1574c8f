@@ -82,12 +82,12 @@ export function DimensionMaturityTable({ rows }: Props) {
       </table>
       <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-5 rounded" style={{ background: "oklch(0.50 0.18 180)" }} />
-          <span>Filled = current state</span>
+          <span className="inline-flex h-5 min-w-[36px] items-center justify-center rounded px-1.5 text-[10px] font-semibold uppercase tracking-wider text-white" style={{ background: "oklch(0.50 0.18 180)" }}>Now</span>
+          <span>Current state</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-5 rounded border-2 border-dashed" style={{ borderColor: "oklch(0.50 0.18 180)" }} />
-          <span>Dashed border = target state</span>
+          <span className="inline-flex h-5 min-w-[36px] items-center justify-center rounded border-2 border-dashed px-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ borderColor: "oklch(0.50 0.18 180)", color: "oklch(0.50 0.18 180)" }}>Tgt</span>
+          <span>Target state</span>
         </div>
         <div className="ml-auto">Columns: Maturity levels (L0 No Capability → L5 Transformational)</div>
       </div>
