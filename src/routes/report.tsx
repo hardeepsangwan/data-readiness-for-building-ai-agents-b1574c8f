@@ -487,6 +487,21 @@ function OntologyGapSection({
         </div>
       </div>
 
+      <div className="mt-6 rounded-lg border border-primary/20 bg-primary/[0.04] p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+          Next steps for {bizFn}{bizProc ? ` — ${bizProc}` : ""}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Current state: 3 source systems for the pilot — <strong>Anaplan</strong> (plan),{" "}
+          <strong>D365 Finance &amp; Operations</strong> (actuals) and an{" "}
+          <strong>Excel working file</strong> for FP&amp;A. Below is the recommended sequence to
+          make this data ready for AI agents.
+        </p>
+        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-foreground/90">
+          {concreteNextSteps.map((s, i) => <li key={i}>{s}</li>)}
+        </ol>
+      </div>
+
       <div className="mt-6">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Steps by business use case</div>
         <div className="mt-3 grid gap-4 md:grid-cols-3">
