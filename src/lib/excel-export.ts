@@ -1,12 +1,14 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { DIMENSIONS, MATURITY_LEVELS } from "./assessment-data";
 import type { AssessmentState } from "./assessment-store";
 
-export function downloadAssessmentExcel(state: AssessmentState) {
-  const wb = XLSX.utils.book_new();
+export async function downloadAssessmentExcel(state: AssessmentState) {
+  const wb = new ExcelJS.Workbook();
 
-  // Cover sheet
-  const cover = [
+  // Overview sheet
+  const overview = wb.addWorksheet("Overview");
+  overview.columns = [{ width: 28 }, { width: 90 }];
+  overview.addRows([
     ["Data Readiness Assessment for AI Agents"],
     [],
     ["Organization", state.org.name || ""],
@@ -17,24 +19,31 @@ export function downloadAssessmentExcel(state: AssessmentState) {
     [],
     ["Maturity scale"],
     ...MATURITY_LEVELS.map((m) => [`Level ${m.level} · ${m.name}`, m.description]),
-  ];
-  const coverWs = XLSX.utils.aoa_to_sheet(cover);
-  coverWs["!cols"] = [{ wch: 28 }, { wch: 90 }];
-  XLSX.utils.book_append_sheet(wb, coverWs, "Overview");
+  ]);
 
   // One sheet per dimension
   DIMENSIONS.forEach((d) => {
-    const rows: (string | number)[][] = [
-      [d.name],
-      [d.description],
-      [],
-      ["#", "Question", "Why it matters", "Current level", "Current label", "Target level", "Target label", "Gap"],
+    const safeName = d.name.replace(/[\\/?*[\]:]/g, "").slice(0, 31);
+    const ws = wb.addWorksheet(safeName);
+    ws.columns = [
+      { width: 4 },
+      { width: 70 },
+      { width: 60 },
+      { width: 12 },
+      { width: 16 },
+      { width: 12 },
+      { width: 16 },
+      { width: 6 },
     ];
+    ws.addRow([d.name]);
+    ws.addRow([d.description]);
+    ws.addRow([]);
+    ws.addRow(["#", "Question", "Why it matters", "Current level", "Current label", "Target level", "Target label", "Gap"]);
     d.questions.forEach((q, i) => {
       const a = state.answers[q.id];
       const cur = a?.current;
       const tgt = a?.target;
-      rows.push([
+      ws.addRow([
         i + 1,
         q.text,
         q.relevance,
@@ -45,22 +54,15 @@ export function downloadAssessmentExcel(state: AssessmentState) {
         a ? a.target - a.current : "",
       ]);
     });
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [
-      { wch: 4 },
-      { wch: 70 },
-      { wch: 60 },
-      { wch: 12 },
-      { wch: 16 },
-      { wch: 12 },
-      { wch: 16 },
-      { wch: 6 },
-    ];
-    // sheet names <=31 chars, no special chars
-    const safeName = d.name.replace(/[\\/?*[\]]/g, "").slice(0, 31);
-    XLSX.utils.book_append_sheet(wb, ws, safeName);
   });
 
   const fileName = `data-readiness-${(state.org.name || "assessment").replace(/\s+/g, "-").toLowerCase()}-${state.org.date || new Date().toISOString().slice(0, 10)}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
 }
