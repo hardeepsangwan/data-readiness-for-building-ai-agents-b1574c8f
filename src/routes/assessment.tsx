@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, FileText } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { HorizontalStepper } from "@/components/horizontal-stepper";
@@ -246,7 +246,39 @@ function DimensionStep({
   onNext: () => void;
   isLast: boolean;
 }) {
-  const allAnswered = dimension.questions.every((q) => answers[q.id]);
+  const [qIndex, setQIndex] = useState(0);
+  const lastDimRef = useRef(dimension.id);
+  useEffect(() => {
+    if (lastDimRef.current !== dimension.id) {
+      lastDimRef.current = dimension.id;
+      setQIndex(0);
+    }
+  }, [dimension.id]);
+
+  const total = dimension.questions.length;
+  const q = dimension.questions[qIndex];
+  const a = answers[q.id];
+  const isAnswered = !!a;
+  const isFirstQ = qIndex === 0;
+  const isLastQ = qIndex === total - 1;
+
+  const handlePrev = () => {
+    if (isFirstQ) {
+      onBack();
+    } else {
+      setQIndex((i) => i - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+  const handleNext = () => {
+    if (isLastQ) {
+      onNext();
+    } else {
+      setQIndex((i) => i + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
@@ -255,50 +287,65 @@ function DimensionStep({
         </div>
         <h2 className="mt-1 text-2xl font-bold tracking-tight">{dimension.name}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{dimension.description}</p>
+        <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium uppercase tracking-[0.14em] text-primary">
+            Question {qIndex + 1} of {total}
+          </span>
+          <div className="ml-2 flex flex-1 gap-1">
+            {dimension.questions.map((qq, i) => (
+              <div
+                key={qq.id}
+                className={cn(
+                  "h-1 flex-1 rounded-full",
+                  i === qIndex
+                    ? "bg-primary"
+                    : answers[qq.id]
+                    ? "bg-primary/40"
+                    : "bg-muted",
+                )}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {dimension.questions.map((q, i) => {
-        const a = answers[q.id];
-        return (
-          <div key={q.id} className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8">
-            <div className="flex items-baseline gap-3">
-              <div className="text-xs font-mono text-muted-foreground">Q{i + 1}</div>
-              <h3 className="text-lg font-semibold tracking-tight">{q.text}</h3>
-            </div>
-            <p className="mt-3 rounded-md border-l-2 border-primary/40 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Why it matters: </span>{q.relevance}
-            </p>
+      <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8">
+        <div className="flex items-baseline gap-3">
+          <div className="text-xs font-mono text-muted-foreground">Q{qIndex + 1}</div>
+          <h3 className="text-lg font-semibold tracking-tight">{q.text}</h3>
+        </div>
+        <p className="mt-3 rounded-md border-l-2 border-primary/40 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Why it matters: </span>{q.relevance}
+        </p>
 
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
-              <ScorePicker
-                title="Current state"
-                value={a?.current}
-                onChange={(v) => setAnswer(q.id, { current: v, target: a?.target ?? v })}
-                accent="oklch(0.55 0.20 30)"
-                options={q.options}
-              />
-              <ScorePicker
-                title="Target state"
-                value={a?.target}
-                onChange={(v) => setAnswer(q.id, { current: a?.current ?? v, target: v })}
-                accent="oklch(0.45 0.18 255)"
-                options={q.options}
-              />
-            </div>
-          </div>
-        );
-      })}
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <ScorePicker
+            title="Current state"
+            value={a?.current}
+            onChange={(v) => setAnswer(q.id, { current: v, target: a?.target ?? v })}
+            accent="oklch(0.55 0.20 30)"
+            options={q.options}
+          />
+          <ScorePicker
+            title="Target state"
+            value={a?.target}
+            onChange={(v) => setAnswer(q.id, { current: a?.current ?? v, target: v })}
+            accent="oklch(0.45 0.18 255)"
+            options={q.options}
+          />
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back
+        <Button variant="outline" onClick={handlePrev}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> {isFirstQ ? "Back" : "Previous"}
         </Button>
         <div className="flex items-center gap-3">
-          {!allAnswered && (
-            <span className="text-xs text-muted-foreground">Answer all questions to continue</span>
+          {!isAnswered && (
+            <span className="text-xs text-muted-foreground">Answer to continue</span>
           )}
-          <Button onClick={onNext} disabled={!allAnswered} className="shadow-[var(--shadow-elegant)]">
-            {isLast ? "Finish" : "Next dimension"} <ArrowRight className="ml-1 h-4 w-4" />
+          <Button onClick={handleNext} disabled={!isAnswered} className="shadow-[var(--shadow-elegant)]">
+            {isLastQ ? (isLast ? "Finish" : "Next dimension") : "Next"} <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
