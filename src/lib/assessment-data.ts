@@ -129,10 +129,21 @@ export const DIMENSIONS: Dimension[] = [
           "Metadata flows end-to-end into Purview, Fabric IQ and Foundry IQ and drives runtime access decisions for agents.",
         ]),
       },
+      {
+        id: "ing-7",
+        text: "For the FP&A pilot, is finance-grade reconciliation done at ingestion (Anaplan plan vs D365 F&O actuals vs Excel adjustments) before data is exposed to AI agents?",
+        relevance: "FP&A agents must not give answers that disagree with the closed books. Reconciliation at ingestion prevents agents quoting numbers that conflict between planning, ERP and working files.",
+        options: std([
+          "No reconciliation; agents could read any source.",
+          "Reconciliation done manually outside the platform; not enforced for AI surfaces.",
+          "Reconciliation rules exist for one or two accounts; gaps not surfaced.",
+          "Reconciliation runs for most FP&A entities; breaks are reported but agents still see unreconciled data.",
+          "Reconciliation gates the gold layer; agents only see reconciled FP&A facts.",
+          "Continuous reconciliation with auto-explained variances surfaced as grounded context to the agent.",
+        ]),
+      },
     ],
   },
-  {
-    id: "processing",
     name: "Data Processing",
     short: "Processing",
     icon: "Cpu",
