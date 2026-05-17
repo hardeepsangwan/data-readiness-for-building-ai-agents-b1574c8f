@@ -25,7 +25,7 @@ const makeInitial = (): AssessmentState => ({
     name: "",
     respondent: "",
     date: new Date().toISOString().slice(0, 10),
-    businessFunction: "Finance & FP&A",
+    businessFunction: "",
     businessProcess: "",
   },
   answers: {},
