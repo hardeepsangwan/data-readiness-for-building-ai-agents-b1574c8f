@@ -248,7 +248,7 @@ function ReportPage() {
         </section>
 
         {/* Ontology / AI-agent readiness gap */}
-        <OntologyGapSection answers={state.answers} />
+        <OntologyGapSection answers={state.answers} org={state.org} />
 
 
         <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8 print-break">
