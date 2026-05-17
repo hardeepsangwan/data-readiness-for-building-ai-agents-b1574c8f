@@ -15,11 +15,16 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+const FACILITATOR_USERNAME = "hardeepsangwan";
+const FACILITATOR_PASSWORD = "Master@11";
+
 function LoginPage() {
   const { user, hydrated, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("user");
+  const [adminUser, setAdminUser] = useState("");
+  const [adminPass, setAdminPass] = useState("");
   const [err, setErr] = useState("");
 
   useEffect(() => {
@@ -30,13 +35,22 @@ function LoginPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (role === "facilitator") {
+      if (adminUser.trim() !== FACILITATOR_USERNAME || adminPass !== FACILITATOR_PASSWORD) {
+        setErr("Invalid admin credentials. Only the authorised facilitator can sign in as admin.");
+        return;
+      }
+      login({ email: `${FACILITATOR_USERNAME}@admin.local`, role: "facilitator" });
+      navigate({ to: "/admin" });
+      return;
+    }
     const clean = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
       setErr("Enter a valid email address");
       return;
     }
     login({ email: clean, role });
-    navigate({ to: role === "facilitator" ? "/admin" : "/assessment" });
+    navigate({ to: "/assessment" });
   };
 
   return (
@@ -52,17 +66,19 @@ function LoginPage() {
           </p>
 
           <form className="mt-6 space-y-5" onSubmit={submit}>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setErr(""); }}
-                required
-              />
-            </div>
+            {role === "user" && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setErr(""); }}
+                  required={role === "user"}
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Role</Label>
@@ -83,6 +99,36 @@ function LoginPage() {
                 </label>
               </RadioGroup>
             </div>
+
+            {role === "facilitator" && (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-user">Admin user ID</Label>
+                  <Input
+                    id="admin-user"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="admin user id"
+                    value={adminUser}
+                    onChange={(e) => { setAdminUser(e.target.value); setErr(""); }}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-pass">Password</Label>
+                  <Input
+                    id="admin-pass"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="password"
+                    value={adminPass}
+                    onChange={(e) => { setAdminPass(e.target.value); setErr(""); }}
+                    required
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Only the authorised facilitator account can sign in as admin.</p>
+              </div>
+            )}
 
             {err && <div className="text-xs text-destructive">{err}</div>}
 

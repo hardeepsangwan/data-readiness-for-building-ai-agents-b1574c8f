@@ -234,7 +234,7 @@ export const DIMENSIONS: Dimension[] = [
   },
   {
     id: "consumption",
-    name: "Data Consumption",
+    name: "Data Consumption (Ontology Layer)",
     short: "Consumption",
     icon: "Sparkles",
     color: "oklch(0.55 0.20 290)",
