@@ -100,6 +100,36 @@ function LoginPage() {
               </RadioGroup>
             </div>
 
+            {role === "facilitator" && (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-user">Admin user ID</Label>
+                  <Input
+                    id="admin-user"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="admin user id"
+                    value={adminUser}
+                    onChange={(e) => { setAdminUser(e.target.value); setErr(""); }}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-pass">Password</Label>
+                  <Input
+                    id="admin-pass"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="password"
+                    value={adminPass}
+                    onChange={(e) => { setAdminPass(e.target.value); setErr(""); }}
+                    required
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Only the authorised facilitator account can sign in as admin.</p>
+              </div>
+            )}
+
             {err && <div className="text-xs text-destructive">{err}</div>}
 
             <Button type="submit" size="lg" className="w-full shadow-[var(--shadow-elegant)]">
