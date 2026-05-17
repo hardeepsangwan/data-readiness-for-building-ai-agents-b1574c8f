@@ -152,19 +152,36 @@ function AssessmentPage() {
 function IntroStep({
   org, setOrg, onStart, onReset, answeredCount,
 }: {
-  org: { name: string; respondent: string; date: string };
-  setOrg: (o: Partial<{ name: string; respondent: string; date: string }>) => void;
+  org: {
+    name: string;
+    respondent: string;
+    date: string;
+    businessFunction: string;
+    businessProcess: string;
+  };
+  setOrg: (o: Partial<{ name: string; respondent: string; date: string; businessFunction: string; businessProcess: string }>) => void;
   onStart: () => void;
   onReset: () => void;
   answeredCount: number;
 }) {
+  const BUSINESS_FUNCTIONS = [
+    "Finance & FP&A",
+    "Sales",
+    "Marketing",
+    "Operations",
+    "Supply Chain",
+    "HR",
+    "Customer Service",
+    "IT",
+    "Other",
+  ];
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-[var(--shadow-soft)] md:p-10">
       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Before you begin</div>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">Tell us about your assessment</h1>
       <p className="mt-2 text-muted-foreground">
-        Optional context that will appear on your final report. Your answers are saved locally in
-        the browser as you go.
+        Capture the org, business function and business process this assessment is being run
+        against. Answers are saved locally so you can come back to them.
       </p>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -177,7 +194,29 @@ function IntroStep({
           <Input id="resp" value={org.respondent} onChange={(e) => setOrg({ respondent: e.target.value })} placeholder="Jane Doe — Head of Data" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="bf">Business function</Label>
+          <select
+            id="bf"
+            value={org.businessFunction}
+            onChange={(e) => setOrg({ businessFunction: e.target.value })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {BUSINESS_FUNCTIONS.map((bf) => (
+              <option key={bf} value={bf}>{bf}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bp">Business process</Label>
+          <Input
+            id="bp"
+            value={org.businessProcess}
+            onChange={(e) => setOrg({ businessProcess: e.target.value })}
+            placeholder="e.g. Service Charge, Budgeting, AR Collections"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="date">Date of assessment</Label>
           <Input id="date" type="date" value={org.date} onChange={(e) => setOrg({ date: e.target.value })} />
         </div>
       </div>
