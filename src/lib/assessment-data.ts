@@ -144,6 +144,8 @@ export const DIMENSIONS: Dimension[] = [
       },
     ],
   },
+  {
+    id: "processing",
     name: "Data Processing",
     short: "Processing",
     icon: "Cpu",
