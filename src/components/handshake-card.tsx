@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Handshake, ShieldCheck, FileSpreadsheet, ArrowRight, ArrowLeft, Star } from "lucide-react";
+import { Handshake, ShieldCheck, FileSpreadsheet, ArrowRight, ArrowLeft, Star, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Workstream } from "@/lib/assessment-data";
+import { WorkstreamRadar } from "@/components/workstream-radar";
+import { WorkstreamActionPlan } from "@/components/workstream-action-plan";
+import type { Workstream, MaturityLevel } from "@/lib/assessment-data";
 import type { GateSignoff } from "@/lib/assessment-store";
 
 interface Props {
   workstream: Workstream;
+  answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
   existing?: GateSignoff;
   defaultSignedBy?: string;
   onSign: (sg: GateSignoff) => void;
@@ -19,7 +22,7 @@ interface Props {
 }
 
 export function HandshakeCard({
-  workstream, existing, defaultSignedBy, onSign, onDownload, onBack, onNext, nextLabel,
+  workstream, answers, existing, defaultSignedBy, onSign, onDownload, onBack, onNext, nextLabel,
 }: Props) {
   const [signedBy, setSignedBy] = useState(existing?.signedBy ?? defaultSignedBy ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
