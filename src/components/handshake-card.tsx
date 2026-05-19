@@ -90,6 +90,21 @@ export function HandshakeCard({
       </div>
 
       <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: workstream.color }}>
+          <BarChart3 className="h-3.5 w-3.5" /> {workstream.short} maturity — dimensions assessed
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Current vs target state across the {workstream.steps.length} dimensions evaluated in this workstream.
+        </p>
+        <div className="mt-3">
+          <WorkstreamRadar workstream={workstream} answers={answers} />
+        </div>
+        <div className="mt-4">
+          <WorkstreamActionPlan workstream={workstream} answers={answers} />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Gate sign-off</div>
         <p className="mt-1 text-sm text-muted-foreground">
           Confirm the gate criteria above are met, then sign off to unlock the next workstream.
