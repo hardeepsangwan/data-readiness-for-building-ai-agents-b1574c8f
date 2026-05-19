@@ -1,3 +1,7 @@
+// Data Blueprint assessment model — 4 workstreams × 6 steps × 2 questions
+// Sequenced per Indurent Data Blueprint v1.0; questions grounded in
+// Azure CAF for AI Agents (Plan / Govern & Secure / Build / Operate).
+
 export type MaturityLevel = 0 | 1 | 2 | 3 | 4 | 5;
 
 export interface MaturityOption {
@@ -11,26 +15,37 @@ export interface Question {
   text: string;
   relevance: string;
   options: MaturityOption[];
-  resources?: { label: string; url: string }[];
 }
 
-export interface Dimension {
+export interface Step {
   id: string;
   name: string;
   short: string;
-  icon: string;
-  color: string;
   description: string;
   questions: Question[];
 }
 
+export interface Workstream {
+  id: string;
+  name: string;
+  short: string;
+  color: string;
+  description: string;
+  keyOutput: string; // ★ star deliverable
+  templates: string[]; // T-XX-NN deliverable templates
+  gateCriteria: string[]; // GATE checklist
+  handshakeTo: string; // next workstream short
+  handshakeOutputs: string[]; // controlled outputs passed forward
+  steps: Step[];
+}
+
 export const MATURITY_LEVELS: { level: MaturityLevel; name: string; description: string }[] = [
-  { level: 0, name: "No Capability", description: "The organization is either not aware or has any processes, tools or resources to support this capability." },
-  { level: 1, name: "Limited Awareness", description: "Some tools and processes may exist. However, there is limited awareness for the importance of managing this capability across the Data and Analytics solution." },
-  { level: 2, name: "Foundational", description: "Foundations of tools and technologies to manage this capability exist and are operational. There is very limited implementation or minor initiatives that demonstrate the organizations' capability to sustain this across the Data and Analytics solution." },
-  { level: 3, name: "Developing", description: "Comprehensive awareness exists. Tools, technology to support the capability exist. Some resource contention. However, the implementation of the capability is not widely deployed. Implementation varied between various business areas in the Data and Analytics solution as well not across the enterprise and not enforced by policies." },
-  { level: 4, name: "Established", description: "Tools, technology, processes and resources exist. Standards are defined. The capability is enforced through all business areas in the Data and Analytics solution, and enforced by policy throughout new implementations. However, there is no transformational change due to the implementation of this capability." },
-  { level: 5, name: "Transformational", description: "The capability is fully implemented and enforced throughout the Data and Analytics solution. The deployment of this capability is considered as transforming the analytical business as well as expanding the analytics capability that could not be achieved prior to this deployment." },
+  { level: 0, name: "No Capability", description: "Not aware or no processes, tools or resources to support this capability." },
+  { level: 1, name: "Limited Awareness", description: "Some tools or processes may exist; limited awareness of the capability's importance." },
+  { level: 2, name: "Foundational", description: "Foundational tools and technologies exist and are operational; very limited implementation." },
+  { level: 3, name: "Developing", description: "Comprehensive awareness; tools exist; implementation is not widely deployed across the enterprise." },
+  { level: 4, name: "Established", description: "Tools, technology, processes and resources exist; standards defined and enforced through policy." },
+  { level: 5, name: "Transformational", description: "Capability is fully implemented, enforced and considered transformational to the business." },
 ];
 
 const std = (specifics: [string, string, string, string, string, string]): MaturityOption[] => [
@@ -42,574 +57,1015 @@ const std = (specifics: [string, string, string, string, string, string]): Matur
   { level: 5, label: "Transformational", description: specifics[5] },
 ];
 
-export const DIMENSIONS: Dimension[] = [
-  {
-    id: "ingestion",
-    name: "Data Ingestion",
-    short: "Ingestion",
-    icon: "Download",
-    color: "oklch(0.55 0.18 255)",
-    description: "Ability to ingest data from disparate sources (Excel, Anaplan, D365 F&O, and future systems) into Microsoft Fabric using a reusable, metadata-driven framework.",
-    questions: [
-      {
-        id: "ing-1",
-        text: "For the business process being assessed (e.g. FP&A), from which source systems are you picking data — and is it ingested into OneLake via a metadata-driven framework?",
-        relevance: "AI agents for a business process need to know exactly which systems hold the source of truth (e.g. Anaplan for planning, D365 F&O for actuals, Excel for FP&A working files). Landing all of these in OneLake through a metadata-driven framework is the prerequisite to applying data quality rules and building an ontology layer for agent grounding.",
-        options: std([
-          "Sources are not catalogued. Data lives in spreadsheets / source apps. Nothing in OneLake.",
-          "We know the sources informally (Anaplan, D365 F&O, Excel) but ingest them ad-hoc per request; no OneLake landing zone.",
-          "One source (e.g. Excel for FP&A) is ingested into OneLake with a hand-built pipeline. Others still siloed.",
-          "All three sources (Anaplan, D365 F&O, Excel) are catalogued and landed in OneLake; pipelines are reusable but not fully metadata-driven.",
-          "Enterprise metadata-driven framework lands every business-process source into OneLake with standard patterns, monitoring and lineage; new sources added by config.",
-          "Self-service: business owners register a new source for a process; the framework auto-deploys pipelines, monitoring and lineage into OneLake ready for ontology + agent grounding.",
-        ]),
-      },
-      {
-        id: "ing-2",
-        text: "How are ingestion patterns (full load, incremental, CDC) standardised across sources?",
-        relevance: "AI workloads need predictable freshness and history. Standard load patterns enable trustworthy time-travel queries and reproducible model training sets.",
-        options: std([
-          "Loads are ad-hoc. No notion of full vs incremental.",
-          "Mostly full loads; incremental is hand-coded per pipeline.",
-          "A documented pattern exists for incremental loads but not consistently applied.",
-          "Standard patterns exist for full / incremental / CDC and are applied to most pipelines.",
-          "All pipelines use the standard patterns, governed by templates and reviewed at design time.",
-          "Patterns are auto-selected by the framework based on source metadata; CDC is the default where supported.",
-        ]),
-      },
-      {
-        id: "ing-3",
-        text: "How is ingestion monitoring, alerting and reprocessing handled?",
-        relevance: "Reliable ingestion telemetry is foundational for AI agents that depend on fresh, complete data.",
-        options: std([
-          "No monitoring; failures are discovered by users.",
-          "Manual checks by the engineering team.",
-          "Basic Fabric pipeline run history is reviewed.",
-          "Centralised dashboards exist but reprocessing is manual.",
-          "Standard alerting + automated retry / reprocessing is in place across the platform.",
-          "Self-healing pipelines with proactive anomaly detection on volumes and SLAs.",
-        ]),
-      },
-      {
-        id: "ing-4",
-        text: "Are unstructured / semi-structured sources (SharePoint, Teams, email, PDFs, images) ingested into Fabric OneLake or indexed in Foundry IQ for agent grounding?",
-        relevance: "Copilot Studio and M365 agents working with Work IQ rely heavily on unstructured content. Without controlled ingestion into OneLake / Foundry IQ indexes, agents either miss context or pull ungoverned content.",
-        options: std([
-          "No unstructured ingestion; agents would scrape ad-hoc.",
-          "A few documents are uploaded manually for a pilot.",
-          "Selected SharePoint sites are indexed for one use case.",
-          "Multiple unstructured sources ingested but not unified across Fabric IQ / Foundry IQ.",
-          "Enterprise pattern ingests unstructured content into OneLake and Foundry IQ indexes with governance.",
-          "Unified Fabric IQ + Foundry IQ indexing with auto-classification, label inheritance and incremental refresh feeding all agents.",
-        ]),
-      },
-      {
-        id: "ing-5",
-        text: "Is ingestion latency / freshness aligned to the SLAs required by your AI agents (e.g. near-real-time vs daily)?",
-        relevance: "Agents grounded on stale data will give wrong answers. Freshness SLAs must be explicit per use case (Copilot, Foundry, M365 agents).",
-        options: std([
-          "No freshness SLAs are defined.",
-          "Freshness is whatever the batch happens to deliver.",
-          "Critical tables have informal freshness targets.",
-          "Freshness SLAs documented per domain; partially monitored.",
-          "Freshness SLAs are contractual per agent use case and monitored centrally.",
-          "Mixed batch + streaming + CDC patterns auto-selected per agent SLA, with breach alerts to the agent owner.",
-        ]),
-      },
-      {
-        id: "ing-6",
-        text: "Does ingestion preserve source-system identity, sensitivity labels and permissions metadata so they can be honoured downstream by Copilot / Foundry / M365 agents?",
-        relevance: "If the user/owner, sensitivity label and source ACLs are dropped at ingestion, downstream access control and Agent 365 policies cannot be enforced.",
-        options: std([
-          "Source identity and labels are stripped on ingest.",
-          "Some metadata is captured inconsistently.",
-          "Owner and source system are captured for selected pipelines.",
-          "Identity, owner and labels captured for most pipelines; ACLs partially preserved.",
-          "Full metadata (owner, label, source ACL, lineage) preserved enterprise-wide.",
-          "Metadata flows end-to-end into Purview, Fabric IQ and Foundry IQ and drives runtime access decisions for agents.",
-        ]),
-      },
-      {
-        id: "ing-7",
-        text: "For the FP&A pilot, is finance-grade reconciliation done at ingestion (Anaplan plan vs D365 F&O actuals vs Excel adjustments) before data is exposed to AI agents?",
-        relevance: "FP&A agents must not give answers that disagree with the closed books. Reconciliation at ingestion prevents agents quoting numbers that conflict between planning, ERP and working files.",
-        options: std([
-          "No reconciliation; agents could read any source.",
-          "Reconciliation done manually outside the platform; not enforced for AI surfaces.",
-          "Reconciliation rules exist for one or two accounts; gaps not surfaced.",
-          "Reconciliation runs for most FP&A entities; breaks are reported but agents still see unreconciled data.",
-          "Reconciliation gates the gold layer; agents only see reconciled FP&A facts.",
-          "Continuous reconciliation with auto-explained variances surfaced as grounded context to the agent.",
-        ]),
-      },
-    ],
-  },
-  {
-    id: "processing",
-    name: "Data Processing",
-    short: "Processing",
-    icon: "Cpu",
-    color: "oklch(0.60 0.20 30)",
-    description: "Reusable transformation patterns inside Fabric (notebooks, pipelines, dataflows) including SCD Type 2, technical metadata, and natural keys.",
-    questions: [
-      {
-        id: "proc-1",
-        text: "Do you have reusable Fabric notebooks (or equivalent templates) to implement SCD Type 2 across your dimensional models?",
-        relevance: "SCD Type 2 preserves history that AI agents need for time-aware reasoning (e.g. 'what did this customer look like 6 months ago').",
-        options: std([
-          "No SCD logic in place; dimensions are overwritten.",
-          "SCD is hand-coded per table.",
-          "A prototype reusable notebook exists for one or two dimensions.",
-          "A reusable SCD2 notebook is used across most dimensions but with variation.",
-          "Standardised SCD2 framework applied enterprise-wide and governed.",
-          "Metadata-driven SCD2: change behaviour is declared per attribute and the framework applies it automatically.",
-        ]),
-      },
-      {
-        id: "proc-2",
-        text: "Do you maintain technical metadata that explicitly identifies the natural keys used to detect change for each entity?",
-        relevance: "Without documented natural keys, SCD2 and merge logic cannot be parameterised, and AI features built on those entities risk silent drift.",
-        options: std([
-          "No technical metadata; keys are tribal knowledge.",
-          "Some keys are documented in spreadsheets.",
-          "A central catalog records natural keys for a few entities.",
-          "Most entities have natural keys captured in a metadata store but not enforced.",
-          "Natural keys are mandatory metadata for any entity onboarded; enforced in CI.",
-          "Natural keys are versioned, lineage-aware and consumed directly by the SCD2 / merge framework.",
-        ]),
-      },
-      {
-        id: "proc-3",
-        text: "How standardised are your medallion (Bronze / Silver / Gold) layers in OneLake?",
-        relevance: "A clean medallion architecture is what AI agents (Copilot Studio, Foundry) consume — inconsistency leads to wrong answers.",
-        options: std([
-          "No medallion structure.",
-          "Medallion exists in name only; layers are inconsistent.",
-          "Bronze and Silver are reasonably defined; Gold is ad-hoc.",
-          "Medallion is documented and followed for new work but legacy varies.",
-          "Medallion is enforced enterprise-wide with naming, schemas and contracts.",
-          "Layer contracts are versioned and consumed via certified semantic models for AI.",
-        ]),
-      },
-      {
-        id: "proc-4",
-        text: "Are vector embeddings, chunking strategies and refresh pipelines for unstructured content standardised and reusable across agents?",
-        relevance: "Foundry IQ / Fabric IQ agents depend on consistent chunking and embeddings. Ad-hoc embedding pipelines produce inconsistent retrieval quality across agents.",
-        options: std([
-          "No embedding pipelines exist.",
-          "Embeddings generated ad-hoc per pilot.",
-          "A reusable notebook exists for one content type.",
-          "Standard chunking + embedding patterns used for several agents.",
-          "Enterprise embedding framework with versioned models and incremental refresh.",
-          "Metadata-driven embedding factory: chunking, model, refresh and eval declared per content set and auto-deployed.",
-        ]),
-      },
-      {
-        id: "proc-5",
-        text: "Is data lineage captured end-to-end (source → bronze → silver → gold → semantic model → agent) and visible in Purview / Fabric?",
-        relevance: "Agent 365 governance, impact analysis and trust in AI outputs require full lineage from raw source to the agent surface.",
-        options: std([
-          "No lineage captured.",
-          "Lineage exists in tribal knowledge / diagrams.",
-          "Pipeline-level lineage in Fabric only.",
-          "Lineage in Purview for most pipelines and semantic models.",
-          "End-to-end lineage including agent grounding sources, governed in Purview.",
-          "Lineage feeds automated impact analysis and notifies agent owners on upstream changes.",
-        ]),
-      },
-      {
-        id: "proc-6",
-        text: "Are PII / sensitive fields detected, masked or tokenised during processing before reaching layers consumed by AI agents?",
-        relevance: "Copilot, Foundry and M365 agents may inadvertently surface PII. Masking at processing time is a key control before Agent 365 access policies apply.",
-        options: std([
-          "No PII handling.",
-          "PII is sometimes removed manually.",
-          "Masking applied to a few known fields.",
-          "PII detection + masking applied to most certified datasets.",
-          "Enterprise PII framework with policy-driven masking aligned to sensitivity labels.",
-          "Dynamic masking / tokenisation driven by Purview labels and the consuming agent's clearance.",
-        ]),
-      },
-    ],
-  },
-  {
-    id: "consumption",
-    name: "Data Consumption (Ontology Layer)",
-    short: "Consumption",
-    icon: "Sparkles",
-    color: "oklch(0.55 0.20 290)",
-    description: "Readiness of the consumption layer (semantic models, ontology, APIs) to be safely surfaced to AI agents in Copilot Studio and Microsoft Foundry.",
-    questions: [
-      {
-        id: "con-1",
-        text: "Do you have an ontology / semantic layer that defines business entities, relationships and metrics for AI consumption?",
-        relevance: "AI agents need a shared semantic vocabulary to answer business questions consistently. Without an ontology, agents return inconsistent or wrong answers.",
-        options: std([
-          "No semantic or ontology layer exists.",
-          "Definitions live in dashboards and spreadsheets; inconsistent.",
-          "A semantic model exists for one domain (e.g. Finance).",
-          "Multiple semantic models exist but not a unified ontology.",
-          "An enterprise semantic layer / ontology covers core domains and is governed.",
-          "Ontology is the single source of truth, queryable by agents with grounded retrieval.",
-        ]),
-      },
-      {
-        id: "con-2",
-        text: "Are certified Power BI / Direct Lake semantic models available for AI agents to ground on?",
-        relevance: "Copilot and Foundry agents perform best when grounded on certified, well-modelled datasets rather than raw tables.",
-        options: std([
-          "No certified models.",
-          "Some models exist but none are certified or curated for AI.",
-          "A few certified models exist but not aligned to AI use cases.",
-          "Certified models cover most domains; AI grounding is being piloted.",
-          "Certified Direct Lake models are the standard surface for agents.",
-          "Models are continuously evaluated against AI quality metrics and re-certified.",
-        ]),
-      },
-      {
-        id: "con-3",
-        text: "Are business-friendly descriptions, synonyms and glossary terms attached to fields/measures for natural language Q&A?",
-        relevance: "Copilot relies on descriptions and synonyms to map user language to the correct fields. Missing metadata = missed or wrong answers.",
-        options: std([
-          "No descriptions or synonyms.",
-          "Some fields have descriptions; coverage is patchy.",
-          "Core measures have descriptions; synonyms are missing.",
-          "Most fields have descriptions and some synonyms; not enforced.",
-          "Descriptions and synonyms are mandatory and reviewed; glossary is integrated.",
-          "Glossary, synonyms and descriptions are auto-validated against agent eval suites.",
-        ]),
-      },
-      {
-        id: "con-4",
-        text: "Are Fabric IQ data agents and / or Foundry IQ knowledge sources configured so that AI agents can retrieve grounded context?",
-        relevance: "Fabric IQ exposes Fabric data to agents; Foundry IQ provides indexed knowledge. Without these, Copilot Studio / Foundry agents cannot reliably ground on enterprise data.",
-        options: std([
-          "Neither Fabric IQ nor Foundry IQ is configured.",
-          "Awareness only; no agents wired to enterprise data.",
-          "One pilot agent grounded on a single Fabric IQ dataset or Foundry IQ index.",
-          "Several agents grounded on Fabric IQ / Foundry IQ for selected domains.",
-          "Standard pattern: every certified domain exposes a Fabric IQ data agent and Foundry IQ index.",
-          "Agents dynamically discover and compose Fabric IQ + Foundry IQ sources via a governed registry.",
-        ]),
-      },
-      {
-        id: "con-5",
-        text: "Are M365 Copilot / Work IQ connectors configured so agents can reason over Teams, SharePoint, Outlook and Loop content with the right scoping?",
-        relevance: "M365 agents using Work IQ depend on properly scoped Graph connectors and content sources. Misconfiguration causes oversharing or missing context.",
-        options: std([
-          "No M365 / Work IQ connectors configured.",
-          "Default Copilot only; no custom connectors.",
-          "A few Graph connectors configured for one team.",
-          "Multiple connectors for several business areas; scoping reviewed manually.",
-          "Enterprise pattern for Work IQ connectors with scoping aligned to sensitivity labels.",
-          "Connectors are governed centrally, auto-scoped by label/ownership and audited continuously.",
-        ]),
-      },
-      {
-        id: "con-6",
-        text: "Are agent prompts, tools and grounding sources versioned, evaluated and promoted through a controlled lifecycle?",
-        relevance: "Agents in Copilot Studio and Foundry must be treated as products: changes to prompts, tools or grounding can degrade quality and leak data.",
-        options: std([
-          "Prompts and tools are edited live in production.",
-          "Some agents are exported manually as backups.",
-          "Versioning exists for one or two agents.",
-          "Most agents are version-controlled; eval is informal.",
-          "All agents follow a release lifecycle with eval suites before promotion.",
-          "Continuous eval: regressions in grounding or accuracy block promotion automatically.",
-        ]),
-      },
-    ],
-  },
-  {
-    id: "quality",
-    name: "Data Quality",
-    short: "Quality",
-    icon: "ShieldCheck",
-    color: "oklch(0.62 0.16 155)",
-    description: "Profiling, rules, monitoring and remediation processes that ensure data feeding AI workloads is fit-for-purpose.",
-    questions: [
-      {
-        id: "dq-1",
-        text: "Do you have data quality rules (completeness, uniqueness, validity, freshness) defined and executed against data feeding AI?",
-        relevance: "AI hallucinations and bad recommendations often trace back to silent data-quality issues.",
-        options: std([
-          "No DQ rules.",
-          "Rules exist informally for a few critical tables.",
-          "DQ rules are coded inside pipelines for some entities.",
-          "A DQ tool / framework is used for several domains; coverage is partial.",
-          "Enterprise DQ framework covers all certified datasets with SLAs.",
-          "DQ rules are versioned, executed at every layer, and AI surfaces are blocked if quality SLAs are breached.",
-        ]),
-      },
-      {
-        id: "dq-2",
-        text: "Are data quality results monitored, alerted on and visible to data owners?",
-        relevance: "Quality must be observable and actionable, not buried in logs.",
-        options: std([
-          "No DQ monitoring.",
-          "Logs exist but no one watches them.",
-          "A basic DQ dashboard exists for one or two domains.",
-          "Dashboards exist; alerts are partially in place.",
-          "Centralised DQ scorecards with alerting are in place per domain.",
-          "Anomaly detection on DQ metrics with auto-tickets to the data owner.",
-        ]),
-      },
-      {
-        id: "dq-3",
-        text: "Is there a defined remediation process when data quality issues are detected?",
-        relevance: "Detection without remediation produces alert fatigue and erodes trust in AI outputs.",
-        options: std([
-          "No remediation process.",
-          "Issues are fixed reactively when business complains.",
-          "Issues are tracked in a backlog by the engineering team.",
-          "A documented process exists; SLAs are loose.",
-          "Remediation SLAs by severity are enforced for all certified datasets.",
-          "Closed-loop remediation: rules, fixes and root-cause are tracked end-to-end.",
-        ]),
-      },
-      {
-        id: "dq-4",
-        text: "Is duplicate detection and entity resolution (golden records / MDM) in place for the entities consumed by agents (customer, product, employee)?",
-        relevance: "Agents that see duplicates or unresolved entities give contradictory answers. Golden records are foundational for trustworthy AI responses.",
-        options: std([
-          "No de-duplication or MDM.",
-          "Manual de-duping in spreadsheets.",
-          "De-duplication logic in selected pipelines.",
-          "MDM exists for one or two domains.",
-          "Enterprise MDM with golden records for all core entities.",
-          "Real-time entity resolution surfaced through Fabric IQ for agents.",
-        ]),
-      },
-      {
-        id: "dq-5",
-        text: "Is the quality and groundedness of unstructured content used by agents (documents, knowledge articles) actively curated?",
-        relevance: "Foundry IQ / Work IQ agents will faithfully retrieve outdated, duplicate or contradictory documents. Curating the corpus is a data-quality activity.",
-        options: std([
-          "No curation; all documents are indexed.",
-          "Owners occasionally clean up SharePoint.",
-          "A pilot index has a curated content set.",
-          "Curation guidelines exist; partially followed.",
-          "Content owners certify documents for AI use; stale content is removed automatically.",
-          "Continuous content evaluation: low-quality / contradictory documents are flagged and excluded from grounding.",
-        ]),
-      },
-      {
-        id: "dq-6",
-        text: "Are AI agent outputs evaluated against quality metrics (groundedness, accuracy, harmful content) and fed back into data quality fixes?",
-        relevance: "Agent eval signals are the most direct measure of data readiness. Without feedback loops, root-cause data issues stay invisible.",
-        options: std([
-          "No agent output evaluation.",
-          "Ad-hoc spot checks by developers.",
-          "Manual eval for one agent in pilot.",
-          "Standard eval harness used at release for several agents.",
-          "Continuous evals tied back to data owners with remediation SLAs.",
-          "Agent telemetry drives auto-tickets to source data owners with root-cause links.",
-        ]),
-      },
-    ],
-  },
-  {
-    id: "governance",
-    name: "Data Governance",
-    short: "Governance",
-    icon: "Lock",
-    color: "oklch(0.50 0.15 145)",
-    description: "Security, ownership, classification and stewardship in Microsoft Purview — including roles required for AI grounding and DLP.",
-    questions: [
-      {
-        id: "gov-1",
-        text: "Are data ownership and stewardship roles defined and assigned in Microsoft Purview for the datasets that will feed AI?",
-        relevance: "AI access decisions need an accountable owner. Without owners, sensitive data ends up grounded into agents without approval.",
-        options: std([
-          "No owners or stewards defined.",
-          "Owners exist informally for a few datasets.",
-          "Owners are recorded in Purview for some critical assets.",
-          "Most certified datasets have owners and stewards in Purview.",
-          "Owners and stewards are mandatory and reviewed; coverage is enterprise-wide.",
-          "Ownership drives automated access workflows for AI grounding requests.",
-        ]),
-      },
-      {
-        id: "gov-2",
-        text: "Is sensitive data classified and labelled in Purview (sensitivity labels, data classifications)?",
-        relevance: "Classification and labelling drive DLP and Copilot's ability to honour 'do not ground on this data' decisions.",
-        options: std([
-          "No classification.",
-          "Manual tagging on a few assets.",
-          "Auto-classification piloted on selected sources.",
-          "Most sources are scanned and classified; labels are mostly correct.",
-          "Enterprise classification + sensitivity labels are applied and enforced.",
-          "Labels propagate end-to-end (lake → semantic model → Copilot) and drive access decisions automatically.",
-        ]),
-      },
-      {
-        id: "gov-3",
-        text: "Are access controls (RLS, OLS, workspace permissions) implemented and aligned to least-privilege for AI consumers?",
-        relevance: "Copilot inherits the user's permissions — over-permissioned datasets cause oversharing through AI.",
-        options: std([
-          "Permissions are broad; no RLS/OLS.",
-          "Some workspaces have basic permissions.",
-          "RLS exists for one or two key models.",
-          "RLS/OLS implemented across most certified models; reviewed periodically.",
-          "Least-privilege enforced enterprise-wide with periodic access reviews.",
-          "Just-in-time access + automated reviews driven by sensitivity labels and ownership.",
-        ]),
-      },
-      {
-        id: "gov-4",
-        text: "Is there a central agent registry (Microsoft Agent 365) recording every agent, its owner, purpose, data sources, tools and risk tier?",
-        relevance: "Agent 365 Registry is the control plane for governing all Copilot Studio, Foundry and M365 agents. Without a registry, shadow agents proliferate and access cannot be governed.",
-        options: std([
-          "No registry; agents are built ad-hoc.",
-          "An informal list of agents in a spreadsheet.",
-          "A pilot registry exists for one team.",
-          "Most production agents are registered with owner and purpose.",
-          "Agent 365 Registry is mandatory for all agents enterprise-wide.",
-          "Registry is the source of truth and gates deployment, access, monitoring and decommissioning.",
-        ]),
-      },
-      {
-        id: "gov-5",
-        text: "Are access control policies for agents centrally defined and enforced through Microsoft Agent 365 (identity, scopes, data sources, tools)?",
-        relevance: "Agent 365 Access Control ensures the agent can only act on the data and tools its caller is entitled to. Policies must be applied at the agent, source, tool and user level.",
-        options: std([
-          "No central policy; each agent configures its own access.",
-          "Workspace-level permissions only.",
-          "Some agents use Entra app roles for scoping.",
-          "Most agents inherit caller identity; tool scopes reviewed.",
-          "Agent 365 policies enforce identity, data scope and tool access for all agents.",
-          "Adaptive, risk-based policies (label, sensitivity, location, role) applied at runtime to every agent invocation.",
-        ]),
-      },
-      {
-        id: "gov-6",
-        text: "Are agent activity, prompts, tool calls and grounded sources logged and visualised for security and compliance monitoring?",
-        relevance: "Agent 365 Visualization / observability is required to detect oversharing, prompt injection, policy violations and data exfiltration through agents.",
-        options: std([
-          "No agent telemetry collected.",
-          "Basic Copilot usage logs reviewed occasionally.",
-          "Logs exist for one agent; no central view.",
-          "Centralised dashboards for several agents; alerting partial.",
-          "Agent 365 visualisation in place enterprise-wide with SOC integration.",
-          "Real-time anomaly detection on agent behaviour with auto-response (suspend agent, revoke tool).",
-        ]),
-      },
-      {
-        id: "gov-7",
-        text: "Is interoperability between agents, tools and data sources (Fabric IQ, Foundry IQ, M365, third-party) governed via standards (OAuth scopes, MCP, Graph connectors)?",
-        relevance: "Agents increasingly call other agents and tools. Interoperability standards govern how identity, scope and data flow between them safely.",
-        options: std([
-          "No interoperability standards.",
-          "Agents call tools with shared secrets / service accounts.",
-          "OAuth used for some integrations.",
-          "Standard patterns (OAuth on-behalf-of, MCP, Graph) used for most integrations.",
-          "All agent-to-agent and agent-to-tool calls follow enterprise interop standards governed centrally.",
-          "Interop is policy-driven via Agent 365: scopes, tools and downstream calls validated at runtime.",
-        ]),
-      },
-      {
-        id: "gov-8",
-        text: "Are security controls for agents (prompt injection defence, content filters, data exfiltration prevention, jailbreak monitoring) implemented and tested?",
-        relevance: "Agent 365 Security covers the agent-specific threat model. Standard data security is necessary but not sufficient for AI agents.",
-        options: std([
-          "No agent-specific security controls.",
-          "Default Azure OpenAI / Foundry content filters only.",
-          "Some agents tested against basic jailbreaks.",
-          "Standard prompt-shield + content filters applied to most agents.",
-          "Enterprise security baseline (prompt shields, XPIA, DLP, exfiltration controls) applied to all agents.",
-          "Continuous red-teaming + adaptive defences governed via Agent 365 with SOC playbooks.",
-        ]),
-      },
-    ],
-  },
-  {
-    id: "cicd",
-    name: "Code Promotion (CI/CD)",
-    short: "CI/CD",
-    icon: "GitBranch",
-    color: "oklch(0.55 0.18 35)",
-    description: "Promotion of Fabric artefacts (notebooks, pipelines, semantic models, agents) from Dev → Test → Prod using Azure DevOps or Fabric deployment pipelines.",
-    questions: [
-      {
-        id: "cicd-1",
-        text: "What tools do you use to promote Fabric / data artefacts across environments (Dev → Test → Prod)?",
-        relevance: "AI use cases require repeatable, auditable releases of data + agent artefacts. Manual promotion blocks scale.",
-        options: std([
-          "Manual copy/paste between workspaces.",
-          "Some artefacts exported/imported manually with no source control.",
-          "Fabric deployment pipelines used for some workspaces.",
-          "Azure DevOps + Git integration used for most artefacts; some manual steps remain.",
-          "Full Azure DevOps CI/CD with Fabric Git integration for all artefact types, gated approvals.",
-          "Fully automated trunk-based CI/CD with policy-as-code, automated tests and rollbacks.",
-        ]),
-      },
-      {
-        id: "cicd-2",
-        text: "Are notebooks, pipelines and semantic models stored in source control (Git) with branching strategy?",
-        relevance: "Source control is the baseline for reviewable, reversible changes in an AI-grade platform.",
-        options: std([
-          "Nothing is in Git.",
-          "Some notebooks are in Git ad-hoc.",
-          "Most notebooks are in Git; pipelines and models are not.",
-          "All artefacts in Git with a branching strategy; not always followed.",
-          "Branching strategy and PR reviews enforced enterprise-wide.",
-          "Trunk-based development with automated quality gates and preview environments.",
-        ]),
-      },
-      {
-        id: "cicd-3",
-        text: "Are automated tests (unit / integration / data tests) executed in your CI/CD pipeline before promotion?",
-        relevance: "Tests catch regressions in data contracts that would silently break grounded AI agents.",
-        options: std([
-          "No automated tests.",
-          "A few unit tests exist locally.",
-          "Some unit tests run in CI for selected notebooks.",
-          "Unit + basic data tests run in CI for most artefacts.",
-          "Comprehensive test pyramid (unit, integration, data contract) gates every promotion.",
-          "Tests include AI-eval suites that validate downstream agent quality before release.",
-        ]),
-      },
-      {
-        id: "cicd-4",
-        text: "Are Copilot Studio / Foundry agent definitions (prompts, tools, knowledge sources, connectors) deployed via CI/CD rather than hand-edited per environment?",
-        relevance: "Agents are now first-class artefacts. Promoting them via CI/CD is required for repeatability, audit and rollback.",
-        options: std([
-          "Agents are built and edited directly in Prod.",
-          "Agents are exported manually between environments.",
-          "Some agents have an export / import script.",
-          "Most agents are deployed via pipelines; some manual steps remain.",
-          "All agents (Copilot Studio, Foundry, M365) deployed through CI/CD with approvals.",
-          "Agent definitions, evals and policies deployed as code with automated rollback on regression.",
-        ]),
-      },
-      {
-        id: "cicd-5",
-        text: "Are environments (Dev / Test / Prod) properly isolated for data, identities, agents and secrets?",
-        relevance: "Without isolated environments, test agents can read prod data or vice-versa, breaking governance and Agent 365 access policies.",
-        options: std([
-          "Single environment for everything.",
-          "Dev and Prod exist but share data / identities.",
-          "Separate workspaces; secrets sometimes shared.",
-          "Isolated environments for most workloads; some exceptions.",
-          "Strict isolation for data, identities, agents and secrets across all environments.",
-          "Ephemeral preview environments per change with synthetic / masked data and scoped agents.",
-        ]),
-      },
-      {
-        id: "cicd-6",
-        text: "Are agent evaluation suites (groundedness, accuracy, safety, regression) run automatically as a release gate before promoting to Prod?",
-        relevance: "AI-grade CI/CD requires AI-grade quality gates. Without automated agent evals, regressions in data or prompts ship straight to users.",
-        options: std([
-          "No agent evals.",
-          "Manual eval before some releases.",
-          "Eval scripts exist but run on demand.",
-          "Eval runs in CI for selected agents.",
-          "Eval suite is a mandatory release gate for all agents.",
-          "Evals tied to production telemetry, with auto-rollback when groundedness/safety drops.",
-        ]),
-      },
-    ],
-  },
-];
+// ────────────────────────────────────────────────────────────────────────────
+// 1. FOUNDATIONS CoE / TECH GOVERNANCE
+// ────────────────────────────────────────────────────────────────────────────
+const COE: Workstream = {
+  id: "coe",
+  name: "Foundations CoE — Tech Governance",
+  short: "Foundations CoE",
+  color: "oklch(0.50 0.14 195)",
+  description:
+    "CoE establishes guardrails BEFORE any agent is built. Aligned to Azure CAF: Responsible AI, Governance & Security, Prepare Environment.",
+  keyOutput: "Tech Guardrail Playbook v1.0",
+  templates: [
+    "T-TG-01 AI Ethics & Risk Policy",
+    "T-TG-02 Data Governance Standards",
+    "T-TG-03 Agent Guardrail Framework",
+    "T-TG-04 Security & Compliance Checklist",
+    "T-TG-05 Integration & API Standards",
+    "Tech Guardrail Playbook v1.0",
+  ],
+  gateCriteria: [
+    "Signed Guardrail Framework is published.",
+    "Tech Guardrail Playbook v1.0 is released to BT, DB and AF.",
+    "Entra Agent Identity model is defined; no agent is built without an assigned identity.",
+  ],
+  handshakeTo: "Business Transformation",
+  handshakeOutputs: [
+    "Guardrail Framework",
+    "Data Standards Register",
+    "Compliance Checklist",
+    "Entra Identity Model",
+    "MCP / A2A Standards",
+  ],
+  steps: [
+    {
+      id: "coe-1",
+      name: "CoE Mandate & Scope",
+      short: "Mandate",
+      description: "Executive sponsorship, programme scope, RACI for the AI agent CoE.",
+      questions: [
+        {
+          id: "coe-1-1",
+          text: "Is there an executive-sponsored AI Agent CoE with a documented mandate, scope and RACI covering Tech Governance, Business Transformation, Data and Agents Factory?",
+          relevance: "CAF: Organizational readiness. Without a CoE mandate, agent work is fragmented and guardrails are inconsistently applied.",
+          options: std([
+            "No CoE; agent work happens ad-hoc per team.",
+            "Informal working group; no executive sponsor.",
+            "CoE is proposed; sponsor identified; scope not signed.",
+            "CoE is operating with scope and sponsor; RACI partial.",
+            "CoE is mandated enterprise-wide with signed RACI and funding.",
+            "CoE governs every agent initiative; performance is reviewed at the exec level.",
+          ]),
+        },
+        {
+          id: "coe-1-2",
+          text: "Does the CoE own a published operating model that defines how AI agent decisions, exceptions and escalations are handled?",
+          relevance: "CAF: Govern agents across the organization. A clear operating model prevents shadow AI and disputes between functions.",
+          options: std([
+            "No operating model.",
+            "Some processes documented per team.",
+            "Draft operating model exists.",
+            "Operating model published; partially followed.",
+            "Operating model is the standard; exceptions are logged centrally.",
+            "Operating model is continuously improved with lessons-learned feedback.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "coe-2",
+      name: "AI Ethics & Risk Policy",
+      short: "Ethics & Risk",
+      description: "Microsoft Responsible AI: fairness, privacy, accountability, transparency.",
+      questions: [
+        {
+          id: "coe-2-1",
+          text: "Is there a board-approved AI Ethics & Risk Policy aligned to Microsoft Responsible AI principles (fairness, reliability, privacy, inclusiveness, transparency, accountability)?",
+          relevance: "CAF: Responsible AI. The policy is the umbrella under which every agent must be designed and reviewed.",
+          options: std([
+            "No AI ethics policy.",
+            "Generic IT policy mentions AI.",
+            "Draft AI policy circulating.",
+            "Policy approved; awareness training partial.",
+            "Policy approved, enforced and trained enterprise-wide.",
+            "Policy is reviewed annually with measurable adherence metrics.",
+          ]),
+        },
+        {
+          id: "coe-2-2",
+          text: "Is an AI risk-tier classification (low / medium / high / unacceptable) defined and applied to every proposed use case?",
+          relevance: "CAF: Responsible AI. Risk tiering drives the depth of review (red team, human-in-the-loop, audit).",
+          options: std([
+            "No risk tiering.",
+            "Risk discussed informally per project.",
+            "Tier definitions drafted.",
+            "Tiering applied to most new use cases.",
+            "Tiering is mandatory at intake for every use case.",
+            "Tiering drives automated controls (HITL, logging, red team) at deployment.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "coe-3",
+      name: "Data Governance Standards",
+      short: "Data Standards",
+      description: "Data ownership, RBAC, PII tagging, DLP.",
+      questions: [
+        {
+          id: "coe-3-1",
+          text: "Are data ownership, RBAC and PII tagging standards published, with Purview as the system of record?",
+          relevance: "CAF: Governance & Security. Standards must exist before agents can be granted scoped access to data.",
+          options: std([
+            "No standards.",
+            "Standards exist informally per team.",
+            "Draft standards in Purview.",
+            "Standards published; coverage partial.",
+            "Standards enforced enterprise-wide via Purview.",
+            "Standards drive automated access workflows and access reviews.",
+          ]),
+        },
+        {
+          id: "coe-3-2",
+          text: "Is a Data Loss Prevention (DLP) policy in place that covers AI grounding surfaces (Fabric IQ, Foundry IQ, M365 Work IQ)?",
+          relevance: "CAF: Govern & secure agents. DLP for AI prevents oversharing of sensitive content through agents.",
+          options: std([
+            "No AI DLP policy.",
+            "Standard M365 DLP only.",
+            "DLP piloted for one agent.",
+            "DLP applied to most agent surfaces.",
+            "Enterprise DLP for every agent grounding source.",
+            "Adaptive DLP driven by sensitivity labels and caller risk score.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "coe-4",
+      name: "Agent Guardrail Framework",
+      short: "Guardrails",
+      description: "Scope boundaries, kill-switch, human-in-the-loop triggers.",
+      questions: [
+        {
+          id: "coe-4-1",
+          text: "Is there an Agent Guardrail Framework defining scope boundaries, prohibited actions and required Human-in-the-Loop (HITL) triggers per agent type (Productivity / Action / Automation)?",
+          relevance: "CAF: Build agents. Guardrails prevent scope creep and constrain autonomy in line with risk tier.",
+          options: std([
+            "No guardrail framework.",
+            "Guardrails decided per agent.",
+            "Framework drafted; one agent uses it.",
+            "Framework applied to most new agents.",
+            "Framework is mandatory and reviewed at every release.",
+            "Guardrails are policy-as-code, validated automatically at build and runtime.",
+          ]),
+        },
+        {
+          id: "coe-4-2",
+          text: "Is a documented kill-switch / pause procedure available for every production agent?",
+          relevance: "CAF: Operate agents. A working kill-switch is the minimum control for non-deterministic agent behaviour.",
+          options: std([
+            "No kill-switch.",
+            "Manual disable per agent; not tested.",
+            "Procedure documented for some agents.",
+            "Kill-switch tested for most agents.",
+            "Standard kill-switch for every agent; tested at release.",
+            "One-click kill-switch with automated rollback and stakeholder notification.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "coe-5",
+      name: "Security & Compliance",
+      short: "Sec & Compliance",
+      description: "Pen-test requirements, encryption, audit logging.",
+      questions: [
+        {
+          id: "coe-5-1",
+          text: "Is an AI-specific Security & Compliance checklist (encryption, audit logging, pen-test, prompt-injection defence) mandatory before any agent goes live?",
+          relevance: "CAF: Govern & secure agents. The checklist is the gate every agent must pass before deployment.",
+          options: std([
+            "No AI security checklist.",
+            "Generic IT checklist re-used.",
+            "AI checklist drafted.",
+            "AI checklist applied to most agents.",
+            "AI checklist mandatory and enforced for every agent.",
+            "Automated controls verify checklist compliance at deployment time.",
+          ]),
+        },
+        {
+          id: "coe-5-2",
+          text: "Are agent prompts, tool calls and grounding events logged centrally and retained for audit and Microsoft Defender for AI monitoring?",
+          relevance: "CAF: Operate agents. Centralised agent telemetry is required for SOC integration and audit.",
+          options: std([
+            "No agent telemetry.",
+            "Logs exist per agent; not centralised.",
+            "Logs collected centrally for one agent.",
+            "Most agents log centrally; retention partial.",
+            "All agents log centrally with policy-driven retention.",
+            "Telemetry feeds Defender for AI and SOC playbooks in real time.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "coe-6",
+      name: "Tech Guardrail Playbook v1.0 ★",
+      short: "Tech Playbook",
+      description: "API, MCP and integration standards; Entra identity; Agent 365 baseline.",
+      questions: [
+        {
+          id: "coe-6-1",
+          text: "Are API, MCP and integration standards (OAuth on-behalf-of, scopes, Graph connectors) published and used by every agent?",
+          relevance: "CAF: Govern agents. Standards govern how identity, scope and data flow safely between agents and tools.",
+          options: std([
+            "No standards.",
+            "Service accounts and shared secrets in use.",
+            "OAuth used for some integrations.",
+            "Standards used for most new integrations.",
+            "Standards enforced enterprise-wide.",
+            "Runtime validation of scopes and tool calls per agent invocation.",
+          ]),
+        },
+        {
+          id: "coe-6-2",
+          text: "Is Microsoft Agent 365 (registry + access control + visualisation + security) established as the control plane for all agents?",
+          relevance: "CAF: Govern & secure agents. Agent 365 is the system of record without which shadow agents proliferate.",
+          options: std([
+            "No central registry; ad-hoc agent builds.",
+            "Spreadsheet of known agents.",
+            "Agent 365 piloted for one team.",
+            "Most production agents registered.",
+            "Agent 365 is mandatory for every agent enterprise-wide.",
+            "Agent 365 gates deployment, access, monitoring and decommissioning automatically.",
+          ]),
+        },
+      ],
+    },
+  ],
+};
 
-export const TOTAL_QUESTIONS = DIMENSIONS.reduce((s, d) => s + d.questions.length, 0);
+// ────────────────────────────────────────────────────────────────────────────
+// 2. BUSINESS TRANSFORMATION
+// ────────────────────────────────────────────────────────────────────────────
+const BT: Workstream = {
+  id: "bt",
+  name: "Business Transformation",
+  short: "Business Transformation",
+  color: "oklch(0.55 0.18 255)",
+  description:
+    "Translate business outcomes into prioritised, sponsor-signed AI agent use cases. Aligned to Azure CAF: Business Plan, Technology Plan, Single-or-Multiple Agents.",
+  keyOutput: "Signed-off Use Case Backlog v1.0",
+  templates: [
+    "T-BW-01 Business Outcome Statement",
+    "T-BW-02 Use Case Decision Log",
+    "T-BW-03 Prioritisation Matrix (scored & ranked)",
+    "T-BW-04 Business Case per use case",
+    "T-BW-05 Stakeholder Sponsor Register",
+    "Signed-off Use Case Backlog v1.0",
+  ],
+  gateCriteria: [
+    "Formal business sponsor sign-off recorded per use case.",
+    "Guardrail validation check (from CoE Playbook) passed.",
+    "KPIs and success metrics defined per use case.",
+  ],
+  handshakeTo: "Foundations Data",
+  handshakeOutputs: [
+    "Signed-off Use Case Backlog",
+    "Business Cases",
+    "KPI Sheets",
+    "Prioritisation Matrix",
+  ],
+  steps: [
+    {
+      id: "bt-1",
+      name: "Define Business Outcome",
+      short: "Outcome",
+      description: "Map to a measurable business objective and existing process map.",
+      questions: [
+        {
+          id: "bt-1-1",
+          text: "For the business function being assessed, is each candidate AI use case mapped to a measurable business outcome (cost, revenue, risk, cycle time)?",
+          relevance: "CAF: Business plan. Outcomes are how AI investment is justified and how success is measured.",
+          options: std([
+            "Use cases described as 'we want AI'.",
+            "Vague outcome statements per use case.",
+            "Some use cases have a baseline metric.",
+            "Most use cases have a measurable target.",
+            "All use cases have a baseline + target + owner.",
+            "Outcomes are tracked live against KPIs after deployment.",
+          ]),
+        },
+        {
+          id: "bt-1-2",
+          text: "Is the current human process map (steps, decisions, data, systems) documented for each candidate use case?",
+          relevance: "CAF: Business plan. You cannot automate or augment a process you have not mapped.",
+          options: std([
+            "No process maps.",
+            "Tribal knowledge only.",
+            "Some process maps exist in slides.",
+            "Most use cases have a documented process map.",
+            "Process maps standardised and signed by process owners.",
+            "Process maps maintained live and linked to the agent design.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "bt-2",
+      name: "Apply CAF Agent Decision Tree",
+      short: "Decision Tree",
+      description: "Structured task? RAG? SaaS or custom build?",
+      questions: [
+        {
+          id: "bt-2-1",
+          text: "Is Microsoft's Cloud Adoption Framework Agent Decision Tree applied to determine whether each use case needs an agent at all (vs. workflow, RAG, or no AI)?",
+          relevance: "CAF: When to use AI agents. Not every problem is an agent problem.",
+          options: std([
+            "Every problem is assumed to need an agent.",
+            "Decision is left to the build team.",
+            "Decision tree referenced for some use cases.",
+            "Decision tree applied to most new use cases.",
+            "Decision tree is mandatory at intake.",
+            "Decision tree results are logged and audited.",
+          ]),
+        },
+        {
+          id: "bt-2-2",
+          text: "Is the SaaS-vs-Custom build decision (M365 Copilot / Copilot Studio / Foundry / custom) made explicitly per use case using CAF guidance?",
+          relevance: "CAF: Technology plan. Choosing the wrong platform inflates cost and delays delivery.",
+          options: std([
+            "No build-vs-buy assessment.",
+            "Platform chosen by the loudest opinion.",
+            "Assessment done for some flagship use cases.",
+            "Assessment standard for most new use cases.",
+            "Assessment mandatory with documented rationale.",
+            "Platform decision is reviewed against post-launch outcomes.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "bt-3",
+      name: "Qualify Agent Type",
+      short: "Agent Type",
+      description: "Productivity · Action · Automation / Multi-agent.",
+      questions: [
+        {
+          id: "bt-3-1",
+          text: "Is each use case classified as Productivity / Action / Automation (CAF agent types) with the autonomy level explicitly chosen?",
+          relevance: "CAF: Agent types. The type drives the depth of guardrails, HITL and red-teaming.",
+          options: std([
+            "No classification.",
+            "Type discussed informally.",
+            "Type recorded for some use cases.",
+            "Type recorded for most use cases.",
+            "Type is mandatory metadata at intake.",
+            "Type drives automated controls applied at build and deploy.",
+          ]),
+        },
+        {
+          id: "bt-3-2",
+          text: "Where multi-agent orchestration is proposed, is the orchestration pattern (planner, peer, hierarchical) documented and reviewed?",
+          relevance: "CAF: Single or multiple agents. Multi-agent introduces fan-out risk and must be governed.",
+          options: std([
+            "No multi-agent decisions documented.",
+            "Multi-agent built ad-hoc.",
+            "Pattern recorded for one pilot.",
+            "Pattern recorded for most multi-agent use cases.",
+            "Pattern is reviewed and signed by architecture.",
+            "Pattern is enforced via reference implementations and red team scenarios.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "bt-4",
+      name: "Score & Prioritise (CAF 1–5)",
+      short: "Prioritise",
+      description: "Business Impact · User Desirability · Technical Feasibility.",
+      questions: [
+        {
+          id: "bt-4-1",
+          text: "Are use cases scored on CAF dimensions (Business Impact 1–5, User Desirability 1–5, Technical Feasibility 1–5) and ranked in a prioritisation matrix?",
+          relevance: "CAF: Business plan. The matrix is the artefact that lets leadership decide what to fund.",
+          options: std([
+            "No scoring; FIFO backlog.",
+            "Subjective ranking by sponsor.",
+            "Scoring done for one cohort.",
+            "Scoring done for most new use cases.",
+            "Scoring + ranking is the standard intake artefact.",
+            "Scoring is recalibrated quarterly with post-launch outcomes.",
+          ]),
+        },
+        {
+          id: "bt-4-2",
+          text: "Are data readiness signals (RAG from the Data Blueprint workstream) reflected in the prioritisation so use cases blocked on data are not promoted?",
+          relevance: "Blueprint handshake: BT must not push use cases that Data Readiness flags as BLOCKER. Saves rework.",
+          options: std([
+            "Data readiness is not considered.",
+            "Data is checked verbally per use case.",
+            "Initial RAG score noted for some use cases.",
+            "RAG score reflected for most use cases.",
+            "RAG score is mandatory in the prioritisation matrix.",
+            "BT and DB co-own the matrix; BLOCKER gaps automatically deprioritise.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "bt-5",
+      name: "Define KPIs & Business Value",
+      short: "KPIs & Value",
+      description: "Baseline metrics, business case, ROI model.",
+      questions: [
+        {
+          id: "bt-5-1",
+          text: "Is a business case (cost, benefit, payback, ROI) produced and approved for every prioritised use case?",
+          relevance: "CAF: Business plan. No funding without a defensible business case.",
+          options: std([
+            "No business cases.",
+            "Narrative business cases only.",
+            "Quantified business case for flagship use cases.",
+            "Quantified business case for most use cases.",
+            "Business case is mandatory and Finance-approved.",
+            "Business case is tracked vs. realised value post-launch.",
+          ]),
+        },
+        {
+          id: "bt-5-2",
+          text: "Are KPIs (leading + lagging) defined and instrumented so post-launch agent value can be measured?",
+          relevance: "CAF: Operate agents. Without KPIs, agents drift and value cannot be proven.",
+          options: std([
+            "No KPIs.",
+            "KPIs discussed but not measured.",
+            "KPI dashboards for one agent.",
+            "KPIs measured for most agents.",
+            "KPIs mandatory at deployment with owner accountability.",
+            "KPI signals close the loop back to the prioritisation matrix.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "bt-6",
+      name: "Signed-off Use Case Backlog ★",
+      short: "Signed Backlog",
+      description: "Sponsor sign-off, guardrail check, KPIs set — the handshake to Data Readiness.",
+      questions: [
+        {
+          id: "bt-6-1",
+          text: "Is a single, signed-off Use Case Backlog v1.0 maintained and shared with the Data Blueprint and Agents Factory workstreams?",
+          relevance: "Blueprint handshake: the backlog is the contract that triggers DB and AF work.",
+          options: std([
+            "No central backlog.",
+            "Spreadsheet maintained per team.",
+            "Backlog drafted but not signed.",
+            "Backlog signed for current cohort.",
+            "Backlog signed, versioned and shared with DB / AF.",
+            "Backlog is the source of truth and gates downstream funding.",
+          ]),
+        },
+        {
+          id: "bt-6-2",
+          text: "Is the GATE check (sponsor sign-off + guardrail validation + KPIs defined) enforced before a use case is handed to the Data Blueprint workstream?",
+          relevance: "Blueprint: prevents downstream rework. CAF: Govern agents.",
+          options: std([
+            "No gate; anything moves forward.",
+            "Gate checked verbally.",
+            "Gate enforced for one use case.",
+            "Gate enforced for most use cases.",
+            "Gate is mandatory and audited.",
+            "Gate evidence is captured in Agent 365 / governance tooling automatically.",
+          ]),
+        },
+      ],
+    },
+  ],
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// 3. FOUNDATIONS DATA  (Data Blueprint)
+// ────────────────────────────────────────────────────────────────────────────
+const DB: Workstream = {
+  id: "db",
+  name: "Foundations Data — Data Blueprint",
+  short: "Foundations Data",
+  color: "oklch(0.62 0.16 155)",
+  description:
+    "Map data assets, score quality across Bronze→Silver→Gold→Semantic→Ontology, identify gaps, remediate. Aligned to Azure CAF: Data Architecture, Fabric OneLake, Purview, Foundry IQ retrieval strategy.",
+  keyOutput: "Data Readiness Scorecard v1.0 (RAG) + Retrieval Strategy",
+  templates: [
+    "T-DR-01 Data Asset Map per use case",
+    "T-DR-02 Data Quality Scorecard (RAG)",
+    "T-DR-03 Lineage & Provenance Map",
+    "T-DR-04 Data Gap Register (BLOCKER / CONDITIONAL / WATCH)",
+    "T-DR-05 Remediation Action Plan",
+    "T-DR-06 Data Readiness Scorecard v1.0 + Retrieval Strategy",
+  ],
+  gateCriteria: [
+    "BLOCKER gaps remediated before agent build.",
+    "Bronze → Silver → Gold layers validated.",
+    "Ontology layer exists for the in-scope domain.",
+    "Retrieval strategy (Foundry IQ / Fabric IQ / MCP) documented and approved.",
+  ],
+  handshakeTo: "Agents Factory",
+  handshakeOutputs: [
+    "Data Readiness Scorecard (RAG)",
+    "Gap Register",
+    "Remediation Plan",
+    "Target Data Architecture",
+    "Confirmed Retrieval Strategy",
+  ],
+  steps: [
+    {
+      id: "db-1",
+      name: "Map Data Assets per Use Case",
+      short: "Asset Map",
+      description: "Source, format, owner, OneLake domain mapping per use case.",
+      questions: [
+        {
+          id: "db-1-1",
+          text: "For each prioritised use case, are the source systems (Excel, Anaplan, D365 F&O, others) catalogued and mapped to an OneLake domain with a metadata-driven ingestion pattern?",
+          relevance: "Blueprint: agents need a known source of truth landed in OneLake before quality and ontology work.",
+          options: std([
+            "Sources not catalogued; nothing in OneLake.",
+            "Sources known informally; ad-hoc ingestion.",
+            "One source landed in OneLake; others siloed.",
+            "Multiple sources landed; pipelines reusable but not metadata-driven.",
+            "All sources landed via a metadata-driven framework with standard patterns.",
+            "Self-service onboarding: new sources auto-deployed by config into OneLake.",
+          ]),
+        },
+        {
+          id: "db-1-2",
+          text: "Is the source-system identity, owner and sensitivity label preserved at ingestion so downstream Purview / Agent 365 controls can be honoured?",
+          relevance: "CAF: Data architecture + Govern agents. If metadata is lost on ingestion, runtime access decisions break.",
+          options: std([
+            "Metadata stripped on ingest.",
+            "Some metadata captured inconsistently.",
+            "Owner and source captured for selected pipelines.",
+            "Identity, owner, labels captured for most pipelines.",
+            "Full metadata preserved enterprise-wide.",
+            "Metadata flows into Purview / Fabric IQ / Foundry IQ and drives runtime access.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "db-2",
+      name: "Assess Data Quality (All Layers)",
+      short: "DQ Scorecard",
+      description: "Completeness · Accuracy · Consistency · Timeliness · Uniqueness across Bronze / Silver / Gold.",
+      questions: [
+        {
+          id: "db-2-1",
+          text: "Are data quality rules (completeness, accuracy, consistency, timeliness, uniqueness) defined and executed on the data feeding each agent?",
+          relevance: "Blueprint + CAF: silent DQ issues are the #1 cause of wrong agent answers.",
+          options: std([
+            "No DQ rules.",
+            "Informal checks on a few critical tables.",
+            "DQ rules coded in some pipelines.",
+            "DQ framework used for several domains; partial coverage.",
+            "Enterprise DQ framework for all certified datasets with SLAs.",
+            "DQ SLAs gate agent grounding surfaces automatically.",
+          ]),
+        },
+        {
+          id: "db-2-2",
+          text: "Are layer contracts standardised across Bronze (raw) → Silver (curated/validated) → Gold (dim/fact)?",
+          relevance: "CAF: Data architecture. Agents consume Gold; without contracts, the layers leak inconsistencies.",
+          options: std([
+            "No medallion structure.",
+            "Medallion in name only.",
+            "Bronze + Silver defined; Gold ad-hoc.",
+            "Medallion documented; legacy varies.",
+            "Medallion enforced enterprise-wide with naming and schemas.",
+            "Layer contracts versioned and consumed via certified semantic models.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "db-3",
+      name: "Evaluate Lineage & Provenance",
+      short: "Lineage",
+      description: "End-to-end lineage in Purview, audit trail for AI grounding.",
+      questions: [
+        {
+          id: "db-3-1",
+          text: "Is end-to-end lineage (source → Bronze → Silver → Gold → semantic model → agent grounding) captured and visible in Purview / Fabric?",
+          relevance: "Agent 365 governance, impact analysis and trust in AI outputs require full lineage.",
+          options: std([
+            "No lineage captured.",
+            "Lineage in diagrams only.",
+            "Pipeline-level lineage in Fabric.",
+            "Lineage in Purview for most pipelines.",
+            "End-to-end lineage including agent grounding sources.",
+            "Lineage drives automated impact analysis and notifies agent owners.",
+          ]),
+        },
+        {
+          id: "db-3-2",
+          text: "Are AI agent grounding events (which document, which row, which model version) traceable for audit?",
+          relevance: "CAF: Operate agents. Provenance is required to defend agent answers.",
+          options: std([
+            "Grounding not traceable.",
+            "Some logging in dev environments.",
+            "Traceability for one agent.",
+            "Traceability for most agents.",
+            "Standard provenance capture across all agents.",
+            "Provenance integrated with Defender for AI and audit.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "db-4",
+      name: "Identify Data Gaps & Risks",
+      short: "Gap Register",
+      description: "BLOCKER · CONDITIONAL · WATCH classification; privacy gaps.",
+      questions: [
+        {
+          id: "db-4-1",
+          text: "Is a Data Gap Register maintained per use case classifying gaps as BLOCKER / CONDITIONAL / WATCH with owner and impact?",
+          relevance: "Blueprint: the register is the source of truth for what must be fixed before an agent goes live.",
+          options: std([
+            "No register.",
+            "Issues tracked in tickets ad-hoc.",
+            "Register exists for one use case.",
+            "Register exists for most use cases.",
+            "Register is mandatory and reviewed at gate meetings.",
+            "Register integrates with the prioritisation matrix and remediation backlog.",
+          ]),
+        },
+        {
+          id: "db-4-2",
+          text: "Are privacy / PII gaps (uncovered, mislabelled, over-shared) explicitly identified and risk-rated?",
+          relevance: "CAF: Govern & secure agents. Privacy gaps are a frequent BLOCKER for Copilot-style agents.",
+          options: std([
+            "Privacy gaps not assessed.",
+            "Privacy reviewed verbally.",
+            "Privacy assessed for one pilot.",
+            "Privacy assessed for most use cases.",
+            "Privacy assessment is mandatory and signed by DPO.",
+            "Privacy controls are policy-driven and validated at runtime.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "db-5",
+      name: "Remediation Action Plan",
+      short: "Remediation",
+      description: "Owners, timelines, Bronze→Silver→Gold remediation path.",
+      questions: [
+        {
+          id: "db-5-1",
+          text: "Is a Remediation Action Plan published per use case with owners, timelines and clear exit criteria for each BLOCKER?",
+          relevance: "Blueprint gate: BLOCKER gaps must be remediated before agent build.",
+          options: std([
+            "No remediation plan.",
+            "Issues fixed when business complains.",
+            "Plan documented for one use case.",
+            "Plan documented for most use cases.",
+            "Plan with SLAs enforced for all certified datasets.",
+            "Closed-loop remediation with auto-tickets and root-cause tracking.",
+          ]),
+        },
+        {
+          id: "db-5-2",
+          text: "Is remediation progress reported to the BT / CoE governance forum so blocked use cases visibly slip in priority?",
+          relevance: "Blueprint: prevents BLOCKER use cases being silently pushed forward.",
+          options: std([
+            "No reporting.",
+            "Reported informally.",
+            "Reported for flagship use cases.",
+            "Reported in most governance meetings.",
+            "Standard reporting cadence to BT / CoE.",
+            "Live dashboard visible to exec sponsors.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "db-6",
+      name: "Data Readiness Scorecard (RAG) ★",
+      short: "Readiness Scorecard",
+      description: "RAG per use case + retrieval strategy confirmed.",
+      questions: [
+        {
+          id: "db-6-1",
+          text: "Is a Data Readiness Scorecard (RAG) produced per use case and signed by the data owner before handover to the Agents Factory?",
+          relevance: "Blueprint key handshake. RED use cases cannot proceed without remediation.",
+          options: std([
+            "No scorecard.",
+            "Verbal readiness statement.",
+            "Scorecard for one use case.",
+            "Scorecard for most use cases.",
+            "Scorecard is mandatory at handover with owner sign-off.",
+            "Scorecard is reviewed periodically post-launch and re-rated.",
+          ]),
+        },
+        {
+          id: "db-6-2",
+          text: "Is the retrieval strategy (Foundry IQ / Fabric IQ / MCP servers) explicitly chosen and documented per use case?",
+          relevance: "CAF: Data architecture. The retrieval strategy drives the agent's grounding pattern and access controls.",
+          options: std([
+            "Retrieval strategy not considered.",
+            "Decided by the build team at the last minute.",
+            "Documented for one use case.",
+            "Documented for most use cases.",
+            "Documented and reviewed by architecture for all use cases.",
+            "Retrieval strategy is policy-driven and validated against eval suites.",
+          ]),
+        },
+      ],
+    },
+  ],
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// 4. AGENTS FACTORY
+// ────────────────────────────────────────────────────────────────────────────
+const AF: Workstream = {
+  id: "af",
+  name: "Agents Factory",
+  short: "Agents Factory",
+  color: "oklch(0.55 0.18 35)",
+  description:
+    "Build, validate and operate agents on the foundations set by CoE, BT and DB. Aligned to Azure CAF: Build agents, Operate agents.",
+  keyOutput: "Deployed Agent in Agent 365 + Monitoring Dashboard live",
+  templates: [
+    "T-AF-01 Agent Charter Document",
+    "T-AF-02 Model Selection Record + validation",
+    "T-AF-03 Knowledge Integration Spec + Tool Governance Register",
+    "T-AF-04 Test Results & Defect Log",
+    "T-AF-05 Guardrail Validation Report + AI Red Team Clearance Certificate",
+    "T-AF-06 Deployed Agent in Agent 365 + Monitoring Dashboard",
+  ],
+  gateCriteria: [
+    "Guardrail Validation Report signed off.",
+    "UAT business sponsor acceptance recorded.",
+    "AI Red Team clearance certificate issued.",
+    "Agent registered in Microsoft Agent 365.",
+  ],
+  handshakeTo: "Continuous Improvement",
+  handshakeOutputs: [
+    "Lessons Learned",
+    "Updated Master Data Blueprint Playbook",
+    "Telemetry feedback to BT (KPI realisation) and DB (data fixes)",
+  ],
+  steps: [
+    {
+      id: "af-1",
+      name: "Charter & Instructions",
+      short: "Charter",
+      description: "Agent scope, prohibited actions, orchestration model.",
+      questions: [
+        {
+          id: "af-1-1",
+          text: "Does every agent have a signed Agent Charter defining scope, prohibited actions, owner, risk tier and orchestration model?",
+          relevance: "CAF: Build agents. The charter is the contract between business and engineering.",
+          options: std([
+            "No charters.",
+            "Charter discussed informally.",
+            "Charter for one flagship agent.",
+            "Charter for most agents.",
+            "Charter is mandatory and signed at intake.",
+            "Charter is enforced via Agent 365 and validated at every release.",
+          ]),
+        },
+        {
+          id: "af-1-2",
+          text: "Are agent instructions (system prompt, persona, refusal rules) versioned and reviewed at each release?",
+          relevance: "CAF: Operate agents. Prompt drift silently changes agent behaviour.",
+          options: std([
+            "Prompts edited live in prod.",
+            "Some prompts backed up manually.",
+            "Versioning exists for one agent.",
+            "Most agents version-controlled.",
+            "All agents follow a release lifecycle.",
+            "Prompt regressions are caught by automated eval at promotion.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "af-2",
+      name: "Model Selection",
+      short: "Model Select",
+      description: "Match model to complexity; validate; use Model Router where appropriate.",
+      questions: [
+        {
+          id: "af-2-1",
+          text: "Is model selection driven by a documented matrix of task complexity, cost, latency and data residency rather than 'latest model wins'?",
+          relevance: "CAF: Technology plan. Wrong model = wasted cost or unfit-for-purpose answers.",
+          options: std([
+            "No selection criteria.",
+            "Default model used everywhere.",
+            "Selection for flagship agents only.",
+            "Selection for most new agents.",
+            "Selection matrix is mandatory and reviewed.",
+            "Model Router automates per-call selection with policy guardrails.",
+          ]),
+        },
+        {
+          id: "af-2-2",
+          text: "Are selected models validated against representative tasks before being approved for production agents?",
+          relevance: "CAF: Build agents. Model validation prevents quality surprises after launch.",
+          options: std([
+            "No validation.",
+            "Spot-check by developer.",
+            "Validation for one model.",
+            "Validation for most models.",
+            "Standard validation suite for every model decision.",
+            "Continuous validation as new models / versions are released.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "af-3",
+      name: "Knowledge, Tools & Memory",
+      short: "Knowledge & Tools",
+      description: "Foundry IQ / Fabric IQ / MCP grounding; tool boundaries; HITL.",
+      questions: [
+        {
+          id: "af-3-1",
+          text: "Are agent tools registered, scoped (least-privilege) and approved before being attached to an agent?",
+          relevance: "CAF: Govern & secure agents. Tools are the agent's hands; unscoped tools = uncontrolled actions.",
+          options: std([
+            "Tools added ad-hoc by the builder.",
+            "Tools listed in design docs.",
+            "Tool registry for one agent.",
+            "Tool registry for most agents.",
+            "Tool registry enforced enterprise-wide via Agent 365.",
+            "Tool scopes validated at runtime per agent invocation.",
+          ]),
+        },
+        {
+          id: "af-3-2",
+          text: "Is memory architecture (short-term / long-term / per-user) explicitly chosen and governed for each agent?",
+          relevance: "CAF: Build agents. Memory leaks across users are a common privacy incident.",
+          options: std([
+            "No memory decisions documented.",
+            "Default memory accepted.",
+            "Memory designed for one agent.",
+            "Memory designed for most agents.",
+            "Memory architecture is a mandatory design artefact.",
+            "Memory is policy-driven and audited continuously.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "af-4",
+      name: "Build & Unit Test",
+      short: "Build & Test",
+      description: "Build to charter; unit tests; CI/CD integration.",
+      questions: [
+        {
+          id: "af-4-1",
+          text: "Are agent artefacts (prompts, tools, knowledge sources, connectors) deployed via CI/CD rather than hand-edited per environment?",
+          relevance: "CAF: Operate agents. CI/CD for agents is required for repeatability, audit and rollback.",
+          options: std([
+            "Agents built and edited in Prod.",
+            "Manual export/import between environments.",
+            "Some agents have a deploy script.",
+            "Most agents deployed via pipelines.",
+            "All agents deployed through CI/CD with approvals.",
+            "Agent definitions + evals + policies deployed as code with auto-rollback.",
+          ]),
+        },
+        {
+          id: "af-4-2",
+          text: "Are automated tests (unit, integration, data contract, agent eval) executed as a gate before promotion?",
+          relevance: "CAF: Build agents. Tests catch regressions in data contracts that silently break grounded agents.",
+          options: std([
+            "No automated tests.",
+            "A few unit tests run locally.",
+            "Unit tests run in CI for selected artefacts.",
+            "Unit + basic data tests in CI for most artefacts.",
+            "Full test pyramid gates every promotion.",
+            "Includes AI-eval suites validating agent quality before release.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "af-5",
+      name: "Guardrail Validation & Red Team",
+      short: "Red Team",
+      description: "Adversarial testing, prompt injection, red team clearance.",
+      questions: [
+        {
+          id: "af-5-1",
+          text: "Is every agent put through adversarial testing (prompt injection, jailbreak, data exfiltration) by an independent AI Red Team before go-live?",
+          relevance: "CAF: Govern & secure agents. Red Team clearance is the deployment gate.",
+          options: std([
+            "No red teaming.",
+            "Builder runs basic jailbreak prompts.",
+            "Independent red team for one flagship agent.",
+            "Independent red team for most agents.",
+            "Red Team clearance certificate mandatory for production.",
+            "Continuous red teaming with adaptive defences governed via Agent 365.",
+          ]),
+        },
+        {
+          id: "af-5-2",
+          text: "Are guardrails (prompt shields, content filters, DLP, exfiltration controls) validated as effective for each agent's risk tier?",
+          relevance: "CAF: Govern & secure agents. Generic controls are necessary but not sufficient.",
+          options: std([
+            "No guardrail validation.",
+            "Default Foundry filters only.",
+            "Validation for one pilot.",
+            "Validation for most agents.",
+            "Validation mandatory per release; results retained.",
+            "Validation is automated and re-run on every change.",
+          ]),
+        },
+      ],
+    },
+    {
+      id: "af-6",
+      name: "Deploy, Monitor & Operate ★",
+      short: "Deploy & Operate",
+      description: "Agent 365 registered, monitoring live, lessons learned.",
+      questions: [
+        {
+          id: "af-6-1",
+          text: "Is the agent deployed via Microsoft Agent 365 with owner, scopes, kill-switch and monitoring dashboard live at go-live?",
+          relevance: "CAF: Operate agents. Agent 365 is the production control plane.",
+          options: std([
+            "Agents deployed ad-hoc; no central control.",
+            "Agents registered after-the-fact.",
+            "One agent operating via Agent 365.",
+            "Most production agents in Agent 365.",
+            "Agent 365 is mandatory at deployment for every agent.",
+            "Agent 365 gates production traffic, monitoring and decommissioning.",
+          ]),
+        },
+        {
+          id: "af-6-2",
+          text: "Are lessons learned captured per agent and fed back into the Master Data Blueprint Playbook for the next cycle?",
+          relevance: "Blueprint: continuous improvement closes the loop with CoE, BT and DB.",
+          options: std([
+            "No lessons captured.",
+            "Lessons stored in team notes.",
+            "Lessons captured for one agent.",
+            "Lessons captured for most agents.",
+            "Lessons feed quarterly Playbook updates.",
+            "Lessons drive automated changes to standards and templates.",
+          ]),
+        },
+      ],
+    },
+  ],
+};
+
+export const WORKSTREAMS: Workstream[] = [COE, BT, DB, AF];
+
+// Legacy DIMENSIONS shape — each workstream surfaces as one radar/chart axis
+// for the high-level views. Components that need per-step detail use WORKSTREAMS.
+export interface Dimension {
+  id: string;
+  name: string;
+  short: string;
+  icon: string;
+  color: string;
+  description: string;
+  questions: Question[];
+}
+
+export const DIMENSIONS: Dimension[] = WORKSTREAMS.map((w) => ({
+  id: w.id,
+  name: w.name,
+  short: w.short,
+  icon: "Layers",
+  color: w.color,
+  description: w.description,
+  questions: w.steps.flatMap((s) => s.questions),
+}));
+
+export const TOTAL_QUESTIONS = WORKSTREAMS.reduce(
+  (acc, w) => acc + w.steps.reduce((a, s) => a + s.questions.length, 0),
+  0,
+);
+
+export const TOTAL_STEPS = WORKSTREAMS.reduce((acc, w) => acc + w.steps.length, 0);
+
+export function stepAverages(
+  step: Step,
+  answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>,
+) {
+  const ans = step.questions.filter((q) => answers[q.id]);
+  if (ans.length === 0) return { current: 0, target: 0, answered: 0, total: step.questions.length };
+  const current = ans.reduce((s, q) => s + answers[q.id].current, 0) / ans.length;
+  const target = ans.reduce((s, q) => s + answers[q.id].target, 0) / ans.length;
+  return { current, target, answered: ans.length, total: step.questions.length };
+}
+
+export function workstreamAverages(
+  ws: Workstream,
+  answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>,
+) {
+  const allQ = ws.steps.flatMap((s) => s.questions);
+  const ans = allQ.filter((q) => answers[q.id]);
+  if (ans.length === 0) return { current: 0, target: 0, answered: 0, total: allQ.length };
+  const current = ans.reduce((s, q) => s + answers[q.id].current, 0) / ans.length;
+  const target = ans.reduce((s, q) => s + answers[q.id].target, 0) / ans.length;
+  return { current, target, answered: ans.length, total: allQ.length };
+}
