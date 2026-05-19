@@ -569,7 +569,7 @@ const BT: Workstream = {
         },
         {
           id: "bt-4-2",
-          text: "Are data readiness signals (RAG from the Data Blueprint workstream) reflected in the prioritisation so use cases blocked on data are not promoted?",
+          text: "Are data readiness signals (RAG from the Foundations Data workstream) reflected in the prioritisation so use cases blocked on data are not promoted?",
           relevance: "Blueprint handshake: BT must not push use cases that Data Readiness flags as BLOCKER. Saves rework.",
           options: std([
             "Data readiness is not considered.",
