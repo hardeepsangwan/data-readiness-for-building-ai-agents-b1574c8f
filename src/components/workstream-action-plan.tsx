@@ -1,5 +1,5 @@
-import { TrendingUp, Target, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
-import { stepAverages, type Workstream, type MaturityLevel, MATURITY_LEVELS } from "@/lib/assessment-data";
+import { TrendingUp, Target, AlertTriangle, CheckCircle2, ArrowRight, BookOpenCheck } from "lucide-react";
+import { stepAverages, CAF_GUIDANCE, type Workstream, type MaturityLevel, MATURITY_LEVELS } from "@/lib/assessment-data";
 
 interface Props {
   workstream: Workstream;
