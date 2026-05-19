@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Handshake, ShieldCheck, FileSpreadsheet, ArrowRight, ArrowLeft, Star } from "lucide-react";
+import { Handshake, ShieldCheck, FileSpreadsheet, ArrowRight, ArrowLeft, Star, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Workstream } from "@/lib/assessment-data";
+import { WorkstreamRadar } from "@/components/workstream-radar";
+import { WorkstreamActionPlan } from "@/components/workstream-action-plan";
+import type { Workstream, MaturityLevel } from "@/lib/assessment-data";
 import type { GateSignoff } from "@/lib/assessment-store";
 
 interface Props {
   workstream: Workstream;
+  answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
   existing?: GateSignoff;
   defaultSignedBy?: string;
   onSign: (sg: GateSignoff) => void;
@@ -19,7 +22,7 @@ interface Props {
 }
 
 export function HandshakeCard({
-  workstream, existing, defaultSignedBy, onSign, onDownload, onBack, onNext, nextLabel,
+  workstream, answers, existing, defaultSignedBy, onSign, onDownload, onBack, onNext, nextLabel,
 }: Props) {
   const [signedBy, setSignedBy] = useState(existing?.signedBy ?? defaultSignedBy ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
@@ -83,6 +86,21 @@ export function HandshakeCard({
               <span key={o} className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">{o}</span>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: workstream.color }}>
+          <BarChart3 className="h-3.5 w-3.5" /> {workstream.short} maturity — dimensions assessed
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Current vs target state across the {workstream.steps.length} dimensions evaluated in this workstream.
+        </p>
+        <div className="mt-3">
+          <WorkstreamRadar workstream={workstream} answers={answers} />
+        </div>
+        <div className="mt-4">
+          <WorkstreamActionPlan workstream={workstream} answers={answers} />
         </div>
       </div>
 

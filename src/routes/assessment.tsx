@@ -125,6 +125,7 @@ function AssessmentPage() {
         {workstream && isHandshake && (
           <HandshakeCard
             workstream={workstream}
+            answers={state.answers}
             existing={state.gates[workstream.id]}
             defaultSignedBy={state.org.respondent}
             onSign={(sg) => signGate(workstream.id, sg)}
