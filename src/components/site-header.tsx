@@ -53,7 +53,7 @@ export function SiteHeader() {
             <Database className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="leading-tight">
-            <div className="text-sm font-semibold tracking-tight">Data Readiness</div>
+            <div className="text-sm font-semibold tracking-tight">Data Blueprint</div>
             <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">For building AI agents</div>
           </div>
         </Link>
