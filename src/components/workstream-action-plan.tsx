@@ -140,6 +140,36 @@ export function WorkstreamActionPlan({ workstream, answers }: Props) {
                   </div>
                 ))
               )}
+
+              {/* CAF-grounded remediation guidance for this subcategory */}
+              {gaps.length > 0 && CAF_GUIDANCE[step.id] && (
+                <div
+                  className="mt-1 rounded border border-dashed p-3"
+                  style={{
+                    borderColor: `color-mix(in oklab, ${workstream.color} 40%, transparent)`,
+                    background: `color-mix(in oklab, ${workstream.color} 4%, white)`,
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: workstream.color }}>
+                    <BookOpenCheck className="h-3.5 w-3.5" />
+                    Azure CAF for AI Agents — prescriptive steps to close the gaps above
+                  </div>
+                  <div className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {CAF_GUIDANCE[step.id].pillar}
+                  </div>
+                  <ul className="mt-2 space-y-1.5 text-xs leading-relaxed">
+                    {CAF_GUIDANCE[step.id].actions.map((a, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span
+                          className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: workstream.color }}
+                        />
+                        <span>{a}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         ))}
