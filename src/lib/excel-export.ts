@@ -1,15 +1,10 @@
 import ExcelJS from "exceljs";
-import { DIMENSIONS, MATURITY_LEVELS } from "./assessment-data";
+import { WORKSTREAMS, MATURITY_LEVELS, workstreamAverages, stepAverages, type Workstream } from "./assessment-data";
 import type { AssessmentState } from "./assessment-store";
 
-export async function downloadAssessmentExcel(state: AssessmentState) {
-  const wb = new ExcelJS.Workbook();
-
-  // Overview sheet
-  const overview = wb.addWorksheet("Overview");
-  overview.columns = [{ width: 28 }, { width: 90 }];
-  overview.addRows([
-    ["Data Readiness Assessment for AI Agents"],
+function headerRows(state: AssessmentState, title: string): (string | number)[][] {
+  return [
+    [title],
     [],
     ["Organization", state.org.name || ""],
     ["Respondent", state.org.respondent || ""],
@@ -17,34 +12,53 @@ export async function downloadAssessmentExcel(state: AssessmentState) {
     ["Business process", state.org.businessProcess || ""],
     ["Date of assessment", state.org.date || ""],
     [],
-    ["Maturity scale"],
-    ...MATURITY_LEVELS.map((m) => [`Level ${m.level} · ${m.name}`, m.description]),
-  ]);
+  ];
+}
 
-  // One sheet per dimension
-  DIMENSIONS.forEach((d) => {
-    const safeName = d.name.replace(/[\\/?*[\]:]/g, "").slice(0, 31);
-    const ws = wb.addWorksheet(safeName);
+function addWorkstreamSheets(wb: ExcelJS.Workbook, state: AssessmentState, w: Workstream) {
+  const summary = wb.addWorksheet(`${w.short} — Summary`.slice(0, 31));
+  summary.columns = [{ width: 32 }, { width: 80 }];
+  headerRows(state, `${w.name} — Summary`).forEach((r) => summary.addRow(r));
+  summary.addRow(["Key output ★", w.keyOutput]);
+  summary.addRow(["Handshake to", w.handshakeTo]);
+  summary.addRow([]);
+  summary.addRow(["Deliverable templates"]);
+  w.templates.forEach((t) => summary.addRow(["", t]));
+  summary.addRow([]);
+  summary.addRow(["Gate criteria"]);
+  w.gateCriteria.forEach((g) => summary.addRow(["", g]));
+  summary.addRow([]);
+  summary.addRow(["Handshake outputs to next workstream"]);
+  w.handshakeOutputs.forEach((o) => summary.addRow(["", o]));
+  summary.addRow([]);
+  const sg = state.gates[w.id];
+  summary.addRow(["Gate signed by", sg?.signedBy || "—"]);
+  summary.addRow(["Gate signed at", sg?.signedAt ? new Date(sg.signedAt).toLocaleString() : "—"]);
+  if (sg?.notes) summary.addRow(["Gate notes", sg.notes]);
+  summary.addRow([]);
+  summary.addRow(["Step", "Current avg", "Target avg", "Gap"]);
+  w.steps.forEach((s) => {
+    const a = stepAverages(s, state.answers);
+    summary.addRow([s.name, a.current.toFixed(2), a.target.toFixed(2), (a.target - a.current).toFixed(2)]);
+  });
+
+  // One sheet per step
+  w.steps.forEach((s, i) => {
+    const ws = wb.addWorksheet(`${w.short.slice(0, 8)} S${i + 1} ${s.short}`.replace(/[\\/?*[\]:]/g, "").slice(0, 31));
     ws.columns = [
-      { width: 4 },
-      { width: 70 },
-      { width: 60 },
-      { width: 12 },
-      { width: 16 },
-      { width: 12 },
-      { width: 16 },
-      { width: 6 },
+      { width: 4 }, { width: 70 }, { width: 60 },
+      { width: 12 }, { width: 16 }, { width: 12 }, { width: 16 }, { width: 6 },
     ];
-    ws.addRow([d.name]);
-    ws.addRow([d.description]);
+    ws.addRow([`${w.name} — Step ${i + 1}: ${s.name}`]);
+    ws.addRow([s.description]);
     ws.addRow([]);
     ws.addRow(["#", "Question", "Why it matters", "Current level", "Current label", "Target level", "Target label", "Gap"]);
-    d.questions.forEach((q, i) => {
+    s.questions.forEach((q, qi) => {
       const a = state.answers[q.id];
       const cur = a?.current;
       const tgt = a?.target;
       ws.addRow([
-        i + 1,
+        qi + 1,
         q.text,
         q.relevance,
         cur ?? "",
@@ -55,14 +69,92 @@ export async function downloadAssessmentExcel(state: AssessmentState) {
       ]);
     });
   });
+}
 
-  const fileName = `data-readiness-${(state.org.name || "assessment").replace(/\s+/g, "-").toLowerCase()}-${state.org.date || new Date().toISOString().slice(0, 10)}.xlsx`;
+function fileName(state: AssessmentState, suffix: string) {
+  const slug = (state.org.businessFunction || state.org.name || "assessment").replace(/\s+/g, "-").toLowerCase();
+  const date = state.org.date || new Date().toISOString().slice(0, 10);
+  return `data-blueprint-${slug}-${suffix}-${date}.xlsx`;
+}
+
+async function download(wb: ExcelJS.Workbook, name: string) {
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = fileName;
+  link.download = name;
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export async function downloadWorkstreamExcel(state: AssessmentState, workstreamId: string) {
+  const w = WORKSTREAMS.find((x) => x.id === workstreamId);
+  if (!w) return;
+  const wb = new ExcelJS.Workbook();
+  addWorkstreamSheets(wb, state, w);
+  await download(wb, fileName(state, w.short.toLowerCase().replace(/\s+/g, "-")));
+}
+
+export async function downloadMasterExcel(state: AssessmentState) {
+  const wb = new ExcelJS.Workbook();
+
+  // Overview
+  const ov = wb.addWorksheet("Overview");
+  ov.columns = [{ width: 32 }, { width: 80 }];
+  headerRows(state, "Data Blueprint — Master Assessment").forEach((r) => ov.addRow(r));
+  ov.addRow(["Workstream", "Current avg", "Target avg", "Gap", "Gate signed by"]);
+  WORKSTREAMS.forEach((w) => {
+    const a = workstreamAverages(w, state.answers);
+    const sg = state.gates[w.id];
+    ov.addRow([w.name, a.current.toFixed(2), a.target.toFixed(2), (a.target - a.current).toFixed(2), sg?.signedBy || "—"]);
+  });
+  ov.addRow([]);
+  ov.addRow(["Maturity scale"]);
+  MATURITY_LEVELS.forEach((m) => ov.addRow([`Level ${m.level} — ${m.name}`, m.description]));
+
+  // Gap Analysis tab
+  const gap = wb.addWorksheet("Gap Analysis");
+  gap.columns = [
+    { width: 26 }, { width: 32 }, { width: 14 }, { width: 14 }, { width: 10 },
+    { width: 14 }, { width: 60 },
+  ];
+  gap.addRow(["Workstream", "Step", "Current avg", "Target avg", "Gap", "Priority", "Suggested remediation"]);
+  WORKSTREAMS.forEach((w) => {
+    w.steps.forEach((s) => {
+      const a = stepAverages(s, state.answers);
+      const g = a.target - a.current;
+      const priority = g >= 2 ? "High" : g >= 1 ? "Medium" : "Maintain";
+      gap.addRow([
+        w.short, s.name, a.current.toFixed(2), a.target.toFixed(2), g.toFixed(2),
+        priority,
+        `Close gap from ${a.current.toFixed(1)} to ${a.target.toFixed(1)}: ${s.description}`,
+      ]);
+    });
+  });
+
+  // Use Case Prioritisation tab (template)
+  const uc = wb.addWorksheet("Use Case Prioritisation");
+  uc.columns = [
+    { width: 28 }, { width: 50 }, { width: 22 }, { width: 14 },
+    { width: 18 }, { width: 22 }, { width: 18 }, { width: 22 }, { width: 28 },
+  ];
+  uc.addRow([
+    "Use case", "Business outcome", "Data readiness (RAG)",
+    "CAF Business Impact (1-5)", "CAF User Desirability (1-5)", "CAF Technical Feasibility (1-5)",
+    "Overall priority", "Agent type (Productivity/Action/Automation)", "Platform (M365 Copilot / Copilot Studio / Foundry)",
+  ]);
+  uc.addRow([
+    `${state.org.businessFunction || "FP&A"} — ${state.org.businessProcess || "Pilot"}`,
+    "Faster, more accurate analysis grounded on enterprise data", "Amber",
+    4, 4, 3, "High", "Productivity", "Copilot Studio + Fabric IQ",
+  ]);
+
+  // Per-workstream sheets
+  WORKSTREAMS.forEach((w) => addWorkstreamSheets(wb, state, w));
+
+  await download(wb, fileName(state, "master"));
+}
+
+// Back-compat name used by older imports
+export const downloadAssessmentExcel = downloadMasterExcel;

@@ -6,6 +6,12 @@ export interface AnswerEntry {
   target: MaturityLevel;
 }
 
+export interface GateSignoff {
+  signedBy: string;
+  signedAt: string;
+  notes?: string;
+}
+
 export interface AssessmentState {
   org: {
     name: string;
@@ -15,10 +21,12 @@ export interface AssessmentState {
     businessProcess: string;
   };
   answers: Record<string, AnswerEntry>;
+  // Gate signoffs keyed by workstream id (coe, bt, db, af)
+  gates: Record<string, GateSignoff>;
   workshopId?: string | null;
 }
 
-const KEY_BASE = "fabric-data-assessment-v2";
+const KEY_BASE = "fabric-data-assessment-v3";
 
 const makeInitial = (): AssessmentState => ({
   org: {
@@ -29,6 +37,7 @@ const makeInitial = (): AssessmentState => ({
     businessProcess: "",
   },
   answers: {},
+  gates: {},
   workshopId: null,
 });
 
@@ -45,7 +54,12 @@ function read(): AssessmentState {
     const raw = localStorage.getItem(getKey());
     if (!raw) return init;
     const parsed = JSON.parse(raw);
-    return { ...init, ...parsed, org: { ...init.org, ...(parsed.org || {}) } };
+    return {
+      ...init,
+      ...parsed,
+      org: { ...init.org, ...(parsed.org || {}) },
+      gates: { ...(parsed.gates || {}) },
+    };
   } catch {
     return init;
   }
@@ -86,11 +100,14 @@ export function useAssessment() {
   const setOrg = (org: Partial<AssessmentState["org"]>) =>
     update((s) => ({ ...s, org: { ...s.org, ...org } }));
 
+  const signGate = (workstreamId: string, sg: GateSignoff) =>
+    update((s) => ({ ...s, gates: { ...s.gates, [workstreamId]: sg } }));
+
   const reset = () => {
     const init = makeInitial();
     write(init);
     setState(init);
   };
 
-  return { state, hydrated, setAnswer, setOrg, reset };
+  return { state, hydrated, setAnswer, setOrg, signGate, reset };
 }
