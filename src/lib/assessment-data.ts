@@ -569,7 +569,7 @@ const BT: Workstream = {
         },
         {
           id: "bt-4-2",
-          text: "Are data readiness signals (RAG from the Data Blueprint workstream) reflected in the prioritisation so use cases blocked on data are not promoted?",
+          text: "Are data readiness signals (RAG from the Foundations Data workstream) reflected in the prioritisation so use cases blocked on data are not promoted?",
           relevance: "Blueprint handshake: BT must not push use cases that Data Readiness flags as BLOCKER. Saves rework.",
           options: std([
             "Data readiness is not considered.",
@@ -650,20 +650,20 @@ const BT: Workstream = {
       questions: [
         {
           id: "bt-6-1",
-          text: "Is a single, signed-off Use Case Backlog v1.0 maintained and shared with the Data Blueprint and Agents Factory workstreams?",
-          relevance: "Blueprint handshake: the backlog is the contract that triggers DB and AF work.",
+          text: "Is a single, signed-off Use Case Backlog v1.0 maintained and shared with the Foundations Data and Agents Factory workstreams?",
+          relevance: "Blueprint handshake: the backlog is the contract that triggers Foundations Data and Agents Factory work.",
           options: std([
             "No central backlog.",
             "Spreadsheet maintained per team.",
             "Backlog drafted but not signed.",
             "Backlog signed for current cohort.",
-            "Backlog signed, versioned and shared with DB / AF.",
+            "Backlog signed, versioned and shared with Foundations Data / Agents Factory.",
             "Backlog is the source of truth and gates downstream funding.",
           ]),
         },
         {
           id: "bt-6-2",
-          text: "Is the GATE check (sponsor sign-off + guardrail validation + KPIs defined) enforced before a use case is handed to the Data Blueprint workstream?",
+          text: "Is the GATE check (sponsor sign-off + guardrail validation + KPIs defined) enforced before a use case is handed to the Foundations Data workstream?",
           relevance: "Blueprint: prevents downstream rework. CAF: Govern agents.",
           options: std([
             "No gate; anything moves forward.",
@@ -1381,3 +1381,218 @@ export function workstreamAverages(
   const target = ans.reduce((s, q) => s + answers[q.id].target, 0) / ans.length;
   return { current, target, answered: ans.length, total: allQ.length };
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// CAF Remediation Guidance — concrete steps from the Microsoft Cloud Adoption
+// Framework for AI Agents (Plan / Govern & Secure / Build / Operate). Keyed by
+// step.id. The action plan surfaces these per subcategory so each identified
+// gap is closed with prescriptive CAF actions, not generic advice.
+// ────────────────────────────────────────────────────────────────────────────
+export const CAF_GUIDANCE: Record<string, { pillar: string; actions: string[] }> = {
+  // FOUNDATIONS CoE
+  "coe-1": {
+    pillar: "CAF · Organizational readiness",
+    actions: [
+      "Stand up an AI CoE with an executive sponsor, charter, and RACI covering Strategy, Risk, Data, Engineering, Change.",
+      "Adopt the CAF AI Center of Excellence operating model and publish a written CoE mandate signed by the CIO/CDO.",
+      "Define funding model (central vs. domain charge-back) and a quarterly portfolio review forum.",
+      "Map roles to Microsoft's recommended personas: AI strategist, Responsible AI lead, Data steward, Agent developer, SecOps.",
+    ],
+  },
+  "coe-2": {
+    pillar: "CAF · Responsible AI",
+    actions: [
+      "Adopt Microsoft's six Responsible AI principles (Fairness, Reliability & Safety, Privacy & Security, Inclusiveness, Transparency, Accountability) as policy.",
+      "Implement the Responsible AI Impact Assessment template for every agent use case; gate funding on completion.",
+      "Map regulatory obligations (EU AI Act risk-tier classification, UK GDPR, ICO guidance) to internal controls and publish a control register.",
+      "Stand up an AI Ethics review board with documented escalation criteria for High-risk and unacceptable-risk systems.",
+    ],
+  },
+  "coe-3": {
+    pillar: "CAF · Data architecture",
+    actions: [
+      "Publish data classification and sensitivity labels in Microsoft Purview and enforce via Purview DLP and Information Protection.",
+      "Define ownership (Data Owner / Steward / Custodian) per domain in a Purview business glossary.",
+      "Mandate Purview lineage and data quality scans for every dataset surfaced to an agent.",
+      "Standardise on OneLake / Fabric as the governed substrate; deprecate shadow data stores from agent retrieval.",
+    ],
+  },
+  "coe-4": {
+    pillar: "CAF · Govern & secure agents",
+    actions: [
+      "Adopt the CAF Agent Guardrail framework: instructions scope, tool allow-list, retrieval boundary, memory retention, human-in-the-loop triggers.",
+      "Mandate Azure AI Content Safety (Prompt Shields, Groundedness detection, Protected material) on every agent endpoint.",
+      "Require evaluation runs in Azure AI Foundry Evaluations before promotion (quality, safety, groundedness, fluency).",
+      "Define a guardrail exception process owned by the CoE; log all exceptions with expiry.",
+    ],
+  },
+  "coe-5": {
+    pillar: "CAF · Governance & security",
+    actions: [
+      "Run STRIDE + OWASP LLM Top 10 threat modelling for each agent; track in the risk register.",
+      "Enable Microsoft Defender for Cloud AI threat protection and Defender XDR alerting for agent identities.",
+      "Apply Entra ID Conditional Access, managed identities and least-privilege RBAC to all agent service principals and tool connectors.",
+      "Configure Purview DSPM for AI to monitor sensitive data flowing through Copilot and custom agents.",
+    ],
+  },
+  "coe-6": {
+    pillar: "CAF · Prepare environment",
+    actions: [
+      "Publish the Tech Guardrail Playbook v1.0 in the CoE portal with version control and change-log.",
+      "Establish quarterly playbook reviews tied to Azure updates, Foundry releases and regulatory change.",
+      "Wire CI checks so every Agents Factory build references the current playbook version.",
+      "Run CoE → Business Transformation handshake ceremony with sign-off on the playbook before any use case enters scoring.",
+    ],
+  },
+
+  // BUSINESS TRANSFORMATION
+  "bt-1": {
+    pillar: "CAF · Business plan",
+    actions: [
+      "Use the CAF Business Outcome template: state the business problem, target metric, owner, time-horizon, and baseline.",
+      "Tie every candidate to a P&L line or operational KPI; reject vague 'productivity' framings.",
+      "Validate executive sponsorship in writing before progressing to the decision tree.",
+    ],
+  },
+  "bt-2": {
+    pillar: "CAF · AI Agent decision tree",
+    actions: [
+      "Run the CAF AI Agent Decision Tree: is the problem deterministic? does it need reasoning over unstructured context? does it require autonomous tool use?",
+      "Reject use cases that should be solved by RPA, Power Automate, or a deterministic API; document the rationale.",
+      "Classify the chosen agent type — Productivity, Action, or Automation — per CAF taxonomy.",
+    ],
+  },
+  "bt-3": {
+    pillar: "CAF · Single or multiple agents",
+    actions: [
+      "Apply the CAF single-vs-multi-agent workflow capability matrix (orchestration, memory, tool surface, latency).",
+      "Default to a single agent; only adopt multi-agent when reasoning specialisation or independent tool domains demand it.",
+      "Document the chosen pattern in the Agent Charter and link to expected build options (Copilot Studio vs. Foundry).",
+    ],
+  },
+  "bt-4": {
+    pillar: "CAF · Business plan · prioritisation",
+    actions: [
+      "Score each use case 1–5 on CAF dimensions: business value, data readiness, technical feasibility, risk, change impact.",
+      "Block any use case scoring < 3 on data readiness until Foundations Data clears the RAG signal.",
+      "Publish the prioritised backlog and review monthly with the executive sponsor.",
+    ],
+  },
+  "bt-5": {
+    pillar: "CAF · Business plan · value realisation",
+    actions: [
+      "Define leading and lagging KPIs per use case (e.g., cycle-time, FTE hours saved, error rate, NPS).",
+      "Capture a measured baseline before build starts; no baseline = no go.",
+      "Wire KPI capture into the production telemetry plan so Operate-phase dashboards prove value.",
+    ],
+  },
+  "bt-6": {
+    pillar: "CAF · Handshake to Foundations Data",
+    actions: [
+      "Sign and version the Use Case Backlog v1.0; circulate to Foundations Data and Agents Factory.",
+      "Enforce the GATE check: sponsor sign-off + Responsible AI Impact Assessment + KPIs + guardrail acknowledgement.",
+      "Open a formal hand-off ticket per use case with all CAF artefacts attached.",
+    ],
+  },
+
+  // FOUNDATIONS DATA
+  "db-1": {
+    pillar: "CAF · Data architecture · asset mapping",
+    actions: [
+      "For each prioritised use case, list every source system, dataset, table and document store the agent will retrieve from.",
+      "Register all sources in Microsoft Purview with owners, classifications and refresh cadence.",
+      "Mark sources outside Fabric/OneLake as candidates for shift-left ingestion via Fabric pipelines or shortcuts.",
+    ],
+  },
+  "db-2": {
+    pillar: "CAF · Data architecture · quality",
+    actions: [
+      "Score each dataset against the Medallion layers (Bronze / Silver / Gold) using Purview DQ rules: completeness, validity, uniqueness, timeliness, accuracy.",
+      "Promote Gold-tier curated datasets into Foundry IQ / OneLake semantic models for agent retrieval.",
+      "Reject Bronze-only sources from production grounding without an interim Silver curation plan.",
+    ],
+  },
+  "db-3": {
+    pillar: "CAF · Data architecture · lineage",
+    actions: [
+      "Enable Purview automated lineage scans across Fabric, ADF, Synapse, Power BI and source systems.",
+      "Document provenance for every Gold dataset feeding an agent; surface in the agent's transparency note.",
+      "Mandate lineage evidence on every Data Quality Scorecard entry.",
+    ],
+  },
+  "db-4": {
+    pillar: "CAF · Data architecture · gap analysis",
+    actions: [
+      "Classify each gap as BLOCKER (must fix before build), CONDITIONAL (mitigate via prompt/tool design) or WATCH (track post-launch).",
+      "Map gaps to remediation owners and target dates; track in the Data Gap Register.",
+      "Re-score the use case RAG signal weekly until all BLOCKERs are resolved.",
+    ],
+  },
+  "db-5": {
+    pillar: "CAF · Data architecture · remediation",
+    actions: [
+      "Build Silver→Gold curation pipelines in Fabric for each blocker dataset; use Dataflow Gen2 or notebooks.",
+      "Apply Purview sensitivity labels and row-level security before exposing data to Foundry IQ.",
+      "Validate the remediated dataset with a small offline retrieval evaluation before handing to Agents Factory.",
+    ],
+  },
+  "db-6": {
+    pillar: "CAF · Handshake to Agents Factory",
+    actions: [
+      "Publish the Data Readiness Scorecard v1.0 (RAG per use case) and Retrieval Strategy document.",
+      "Sign the Foundations Data → Agents Factory hand-off only when no BLOCKERs remain.",
+      "Provide Foundry IQ index references, Purview links, and DQ evidence in the hand-off package.",
+    ],
+  },
+
+  // AGENTS FACTORY
+  "af-1": {
+    pillar: "CAF · Process to build agents · instructions",
+    actions: [
+      "Author the Agent Charter: purpose, scope, in/out-of-scope tasks, success metrics, fallback behaviour, escalation.",
+      "Write instructions per Microsoft's prompt engineering guidance: role, constraints, refusal rules, tone, format.",
+      "Version the charter and instructions in source control alongside the agent code.",
+    ],
+  },
+  "af-2": {
+    pillar: "CAF · Technology plan · model selection",
+    actions: [
+      "Use the Azure AI Foundry model catalog; select based on capability, latency, cost, and data residency (UK/EU).",
+      "Prefer the smallest model meeting evaluation thresholds; document the trade-off study.",
+      "Lock model version and deployment region; track model deprecation calendar.",
+    ],
+  },
+  "af-3": {
+    pillar: "CAF · Build agents · knowledge & tools",
+    actions: [
+      "Wire retrieval through Foundry IQ / Azure AI Search against the Gold datasets approved by Foundations Data.",
+      "Register every tool/action in a Tool Governance Register with auth scope, rate limits, and audit logging.",
+      "Configure memory (short-term / long-term) per CAF guidance; apply retention and PII redaction policies.",
+    ],
+  },
+  "af-4": {
+    pillar: "CAF · Build agents · evaluation",
+    actions: [
+      "Run Azure AI Foundry Evaluations on a golden test set: quality, groundedness, relevance, fluency, safety.",
+      "Add adversarial test cases for prompt injection, jailbreak, and tool misuse.",
+      "Block promotion if any evaluation metric falls below the threshold defined in the Tech Guardrail Playbook.",
+    ],
+  },
+  "af-5": {
+    pillar: "CAF · Govern & secure agents · red team",
+    actions: [
+      "Run PyRIT-based red-team campaigns covering OWASP LLM Top 10 and Responsible AI harms.",
+      "Enable Azure AI Content Safety Prompt Shields and Groundedness detection in production configuration.",
+      "Capture residual risks in the risk register with sponsor sign-off before go-live.",
+    ],
+  },
+  "af-6": {
+    pillar: "CAF · Operate agents",
+    actions: [
+      "Deploy through CI/CD with environment promotion (dev → test → prod) and infrastructure-as-code.",
+      "Enable Azure Monitor + Application Insights + Foundry observability for token usage, latency, groundedness drift and cost.",
+      "Configure Defender for Cloud AI alerts and a 24×7 on-call runbook for safety incidents.",
+      "Feed lessons learned back into the Master Data Blueprint Playbook each cycle.",
+    ],
+  },
+};
