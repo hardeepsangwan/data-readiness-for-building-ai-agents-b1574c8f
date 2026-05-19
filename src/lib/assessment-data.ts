@@ -650,20 +650,20 @@ const BT: Workstream = {
       questions: [
         {
           id: "bt-6-1",
-          text: "Is a single, signed-off Use Case Backlog v1.0 maintained and shared with the Data Blueprint and Agents Factory workstreams?",
-          relevance: "Blueprint handshake: the backlog is the contract that triggers DB and AF work.",
+          text: "Is a single, signed-off Use Case Backlog v1.0 maintained and shared with the Foundations Data and Agents Factory workstreams?",
+          relevance: "Blueprint handshake: the backlog is the contract that triggers Foundations Data and Agents Factory work.",
           options: std([
             "No central backlog.",
             "Spreadsheet maintained per team.",
             "Backlog drafted but not signed.",
             "Backlog signed for current cohort.",
-            "Backlog signed, versioned and shared with DB / AF.",
+            "Backlog signed, versioned and shared with Foundations Data / Agents Factory.",
             "Backlog is the source of truth and gates downstream funding.",
           ]),
         },
         {
           id: "bt-6-2",
-          text: "Is the GATE check (sponsor sign-off + guardrail validation + KPIs defined) enforced before a use case is handed to the Data Blueprint workstream?",
+          text: "Is the GATE check (sponsor sign-off + guardrail validation + KPIs defined) enforced before a use case is handed to the Foundations Data workstream?",
           relevance: "Blueprint: prevents downstream rework. CAF: Govern agents.",
           options: std([
             "No gate; anything moves forward.",
