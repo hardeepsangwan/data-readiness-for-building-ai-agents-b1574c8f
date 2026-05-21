@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, FileText, MessageSquareText } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { WorkstreamStepper } from "@/components/workstream-stepper";
 import { HandshakeCard } from "@/components/handshake-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { WORKSTREAMS, MATURITY_LEVELS, TOTAL_QUESTIONS, workstreamAverages, type MaturityLevel } from "@/lib/assessment-data";
@@ -14,6 +15,7 @@ import { useAssessment } from "@/lib/assessment-store";
 import { useAuth } from "@/lib/auth-store";
 import { saveSubmission } from "@/lib/submissions-store";
 import { downloadWorkstreamExcel } from "@/lib/excel-export";
+import { getOpenQuestions, renderPrompt } from "@/lib/open-questions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assessment")({
@@ -32,7 +34,7 @@ const SLOTS_PER_WS = 7;
 const TOTAL_SLOTS = WORKSTREAMS.length * SLOTS_PER_WS;
 
 function AssessmentPage() {
-  const { state, hydrated, setAnswer, setOrg, signGate, reset } = useAssessment();
+  const { state, hydrated, setAnswer, setOpenAnswer, setOrg, signGate, setAiResult, reset } = useAssessment();
   const { user, hydrated: authHydrated } = useAuth();
   const navigate = useNavigate();
   const [pos, setPos] = useState(-1);
@@ -112,11 +114,15 @@ function AssessmentPage() {
             key={step.id}
             workstreamColor={workstream.color}
             workstreamShort={workstream.short}
+            stepId={step.id}
             stepName={step.name}
             stepDescription={step.description}
             questions={step.questions}
             answers={state.answers}
+            openAnswers={state.openAnswers}
+            context={{ businessFunction: state.org.businessFunction, businessProcess: state.org.businessProcess }}
             setAnswer={setAnswer}
+            setOpenAnswer={setOpenAnswer}
             onBack={() => { setPos((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             onNext={() => { setPos((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           />
@@ -126,6 +132,18 @@ function AssessmentPage() {
           <HandshakeCard
             workstream={workstream}
             answers={state.answers}
+            openAnswers={state.openAnswers}
+            context={{
+              organisation: state.org.name,
+              businessFunction: state.org.businessFunction,
+              businessProcess: state.org.businessProcess,
+              executiveSponsor: state.org.executiveSponsor,
+              inScopeSystems: state.org.inScopeSystems,
+              successDefinition: state.org.successDefinition,
+              timeline: state.org.timeline,
+            }}
+            aiResult={state.aiResults[workstream.id]}
+            onAiResult={(r) => setAiResult(workstream.id, r)}
             existing={state.gates[workstream.id]}
             defaultSignedBy={state.org.respondent}
             onSign={(sg) => signGate(workstream.id, sg)}
@@ -209,15 +227,20 @@ function IntroStep({ org, setOrg, onStart, onReset, answeredCount }: {
 }
 
 function StepQuestions({
-  workstreamColor, workstreamShort, stepName, stepDescription, questions, answers, setAnswer, onBack, onNext,
+  workstreamColor, workstreamShort, stepId, stepName, stepDescription, questions,
+  answers, openAnswers, context, setAnswer, setOpenAnswer, onBack, onNext,
 }: {
   workstreamColor: string;
   workstreamShort: string;
+  stepId: string;
   stepName: string;
   stepDescription: string;
   questions: { id: string; text: string; relevance: string; options: { level: MaturityLevel; label: string; description: string }[] }[];
   answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
+  openAnswers: Record<string, string>;
+  context: { businessFunction: string; businessProcess: string };
   setAnswer: (id: string, v: { current: MaturityLevel; target: MaturityLevel }) => void;
+  setOpenAnswer: (id: string, v: string) => void;
   onBack: () => void; onNext: () => void;
 }) {
   const [qIndex, setQIndex] = useState(0);
@@ -227,6 +250,7 @@ function StepQuestions({
   const isAnswered = !!a;
   const isFirstQ = qIndex === 0;
   const isLastQ = qIndex === total - 1;
+  const openQs = getOpenQuestions(stepId);
 
   return (
     <div className="space-y-6">
@@ -265,6 +289,32 @@ function StepQuestions({
             accent={workstreamColor} options={q.options} />
         </div>
       </div>
+
+      {/* Open-text discovery questions, sourced from the Data Blueprint templates */}
+      {isLastQ && openQs.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: workstreamColor }}>
+            <MessageSquareText className="h-3.5 w-3.5" /> Discovery questions — {stepName}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your free-text answers are sent (together with the maturity ratings above) to a reasoning AI model
+            that produces the pain-points and next-best-actions at the end of this workstream.
+          </p>
+          <div className="mt-4 space-y-4">
+            {openQs.map((oq, i) => (
+              <div key={oq.id} className="space-y-2">
+                <Label htmlFor={oq.id} className="text-sm font-medium">
+                  <span className="mr-2 font-mono text-[10px] text-muted-foreground">D{i + 1}</span>
+                  {renderPrompt(oq.prompt, context)}
+                </Label>
+                <Textarea id={oq.id} rows={3} value={openAnswers[oq.id] ?? ""}
+                  onChange={(e) => setOpenAnswer(oq.id, e.target.value)}
+                  placeholder={oq.placeholder ? renderPrompt(oq.placeholder, context) : "Type your answer…"} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <Button variant="outline" onClick={() => { if (isFirstQ) onBack(); else { setQIndex((i) => i - 1); window.scrollTo({ top: 0, behavior: "smooth" }); } }}>

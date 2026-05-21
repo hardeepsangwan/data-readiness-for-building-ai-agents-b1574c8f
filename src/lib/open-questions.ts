@@ -1,0 +1,136 @@
+// Open-text discovery questions per workstream sub-category (step).
+// Sourced from the Data Blueprint Assessment Templates workbook.
+// Phrased generically — placeholders {function} / {process} are rendered
+// at runtime from the Process Context the user fills in.
+
+export interface OpenQuestion {
+  id: string;       // unique within the assessment, e.g. "coe-1-open-1"
+  prompt: string;   // shown to the user (may contain {function}/{process})
+  placeholder?: string;
+}
+
+export type OpenQuestionMap = Record<string, OpenQuestion[]>;
+
+// Keys are existing step IDs from assessment-data.ts.
+export const OPEN_QUESTIONS_BY_STEP: OpenQuestionMap = {
+  // ── Foundations CoE ────────────────────────────────────────────────
+  "coe-1": [
+    { id: "coe-1-open-1", prompt: "Which business functions and specific processes are in scope for Phase 1? What is explicitly out of scope?", placeholder: "e.g. {function} — starting with {process}; out of scope: HR, full R2R…" },
+    { id: "coe-1-open-2", prompt: "Who is the executive sponsor and decision authority at each gate? What is the target completion date for the Data Blueprint + pilots?" },
+    { id: "coe-1-open-3", prompt: "How will success be defined at the end of the programme? Give a specific, measurable outcome for {process}.", placeholder: "e.g. {process} cycle reduced from 3 days to <4 hours; 0 manual GL corrections" },
+  ],
+  "coe-2": [
+    { id: "coe-2-open-1", prompt: "Which business decisions in {process} will AI / automation assist with, and could any disadvantage tenants, customers or employees?" },
+    { id: "coe-2-open-2", prompt: "What FP&A / {function} data contains personal or commercially sensitive data? How is it currently protected and is a DPIA in place?" },
+    { id: "coe-2-open-3", prompt: "Who is accountable if an agent produces an incorrect output in {process}? Name the role and the audit trail required." },
+  ],
+  "coe-3": [
+    { id: "coe-3-open-1", prompt: "What RBAC / PII tagging / data residency / retention / DLP controls already exist that AI agents must comply with?" },
+    { id: "coe-3-open-2", prompt: "How is sensitive data classified today (Purview labels, sensitivity tiers) and what is the gap to certified Gold-layer use by agents?" },
+  ],
+  "coe-4": [
+    { id: "coe-4-open-1", prompt: "Define at least 3 kill-switch trigger conditions for agents operating in {process} (error rate, value anomaly, data freshness, etc.)." },
+    { id: "coe-4-open-2", prompt: "Which steps in {process} MUST have a human-in-the-loop review regardless of agent confidence? Why?" },
+    { id: "coe-4-open-3", prompt: "List 5 things an agent must NOT be allowed to do in the {function} context." },
+  ],
+  "coe-5": [
+    { id: "coe-5-open-1", prompt: "What regulatory / audit requirements apply to {process} (e.g. EU AI Act, GDPR, sector codes)? Which planned use cases could be classed as 'high risk'?" },
+    { id: "coe-5-open-2", prompt: "Current state of pen-testing, encryption, audit logging and Defender for Cloud AI coverage for the platform that will host the agents?" },
+  ],
+  "coe-6": [
+    { id: "coe-6-open-1", prompt: "Which MCP servers, A2A protocols, OAuth / Entra Agent ID patterns and approved connectors are standard today? What's missing?" },
+    { id: "coe-6-open-2", prompt: "Where will the Tech Guardrail Playbook v1.0 be published, and how will it be socialised to BT, FD and AF teams BEFORE any build?" },
+  ],
+
+  // ── Business Transformation ────────────────────────────────────────
+  "bt-1": [
+    { id: "bt-1-open-1", prompt: "What does {function} need to look like in 3 years to serve the business's growth ambitions? What's different from today?" },
+    { id: "bt-1-open-2", prompt: "Top 3 inefficiencies in {process} that cost the most time or money today — quantify (FTE-hours / month, error rate, rework)." },
+    { id: "bt-1-open-3", prompt: "Where do you feel least confident in the accuracy or timeliness of {process} outputs today? What are the consequences of errors?" },
+  ],
+  "bt-2": [
+    { id: "bt-2-open-1", prompt: "Walk through the AS-IS {process}: cycle time end-to-end, FTE effort per cycle, systems touched, manual / copy-paste steps." },
+    { id: "bt-2-open-2", prompt: "Which steps are entirely manual (no system support) and which involve extracting data from one system and re-entering elsewhere?" },
+    { id: "bt-2-open-3", prompt: "How are outputs approved today? Who approves, how long does it take, and is there an audit trail?" },
+  ],
+  "bt-3": [
+    { id: "bt-3-open-1", prompt: "Describe the TO-BE TOM for {process} in a Data & AI-first world — new roles, RACI, controls, automation classification per step." },
+    { id: "bt-3-open-2", prompt: "Which steps will be Assist / Automate / Eliminate? Which require human-in-the-loop?" },
+  ],
+  "bt-4": [
+    { id: "bt-4-open-1", prompt: "List the gaps between current-state and target TOM across process, data, technology, skills and governance — order by severity." },
+    { id: "bt-4-open-2", prompt: "Score the top use cases on Business Impact, User Desirability and Technical Feasibility (1-5 each). Which is the highest priority and why?" },
+  ],
+  "bt-5": [
+    { id: "bt-5-open-1", prompt: "Which roles in {function} are impacted by the proposed automation? What retraining / change-management is needed per persona?" },
+    { id: "bt-5-open-2", prompt: "What is the change-appetite of the {process} team (1=very resistant, 5=very open) and what are the blockers?" },
+  ],
+  "bt-6": [
+    { id: "bt-6-open-1", prompt: "What KPIs / success metrics will be tracked post-deployment (baseline + target)? Who owns each metric?" },
+    { id: "bt-6-open-2", prompt: "Confirm the signed-off Use Case Backlog handed to Foundations Data — which use case is the lighthouse for {process}?" },
+  ],
+
+  // ── Foundations Data ───────────────────────────────────────────────
+  "fd-1": [
+    { id: "fd-1-open-1", prompt: "List every data source {process} uses or produces (ERP / planning / spreadsheets / files / APIs). For each: business owner, technical owner, domain, refresh frequency, access method." },
+    { id: "fd-1-open-2", prompt: "Which sources contain PII or commercially sensitive data and have GDPR / sensitivity labels applied?" },
+    { id: "fd-1-open-3", prompt: "Anaplan (or equivalent planning tool): which processes use it, what data goes in/out, who owns it, and what is the long-term integrate vs migrate decision?" },
+  ],
+  "fd-2": [
+    { id: "fd-2-open-1", prompt: "For the most critical source, quantify completeness, accuracy, consistency, timeliness, uniqueness. What % of records have mandatory fields populated? What is the error rate of the most critical field?" },
+    { id: "fd-2-open-2", prompt: "Is data in one system consistent with data in others (e.g. F&O actuals vs Anaplan)? Are field definitions identical across systems?" },
+    { id: "fd-2-open-3", prompt: "Would you trust this data to drive an automated output for {process} WITHOUT human review? If not, what would need to be true?" },
+  ],
+  "fd-3": [
+    { id: "fd-3-open-1", prompt: "Can you trace every critical data field from entry to use? Where are the lineage breaks (manual copy/paste, Excel transformations)?" },
+    { id: "fd-3-open-2", prompt: "What is the current state of Microsoft Purview lineage / glossary / sensitivity labels coverage for {process} data?" },
+  ],
+  "fd-4": [
+    { id: "fd-4-open-1", prompt: "Classify each known data gap as BLOCKER / CONDITIONAL / WATCH for the lighthouse {process} use case." },
+    { id: "fd-4-open-2", prompt: "Which gaps have known privacy / consent / residency implications that must be remediated before AI use?" },
+  ],
+  "fd-5": [
+    { id: "fd-5-open-1", prompt: "For the top 5 gaps: name the owner, effort, target date and the Bronze→Silver→Gold milestone that closes them." },
+    { id: "fd-5-open-2", prompt: "What Purview configuration (domains, glossary, lineage scan, DLP) is required as part of the remediation plan?" },
+  ],
+  "fd-6": [
+    { id: "fd-6-open-1", prompt: "Provide a RAG-rated Data Readiness Scorecard for the lighthouse use case — confirm Foundry IQ / Fabric IQ readiness." },
+    { id: "fd-6-open-2", prompt: "Outline the FP&A integration roadmap (sequencing of source onboarding into Data Hive / OneLake) for the next 2 quarters." },
+  ],
+
+  // ── Agents Factory ─────────────────────────────────────────────────
+  "af-1": [
+    { id: "af-1-open-1", prompt: "Draft the Agent Charter for the {process} lighthouse: scope boundaries, prohibited actions, instruction set, orchestration pattern (single / multi-agent)." },
+    { id: "af-1-open-2", prompt: "Which approved tools / actions / MCP servers will the agent use? Which are explicitly out of scope?" },
+  ],
+  "af-2": [
+    { id: "af-2-open-1", prompt: "Which model(s) will be selected and on what criteria (task complexity, data residency, cost, latency, evaluation results)?" },
+    { id: "af-2-open-2", prompt: "How will model performance be validated against a representative gold-set for {process} before sign-off?" },
+  ],
+  "af-3": [
+    { id: "af-3-open-1", prompt: "Describe the retrieval strategy (Foundry IQ / Fabric IQ, search indexes), the tool governance model and the memory architecture for the agent." },
+    { id: "af-3-open-2", prompt: "Which knowledge sources are certified Gold and which are conditional? How will groundedness be enforced?" },
+  ],
+  "af-4": [
+    { id: "af-4-open-1", prompt: "Outline the unit / integration test plan, CI/CD pipeline (dev→test→prod) and acceptance criteria for {process}." },
+    { id: "af-4-open-2", prompt: "What defects / risks have been logged so far and what is the TDA sign-off path?" },
+  ],
+  "af-5": [
+    { id: "af-5-open-1", prompt: "Describe the guardrail validation, observability (traces, evals) and red-team approach (PyRIT, OWASP LLM Top 10) planned for the agent." },
+    { id: "af-5-open-2", prompt: "What residual risks are documented and accepted by the sponsor before go-live?" },
+  ],
+  "af-6": [
+    { id: "af-6-open-1", prompt: "Deployment runbook: environment, Agent 365 registration, monitoring (Azure Monitor / App Insights / Foundry observability), Defender for Cloud AI alerts, on-call." },
+    { id: "af-6-open-2", prompt: "What lessons learned from {process} will be fed back into the Master Data Blueprint Playbook for reuse on the next function / process?" },
+  ],
+};
+
+export function renderPrompt(prompt: string, ctx: { businessFunction?: string; businessProcess?: string }): string {
+  const fn = ctx.businessFunction?.trim() || "your business function";
+  const pr = ctx.businessProcess?.trim() || "your business process";
+  return prompt.replaceAll("{function}", fn).replaceAll("{process}", pr);
+}
+
+export function getOpenQuestions(stepId: string): OpenQuestion[] {
+  return OPEN_QUESTIONS_BY_STEP[stepId] ?? [];
+}
