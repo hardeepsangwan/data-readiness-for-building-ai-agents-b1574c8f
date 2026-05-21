@@ -5,13 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { WorkstreamRadar } from "@/components/workstream-radar";
-import { WorkstreamActionPlan } from "@/components/workstream-action-plan";
+import { AiFindings } from "@/components/ai-findings";
 import type { Workstream, MaturityLevel } from "@/lib/assessment-data";
 import type { GateSignoff } from "@/lib/assessment-store";
+import type { AiWorkstreamResult, ProcessContext } from "@/lib/analysis.schema";
 
 interface Props {
   workstream: Workstream;
   answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
+  openAnswers: Record<string, string>;
+  context: ProcessContext;
+  aiResult?: AiWorkstreamResult;
+  onAiResult: (r: AiWorkstreamResult) => void;
   existing?: GateSignoff;
   defaultSignedBy?: string;
   onSign: (sg: GateSignoff) => void;
@@ -22,7 +27,8 @@ interface Props {
 }
 
 export function HandshakeCard({
-  workstream, answers, existing, defaultSignedBy, onSign, onDownload, onBack, onNext, nextLabel,
+  workstream, answers, openAnswers, context, aiResult, onAiResult,
+  existing, defaultSignedBy, onSign, onDownload, onBack, onNext, nextLabel,
 }: Props) {
   const [signedBy, setSignedBy] = useState(existing?.signedBy ?? defaultSignedBy ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
@@ -45,8 +51,8 @@ export function HandshakeCard({
           <Star className="h-5 w-5" style={{ color: workstream.color }} /> {workstream.keyOutput}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          You've completed the {workstream.name} workstream. Review the key outputs, confirm the gate criteria,
-          and hand over the controlled outputs to <strong>{workstream.handshakeTo}</strong>.
+          You've completed the {workstream.name} workstream for <strong>{context.businessFunction || "your function"} / {context.businessProcess || "your process"}</strong>.
+          Run the AI analysis to generate pain points and next-best actions, then sign the gate to hand over to <strong>{workstream.handshakeTo}</strong>.
         </p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -89,20 +95,28 @@ export function HandshakeCard({
         </div>
       </div>
 
+      {/* Self-rated maturity radar (instant, from user ratings) */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: workstream.color }}>
-          <BarChart3 className="h-3.5 w-3.5" /> {workstream.short} maturity — dimensions assessed
+          <BarChart3 className="h-3.5 w-3.5" /> {workstream.short} self-rated maturity
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Current vs target state across the {workstream.steps.length} dimensions evaluated in this workstream.
+          Current vs target across the {workstream.steps.length} sub-categories — based on your maturity ratings.
         </p>
         <div className="mt-3">
           <WorkstreamRadar workstream={workstream} answers={answers} />
         </div>
-        <div className="mt-4">
-          <WorkstreamActionPlan workstream={workstream} answers={answers} />
-        </div>
       </div>
+
+      {/* AI-reasoned findings — radar, pain points, next-best actions */}
+      <AiFindings
+        workstream={workstream}
+        context={context}
+        maturityAnswers={answers}
+        openAnswers={openAnswers}
+        existing={aiResult}
+        onResult={onAiResult}
+      />
 
       <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Gate sign-off</div>
