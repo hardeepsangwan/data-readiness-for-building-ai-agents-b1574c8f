@@ -114,11 +114,15 @@ function AssessmentPage() {
             key={step.id}
             workstreamColor={workstream.color}
             workstreamShort={workstream.short}
+            stepId={step.id}
             stepName={step.name}
             stepDescription={step.description}
             questions={step.questions}
             answers={state.answers}
+            openAnswers={state.openAnswers}
+            context={{ businessFunction: state.org.businessFunction, businessProcess: state.org.businessProcess }}
             setAnswer={setAnswer}
+            setOpenAnswer={setOpenAnswer}
             onBack={() => { setPos((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             onNext={() => { setPos((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           />
@@ -128,6 +132,18 @@ function AssessmentPage() {
           <HandshakeCard
             workstream={workstream}
             answers={state.answers}
+            openAnswers={state.openAnswers}
+            context={{
+              organisation: state.org.name,
+              businessFunction: state.org.businessFunction,
+              businessProcess: state.org.businessProcess,
+              executiveSponsor: state.org.executiveSponsor,
+              inScopeSystems: state.org.inScopeSystems,
+              successDefinition: state.org.successDefinition,
+              timeline: state.org.timeline,
+            }}
+            aiResult={state.aiResults[workstream.id]}
+            onAiResult={(r) => setAiResult(workstream.id, r)}
             existing={state.gates[workstream.id]}
             defaultSignedBy={state.org.respondent}
             onSign={(sg) => signGate(workstream.id, sg)}
