@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { WORKSTREAMS, MATURITY_LEVELS, workstreamAverages, stepAverages, type Workstream } from "./assessment-data";
+import { getOpenQuestions, renderPrompt } from "./open-questions";
 import type { AssessmentState } from "./assessment-store";
 
 function headerRows(state: AssessmentState, title: string): (string | number)[][] {
@@ -10,6 +11,10 @@ function headerRows(state: AssessmentState, title: string): (string | number)[][
     ["Respondent", state.org.respondent || ""],
     ["Business function", state.org.businessFunction || ""],
     ["Business process", state.org.businessProcess || ""],
+    ["Executive sponsor", state.org.executiveSponsor || ""],
+    ["In-scope systems", state.org.inScopeSystems || ""],
+    ["Definition of success", state.org.successDefinition || ""],
+    ["Target timeline", state.org.timeline || ""],
     ["Date of assessment", state.org.date || ""],
     [],
   ];
