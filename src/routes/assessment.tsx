@@ -172,8 +172,8 @@ function AssessmentPage() {
 }
 
 function IntroStep({ org, setOrg, onStart, onReset, answeredCount }: {
-  org: { name: string; respondent: string; date: string; businessFunction: string; businessProcess: string };
-  setOrg: (o: Partial<{ name: string; respondent: string; date: string; businessFunction: string; businessProcess: string }>) => void;
+  org: import("@/lib/assessment-store").AssessmentState["org"];
+  setOrg: (o: Partial<import("@/lib/assessment-store").AssessmentState["org"]>) => void;
   onStart: () => void; onReset: () => void; answeredCount: number;
 }) {
   const BUSINESS_FUNCTIONS = ["Finance & FP&A", "Sales", "Marketing", "Operations", "Supply Chain", "HR", "Customer Service", "IT", "Other"];
@@ -183,35 +183,74 @@ function IntroStep({ org, setOrg, onStart, onReset, answeredCount }: {
       <h1 className="mt-2 text-3xl font-bold tracking-tight">Data Blueprint Assessment</h1>
       <p className="mt-2 text-muted-foreground">
         You'll work through 4 sequential workstreams — Foundations CoE, Business Transformation, Foundations Data,
-        and Agents Factory — with a gated handshake between each. Outputs at every stage can be downloaded as Excel.
+        and Agents Factory — with a gated handshake between each. The process context you provide below is sent
+        with every AI analysis to ground pain points and next-best actions to your business.
       </p>
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="org">Organization</Label>
-          <Input id="org" value={org.name} onChange={(e) => setOrg({ name: e.target.value })} placeholder="Indurent" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="resp">Respondent</Label>
-          <Input id="resp" value={org.respondent} onChange={(e) => setOrg({ respondent: e.target.value })} placeholder="Jane Doe — Head of Data" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bf">Business function</Label>
-          <select id="bf" value={org.businessFunction} onChange={(e) => setOrg({ businessFunction: e.target.value })}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-            <option value="">Select…</option>
-            {BUSINESS_FUNCTIONS.map((bf) => <option key={bf} value={bf}>{bf}</option>)}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bp">Business process</Label>
-          <Input id="bp" value={org.businessProcess} onChange={(e) => setOrg({ businessProcess: e.target.value })}
-            placeholder="e.g. Service Charge, Budgeting, AR Collections" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">Date of assessment</Label>
-          <Input id="date" type="date" value={org.date} onChange={(e) => setOrg({ date: e.target.value })} />
+
+      <div className="mt-8">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Respondent</div>
+        <div className="mt-3 grid gap-5 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="org">Organization</Label>
+            <Input id="org" value={org.name} onChange={(e) => setOrg({ name: e.target.value })} placeholder="Indurent" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="resp">Respondent</Label>
+            <Input id="resp" value={org.respondent} onChange={(e) => setOrg({ respondent: e.target.value })} placeholder="Jane Doe — Head of Data" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Date of assessment</Label>
+            <Input id="date" type="date" value={org.date} onChange={(e) => setOrg({ date: e.target.value })} />
+          </div>
         </div>
       </div>
+
+      <div className="mt-8">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Process context</div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          The AI reasoning model uses these fields to tailor pain points and recommendations to your specific scope.
+        </p>
+        <div className="mt-3 grid gap-5 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="bf">Business function</Label>
+            <select id="bf" value={org.businessFunction} onChange={(e) => setOrg({ businessFunction: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <option value="">Select…</option>
+              {BUSINESS_FUNCTIONS.map((bf) => <option key={bf} value={bf}>{bf}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bp">Business process</Label>
+            <Input id="bp" value={org.businessProcess} onChange={(e) => setOrg({ businessProcess: e.target.value })}
+              placeholder="e.g. Service Charge, Budgeting, AR Collections" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sponsor">Executive sponsor</Label>
+            <Input id="sponsor" value={org.executiveSponsor}
+              onChange={(e) => setOrg({ executiveSponsor: e.target.value })}
+              placeholder="e.g. CFO, VP FP&A" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="timeline">Target timeline</Label>
+            <Input id="timeline" value={org.timeline}
+              onChange={(e) => setOrg({ timeline: e.target.value })}
+              placeholder="e.g. MVP in 12 weeks, scale by FY26 Q2" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="systems">In-scope systems & data sources</Label>
+            <Textarea id="systems" rows={2} value={org.inScopeSystems}
+              onChange={(e) => setOrg({ inScopeSystems: e.target.value })}
+              placeholder="e.g. D365 F&O, Anaplan, Yardi, Excel service-charge workbooks, SharePoint lease contracts" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="success">Definition of success</Label>
+            <Textarea id="success" rows={2} value={org.successDefinition}
+              onChange={(e) => setOrg({ successDefinition: e.target.value })}
+              placeholder="e.g. Cut service-charge reconciliation cycle from 10 days to 2, with audit-ready lineage and zero manual Excel handoffs." />
+          </div>
+        </div>
+      </div>
+
       <div className="mt-10 flex flex-wrap items-center gap-3">
         <Button size="lg" onClick={onStart} className="shadow-[var(--shadow-elegant)]">
           {answeredCount > 0 ? "Continue assessment" : "Start assessment"} <ArrowRight className="ml-1 h-4 w-4" />

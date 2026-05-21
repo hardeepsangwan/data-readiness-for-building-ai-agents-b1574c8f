@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { WORKSTREAMS, MATURITY_LEVELS, workstreamAverages, stepAverages, type Workstream } from "./assessment-data";
+import { getOpenQuestions, renderPrompt } from "./open-questions";
 import type { AssessmentState } from "./assessment-store";
 
 function headerRows(state: AssessmentState, title: string): (string | number)[][] {
@@ -10,6 +11,10 @@ function headerRows(state: AssessmentState, title: string): (string | number)[][
     ["Respondent", state.org.respondent || ""],
     ["Business function", state.org.businessFunction || ""],
     ["Business process", state.org.businessProcess || ""],
+    ["Executive sponsor", state.org.executiveSponsor || ""],
+    ["In-scope systems", state.org.inScopeSystems || ""],
+    ["Definition of success", state.org.successDefinition || ""],
+    ["Target timeline", state.org.timeline || ""],
     ["Date of assessment", state.org.date || ""],
     [],
   ];
@@ -42,7 +47,8 @@ function addWorkstreamSheets(wb: ExcelJS.Workbook, state: AssessmentState, w: Wo
     summary.addRow([s.name, a.current.toFixed(2), a.target.toFixed(2), (a.target - a.current).toFixed(2)]);
   });
 
-  // One sheet per step
+  // One sheet per step (includes maturity Qs + open discovery answers)
+  const ctx = { businessFunction: state.org.businessFunction, businessProcess: state.org.businessProcess };
   w.steps.forEach((s, i) => {
     const ws = wb.addWorksheet(`${w.short.slice(0, 8)} S${i + 1} ${s.short}`.replace(/[\\/?*[\]:]/g, "").slice(0, 31));
     ws.columns = [
@@ -58,17 +64,57 @@ function addWorkstreamSheets(wb: ExcelJS.Workbook, state: AssessmentState, w: Wo
       const cur = a?.current;
       const tgt = a?.target;
       ws.addRow([
-        qi + 1,
-        q.text,
-        q.relevance,
-        cur ?? "",
-        cur !== undefined ? MATURITY_LEVELS[cur].name : "",
-        tgt ?? "",
-        tgt !== undefined ? MATURITY_LEVELS[tgt].name : "",
+        qi + 1, q.text, q.relevance,
+        cur ?? "", cur !== undefined ? MATURITY_LEVELS[cur].name : "",
+        tgt ?? "", tgt !== undefined ? MATURITY_LEVELS[tgt].name : "",
         a ? a.target - a.current : "",
       ]);
     });
+
+    const openQs = getOpenQuestions(s.id);
+    if (openQs.length) {
+      ws.addRow([]);
+      ws.addRow(["", "Discovery (free-text) answers"]);
+      ws.addRow(["#", "Prompt", "Answer"]);
+      openQs.forEach((oq, oi) => {
+        ws.addRow([
+          `D${oi + 1}`,
+          renderPrompt(oq.prompt, ctx),
+          state.openAnswers[oq.id] || "",
+        ]);
+      });
+    }
   });
+
+  // AI findings sheet for this workstream
+  const ai = state.aiResults[w.id];
+  if (ai) {
+    const aiSheet = wb.addWorksheet(`${w.short.slice(0, 10)} AI`.replace(/[\\/?*[\]:]/g, "").slice(0, 31));
+    aiSheet.columns = [{ width: 6 }, { width: 32 }, { width: 90 }, { width: 14 }, { width: 14 }];
+    aiSheet.addRow([`${w.name} — AI findings`]);
+    aiSheet.addRow(["Model", ai.model, "Generated", new Date(ai.generatedAt).toLocaleString()]);
+    aiSheet.addRow([]);
+    aiSheet.addRow(["Executive summary"]);
+    aiSheet.addRow(["", ai.summary]);
+    aiSheet.addRow([]);
+    aiSheet.addRow(["Dimension", "Current", "Target", "Rationale"]);
+    ai.dimensions.forEach((d) => aiSheet.addRow([d.name, d.currentScore, d.targetScore, d.rationale]));
+    aiSheet.addRow([]);
+    aiSheet.addRow(["Pain points"]);
+    aiSheet.addRow(["ID", "Title", "Severity", "Affected dimensions", "Evidence"]);
+    ai.painPoints.forEach((p) =>
+      aiSheet.addRow([p.id, p.title, p.severity, p.affectedDimensions.join("; "), p.evidence])
+    );
+    aiSheet.addRow([]);
+    aiSheet.addRow(["Next-best actions (Azure CAF for AI Agents)"]);
+    aiSheet.addRow(["ID", "Title", "Addresses", "CAF pillar", "Owner", "Effort", "Steps"]);
+    ai.actions.forEach((a) =>
+      aiSheet.addRow([
+        a.id, a.title, a.addressesPainPoints.join(", "), a.cafPillar, a.owner, a.effort,
+        a.steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
+      ])
+    );
+  }
 }
 
 function fileName(state: AssessmentState, suffix: string) {
