@@ -34,7 +34,7 @@ const SLOTS_PER_WS = 7;
 const TOTAL_SLOTS = WORKSTREAMS.length * SLOTS_PER_WS;
 
 function AssessmentPage() {
-  const { state, hydrated, setAnswer, setOrg, signGate, reset } = useAssessment();
+  const { state, hydrated, setAnswer, setOpenAnswer, setOrg, signGate, setAiResult, reset } = useAssessment();
   const { user, hydrated: authHydrated } = useAuth();
   const navigate = useNavigate();
   const [pos, setPos] = useState(-1);
