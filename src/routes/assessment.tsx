@@ -227,15 +227,20 @@ function IntroStep({ org, setOrg, onStart, onReset, answeredCount }: {
 }
 
 function StepQuestions({
-  workstreamColor, workstreamShort, stepName, stepDescription, questions, answers, setAnswer, onBack, onNext,
+  workstreamColor, workstreamShort, stepId, stepName, stepDescription, questions,
+  answers, openAnswers, context, setAnswer, setOpenAnswer, onBack, onNext,
 }: {
   workstreamColor: string;
   workstreamShort: string;
+  stepId: string;
   stepName: string;
   stepDescription: string;
   questions: { id: string; text: string; relevance: string; options: { level: MaturityLevel; label: string; description: string }[] }[];
   answers: Record<string, { current: MaturityLevel; target: MaturityLevel }>;
+  openAnswers: Record<string, string>;
+  context: { businessFunction: string; businessProcess: string };
   setAnswer: (id: string, v: { current: MaturityLevel; target: MaturityLevel }) => void;
+  setOpenAnswer: (id: string, v: string) => void;
   onBack: () => void; onNext: () => void;
 }) {
   const [qIndex, setQIndex] = useState(0);
@@ -245,6 +250,7 @@ function StepQuestions({
   const isAnswered = !!a;
   const isFirstQ = qIndex === 0;
   const isLastQ = qIndex === total - 1;
+  const openQs = getOpenQuestions(stepId);
 
   return (
     <div className="space-y-6">
@@ -283,6 +289,32 @@ function StepQuestions({
             accent={workstreamColor} options={q.options} />
         </div>
       </div>
+
+      {/* Open-text discovery questions, sourced from the Data Blueprint templates */}
+      {isLastQ && openQs.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] md:p-8">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: workstreamColor }}>
+            <MessageSquareText className="h-3.5 w-3.5" /> Discovery questions — {stepName}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your free-text answers are sent (together with the maturity ratings above) to a reasoning AI model
+            that produces the pain-points and next-best-actions at the end of this workstream.
+          </p>
+          <div className="mt-4 space-y-4">
+            {openQs.map((oq, i) => (
+              <div key={oq.id} className="space-y-2">
+                <Label htmlFor={oq.id} className="text-sm font-medium">
+                  <span className="mr-2 font-mono text-[10px] text-muted-foreground">D{i + 1}</span>
+                  {renderPrompt(oq.prompt, context)}
+                </Label>
+                <Textarea id={oq.id} rows={3} value={openAnswers[oq.id] ?? ""}
+                  onChange={(e) => setOpenAnswer(oq.id, e.target.value)}
+                  placeholder={oq.placeholder ? renderPrompt(oq.placeholder, context) : "Type your answer…"} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <Button variant="outline" onClick={() => { if (isFirstQ) onBack(); else { setQIndex((i) => i - 1); window.scrollTo({ top: 0, behavior: "smooth" }); } }}>
