@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, FileText, MessageSquareText } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { WorkstreamStepper } from "@/components/workstream-stepper";
 import { HandshakeCard } from "@/components/handshake-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { WORKSTREAMS, MATURITY_LEVELS, TOTAL_QUESTIONS, workstreamAverages, type MaturityLevel } from "@/lib/assessment-data";
@@ -14,6 +15,7 @@ import { useAssessment } from "@/lib/assessment-store";
 import { useAuth } from "@/lib/auth-store";
 import { saveSubmission } from "@/lib/submissions-store";
 import { downloadWorkstreamExcel } from "@/lib/excel-export";
+import { getOpenQuestions, renderPrompt } from "@/lib/open-questions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assessment")({
