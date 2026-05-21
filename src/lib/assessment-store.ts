@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MaturityLevel } from "./assessment-data";
+import type { AiWorkstreamResult } from "./analysis.schema";
 
 export interface AnswerEntry {
   current: MaturityLevel;
@@ -19,25 +20,40 @@ export interface AssessmentState {
     date: string;
     businessFunction: string;
     businessProcess: string;
+    // Extended process-context fields used by the AI analysis
+    executiveSponsor: string;
+    inScopeSystems: string;
+    successDefinition: string;
+    timeline: string;
   };
   answers: Record<string, AnswerEntry>;
-  // Gate signoffs keyed by workstream id (coe, bt, db, af)
+  // Free-text answers to the open discovery questions (keyed by open-question id)
+  openAnswers: Record<string, string>;
+  // Gate signoffs keyed by workstream id (coe, bt, fd, af)
   gates: Record<string, GateSignoff>;
+  // AI analysis results, keyed by workstream id
+  aiResults: Record<string, AiWorkstreamResult>;
   workshopId?: string | null;
 }
 
-const KEY_BASE = "fabric-data-assessment-v3";
+const KEY_BASE = "fabric-data-assessment-v4";
 
 const makeInitial = (): AssessmentState => ({
   org: {
     name: "",
     respondent: "",
     date: new Date().toISOString().slice(0, 10),
-    businessFunction: "",
-    businessProcess: "",
+    businessFunction: "Finance & FP&A",
+    businessProcess: "Service Charge Accounting",
+    executiveSponsor: "",
+    inScopeSystems: "",
+    successDefinition: "",
+    timeline: "",
   },
   answers: {},
+  openAnswers: {},
   gates: {},
+  aiResults: {},
   workshopId: null,
 });
 
@@ -59,6 +75,8 @@ function read(): AssessmentState {
       ...parsed,
       org: { ...init.org, ...(parsed.org || {}) },
       gates: { ...(parsed.gates || {}) },
+      openAnswers: { ...(parsed.openAnswers || {}) },
+      aiResults: { ...(parsed.aiResults || {}) },
     };
   } catch {
     return init;
@@ -97,11 +115,17 @@ export function useAssessment() {
   const setAnswer = (questionId: string, entry: AnswerEntry) =>
     update((s) => ({ ...s, answers: { ...s.answers, [questionId]: entry } }));
 
+  const setOpenAnswer = (questionId: string, text: string) =>
+    update((s) => ({ ...s, openAnswers: { ...s.openAnswers, [questionId]: text } }));
+
   const setOrg = (org: Partial<AssessmentState["org"]>) =>
     update((s) => ({ ...s, org: { ...s.org, ...org } }));
 
   const signGate = (workstreamId: string, sg: GateSignoff) =>
     update((s) => ({ ...s, gates: { ...s.gates, [workstreamId]: sg } }));
+
+  const setAiResult = (workstreamId: string, r: AiWorkstreamResult) =>
+    update((s) => ({ ...s, aiResults: { ...s.aiResults, [workstreamId]: r } }));
 
   const reset = () => {
     const init = makeInitial();
@@ -109,5 +133,5 @@ export function useAssessment() {
     setState(init);
   };
 
-  return { state, hydrated, setAnswer, setOrg, signGate, reset };
+  return { state, hydrated, setAnswer, setOpenAnswer, setOrg, signGate, setAiResult, reset };
 }
