@@ -1,68 +1,76 @@
+## Goal
 
-# Data Blueprint Assessment — Restructure Plan
+Pivot the Data Blueprint app from a fixed maturity-level picker into a **generic, process-agnostic assessment** whose questions come directly from the uploaded templates, and whose results (pain points, next-best actions, current-vs-target radar) are produced by a reasoning LLM from the user's free-text and structured answers. Service Charge in FP&A is the first instance; the framework must work for any process in any function.
 
-Based on `Data_blueprint_version_1.0_pdf.pdf` and `Indurent_DataBlueprint_ProcessFlow_v2.docx`, with questions framed against `azure-cloud-adoption-framework-ai-agents-2.pdf`.
+## Scope of change
 
-## 1. New workstream model
+### 1. Process Context (new step)
+Add a "Context" step at the top of the assessment capturing:
+- Business Function (default: FP&A — editable)
+- Business Process (default: Service Charge — editable)
+- Executive sponsor, in-scope systems, success definition, timeline
+This context is persisted and injected into every AI prompt so the reasoning model tailors findings to the chosen process.
 
-Replace the current single 6-dimension assessment with **4 sequential workstreams**, each with 6 steps and a key handshake output that feeds the next workstream:
+### 2. Questions sourced from the templates
+Replace the current 72 maturity-level questions with the actual structured discovery questions extracted from the uploaded workbooks, organised by the 4 workstreams and their sub-sections (e.g. WS1 → Programme Scope, AI Ethics, Guardrails, Compliance; WS2 → Business Problems, AS-IS, TO-BE, Gap & Use Case; WS3 → Data Assets, DQ, Lineage, Readiness; WS4 → Charter, Model, Build/Test, Deploy).
+Each question supports a free-text answer plus an optional current-state / target-state self-rating (1–5) used to seed the radar before the AI refines it.
 
-1. **Foundations CoE / Tech Governance** — Mandate & Scope · AI Ethics & Risk · Data Governance Standards · Agent Guardrail Framework · Security & Compliance · Tech Guardrail Playbook v1.0 ★
-2. **Business Transformation** — Define Business Outcome · Apply CAF Agent Decision Tree · Qualify Agent Type · Score & Prioritise (CAF 1–5) · Define KPIs & Business Value · Signed-off Use Case Backlog ★
-3. **Foundations Data (Data Blueprint)** — Map Data Assets · Assess Data Quality (Bronze/Silver/Gold/Ontology) · Lineage & Provenance · Identify Gaps & Risks · Remediation Plan · Data Readiness Scorecard (RAG) ★
-4. **Agents Factory** — Charter & Instructions · Model Selection · Knowledge/Tools/Memory · Build & Unit Test · Guardrail Validation & Red Team · Deploy, Monitor & Operate ★
+### 3. AI reasoning backend
+- New `createServerFn` `analyzeWorkstream` that takes `{ context, workstream, answers }` and calls the Lovable AI Gateway with a strong reasoning model (`openai/gpt-5.5` with `reasoning.effort: "high"`) using tool-calling for structured JSON output.
+- Schema returned per workstream:
+  - `dimensions[]` → { name, currentScore (0-5), targetScore (0-5), rationale }
+  - `painPoints[]` → { title, severity, evidence (quotes user answers), affectedDimensions }
+  - `nextBestActions[]` → { title, addresses (painPoint refs), CAF pillar, owner, effort, prescriptiveSteps[] }
+  - `summary` (3–5 lines)
+- A second serverFn `analyzeProgramme` produces the cross-workstream executive view.
+- Uses `LOVABLE_API_KEY` (auto-provisioned via Lovable Cloud).
 
-Each step uses the existing 6-level maturity scale (No Capability → Developing → Established → Transformational). Questions for each step are authored from the matching Azure CAF section (Responsible AI, Governance & Security, Business Plan, Technology Plan, Data Architecture, Build/Operate).
+### 4. Results UI rewrite
+- Per-workstream tab shows:
+  - **Radar chart** (current vs target) built from AI `dimensions` (full names, no truncation).
+  - **Pain Points** card grouped by severity with evidence chips.
+  - **Next Best Actions** list, each tagged to the pain point it addresses + CAF pillar.
+- Programme view: cross-workstream radar, top pain points, gate-readiness summary.
+- "Run analysis" button per workstream + "Analyse full programme" at top.
+- Loading + error states (handle 429 / 402 from gateway).
 
-## 2. Handshakes and gates between workstreams
+### 5. Generic-by-design
+- Strip all hardcoded FP&A / Service Charge phrasing from question text — instead use `{process}` / `{function}` placeholders rendered at runtime from Context.
+- The Service Charge example becomes a *preset* (one-click "Load Service Charge example") rather than baked into questions.
 
-After each workstream the user sees a **Handshake screen** that:
-- Shows the ★ key output(s) produced (e.g. `Tech Guardrail Playbook v1.0`, `Signed-off Use Case Backlog`, `Data Readiness Scorecard`).
-- Lists the **GATE** criteria from the blueprint (e.g. "No use case enters Data Readiness without business sponsor sign-off, guardrail validation, KPIs defined").
-- Requires the user to confirm gate sign-off before the next workstream unlocks.
-- Carries scored outputs forward — e.g. BT prioritisation feeds Data Readiness mapping; Data RAG scorecard feeds Agents Factory prerequisites.
+### 6. Cleanup
+- Keep `assessment-data.ts` for the question catalogue only; remove the static `CAF_GUIDANCE` map (AI now produces guidance dynamically).
+- Replace `workstream-action-plan.tsx` with `ai-findings.tsx` (pain points + actions).
+- Rewrite `workstream-radar.tsx` to consume AI `dimensions`.
+- Update `excel-export.ts` to export answers + AI findings.
 
-## 3. Progress bar
+## Technical notes
 
-Replace the existing 6-dimension stepper with a **workstream stepper** showing the 4 workstreams plus a sub-progress bar for the current step within the active workstream. The header always shows the active workstream name (e.g. "Business Transformation · Step 3 of 6").
+- Enable Lovable Cloud (if not already) so `LOVABLE_API_KEY` is provisioned.
+- Server function lives at `src/lib/analysis.functions.ts`; helper schema at `src/lib/analysis.schema.ts`.
+- Cache AI results in `assessment-store.ts` keyed by `workstreamId + answersHash` so repeat renders don't re-bill.
+- Model default `openai/gpt-5.5`, fallback `google/gemini-3-pro-preview` (configurable).
+- Radar uses Recharts as today; full angle-tick labels (already wrapped).
 
-## 4. Per-stage Excel downloads
+## Files to add / change
 
-At the end of every workstream (and on the final report) add a "Download Excel" button:
-- **CoE workbook** — AI Ethics Policy, Guardrail Framework, Data Standards Register, Security Checklist, Tech Playbook summary (one sheet each).
-- **BT workbook** — Business Outcome, Decision Log, Prioritisation Matrix (scored), Business Case, KPI Sheet, Signed-off Backlog.
-- **Data Blueprint workbook** — Asset Map, DQ Scorecard, Lineage Map, Gap Register (Blocker/Conditional/Watch), Remediation Plan, Readiness Scorecard.
-- **Agents Factory workbook** — Charter, Model Selection, Knowledge/Tools/Memory, Test Results, Guardrail/Red Team Report, Deployment record.
-- **Master Data Blueprint workbook** — consolidates all of the above with an Overview tab and a Gap Analysis tab (current vs target per dimension, priority, owner, timeline) and Use Case Prioritisation tab (CAF Business Impact / Desirability / Feasibility, agent type, platform recommendation).
+Add:
+- `src/routes/assessment.context.tsx` (or inline Context step in existing assessment route)
+- `src/lib/analysis.functions.ts`
+- `src/lib/analysis.schema.ts`
+- `src/components/ai-findings.tsx`
+- `src/components/programme-summary.tsx`
 
-## 5. Business function scoping
+Change:
+- `src/lib/assessment-data.ts` — replace question catalogue with template-driven questions; remove CAF_GUIDANCE.
+- `src/lib/assessment-store.ts` — add context + aiResults state.
+- `src/components/workstream-radar.tsx` — consume AI dimensions.
+- `src/routes/assessment.tsx` — Context step, free-text answers, "Run AI analysis" CTA, render `<AiFindings>`.
+- `src/lib/excel-export.ts` — include AI findings.
+- Remove `src/components/workstream-action-plan.tsx` (superseded).
 
-The business function / process captured on the intro screen (e.g. FP&A · Service Charge) is applied as a header to every workstream report and every Excel workbook, so the same blueprint can be re-run per function/process.
+## Out of scope (this iteration)
 
-## 6. Final consolidated output (Report page)
-
-Restructured to mirror the blueprint deliverables:
-1. Executive summary (function, process, sponsor, date)
-2. Workstream-by-workstream current vs target radar + horizontal stack chart
-3. Gap Analysis table (per step: current, target, gap, priority, remediation, owner, timeline)
-4. Use Case Prioritisation table (CAF scoring, agent type, platform)
-5. FP&A Pilot Blueprint section (data sources, Bronze→Silver→Gold→Semantic→Ontology, retrieval strategy, agent design, risks, KPIs) — pre-filled from earlier answers
-6. Handshake/Gate audit trail showing sign-offs
-7. Download buttons: per-workstream Excel + Master Excel
-
-## Technical implementation
-
-- `src/lib/assessment-data.ts` — replace the current 6 dimensions with a `WORKSTREAMS` array of 4 workstreams × 6 steps; each step has CAF-derived questions, key output label, gate criteria, and handshake outputs.
-- `src/lib/assessment-store.ts` — extend state with `workstreamIndex`, `stepIndex`, per-workstream `gateSignoff` flags, and a `useCaseBacklog` array (carried from BT into FD and AF).
-- `src/routes/assessment.tsx` — rewrite stepper to render workstream + step; insert a `HandshakeStep` component between workstreams; one-question-at-a-time UX (Prev/Next) is retained.
-- `src/components/workstream-stepper.tsx` (new) — replaces `horizontal-stepper.tsx` usage on assessment route.
-- `src/components/handshake-card.tsx` (new) — displays ★ outputs, gate checklist, sign-off button.
-- `src/lib/excel-export.ts` — split into `buildCoEWorkbook`, `buildBTWorkbook`, `buildFDWorkbook`, `buildAFWorkbook`, `buildMasterWorkbook` (all using `exceljs`, already installed and patched for the xlsx CVE).
-- `src/routes/report.tsx` — add Gap Analysis table, Use Case Prioritisation table, FP&A Pilot Blueprint section, and 5 download buttons.
-- Admin/facilitator route already lists submissions — no schema change needed; each submission now stores the workstream-shaped state.
-
-## Out of scope (will keep current behaviour)
-
-- Auth, facilitator audit dashboard, login flow, Azure deploy config — unchanged.
-- Radar + horizontal stack charts — reused, now plotted across the 4-workstream / 24-step structure.
-- One-question-per-screen Prev/Next pattern from the previous turn — retained.
+- Persisting assessments to a database (currently lives in localStorage via assessment-store).
+- Multi-user collaboration.
+- Streaming the AI response (results delivered as a single structured payload).
