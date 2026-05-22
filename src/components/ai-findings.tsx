@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AiRadar } from "@/components/ai-radar";
 import { analyzeWorkstream } from "@/lib/analysis.functions";
 import { getOpenQuestions, renderPrompt } from "@/lib/open-questions";
+import { getDomainEvidence } from "@/lib/domain-evidence";
 import type { Workstream, MaturityLevel } from "@/lib/assessment-data";
 import type { AiWorkstreamResult, ProcessContext } from "@/lib/analysis.schema";
 
@@ -54,6 +55,7 @@ export function AiFindings({ workstream, context, maturityAnswers, openAnswers, 
           answer: openAnswers[oq.id] ?? "",
         }))
       );
+      const domainEvidence = getDomainEvidence(context, workstream.id);
       const result = await runAnalyze({
         data: {
           context,
@@ -65,6 +67,7 @@ export function AiFindings({ workstream, context, maturityAnswers, openAnswers, 
           },
           maturityAnswers: maturityPayload,
           openAnswers: openPayload,
+          domainEvidence,
         },
       });
       onResult(result);

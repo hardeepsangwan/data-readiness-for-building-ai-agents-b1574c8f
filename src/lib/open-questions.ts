@@ -70,32 +70,34 @@ export const OPEN_QUESTIONS_BY_STEP: OpenQuestionMap = {
     { id: "bt-6-open-2", prompt: "Confirm the signed-off Use Case Backlog handed to Foundations Data — which use case is the lighthouse for {process}?" },
   ],
 
-  // ── Foundations Data ───────────────────────────────────────────────
-  "fd-1": [
-    { id: "fd-1-open-1", prompt: "List every data source {process} uses or produces (ERP / planning / spreadsheets / files / APIs). For each: business owner, technical owner, domain, refresh frequency, access method." },
-    { id: "fd-1-open-2", prompt: "Which sources contain PII or commercially sensitive data and have GDPR / sensitivity labels applied?" },
-    { id: "fd-1-open-3", prompt: "Anaplan (or equivalent planning tool): which processes use it, what data goes in/out, who owns it, and what is the long-term integrate vs migrate decision?" },
+  // ── Foundations Data (step IDs in assessment-data.ts are db-*) ─────
+  "db-1": [
+    { id: "db-1-open-1", prompt: "How is the data for {process} produced today? For every source (ERP, planning tool, spreadsheets, files, APIs) capture: system name, business owner, technical owner, domain, refresh frequency, format and how {function} accesses it." , placeholder: "e.g. F&O — Finance Systems Mgr, daily, DB export; Anaplan — FP&A Mgr, monthly, manual export; Excel trackers — FP&A Analyst, ad-hoc…"},
+    { id: "db-1-open-2", prompt: "Which of those sources are already landed in Data Hive (Fabric / OneLake) and at which Medallion layer (Bronze / Silver / Gold)? Which are NOT in Data Hive yet?" },
+    { id: "db-1-open-3", prompt: "How is {process} data managed today — who curates it, what transformations live in Excel / Anaplan vs in Data Hive, and what is the long-term integrate-vs-migrate decision for Anaplan / legacy planning tools?" },
+    { id: "db-1-open-4", prompt: "Which sources contain PII or commercially sensitive data, and what Purview sensitivity labels / DLP controls are applied today?" },
   ],
-  "fd-2": [
-    { id: "fd-2-open-1", prompt: "For the most critical source, quantify completeness, accuracy, consistency, timeliness, uniqueness. What % of records have mandatory fields populated? What is the error rate of the most critical field?" },
-    { id: "fd-2-open-2", prompt: "Is data in one system consistent with data in others (e.g. F&O actuals vs Anaplan)? Are field definitions identical across systems?" },
-    { id: "fd-2-open-3", prompt: "Would you trust this data to drive an automated output for {process} WITHOUT human review? If not, what would need to be true?" },
+  "db-2": [
+    { id: "db-2-open-1", prompt: "For each critical source feeding {process}, quantify Data Quality on the 5 dimensions: COMPLETENESS (% records with mandatory fields), ACCURACY (error rate of the most critical field, e.g. GL code), CONSISTENCY (system A vs system B), TIMELINESS (freshness vs SLA), UNIQUENESS (duplicate rate).", placeholder: "Use the DQ profiling results from your Fabric data profiling run." },
+    { id: "db-2-open-2", prompt: "Per layer, what DQ thresholds are enforced? Does Bronze accept raw, Silver enforce validation, and Gold gate analytics & AI consumption? What happens when a dataset breaches threshold — is it quarantined?" },
+    { id: "db-2-open-3", prompt: "Would you trust the Gold-layer data to drive an automated output for {process} WITHOUT human review? If not, which specific dimension blocks you and what would need to be true?" },
   ],
-  "fd-3": [
-    { id: "fd-3-open-1", prompt: "Can you trace every critical data field from entry to use? Where are the lineage breaks (manual copy/paste, Excel transformations)?" },
-    { id: "fd-3-open-2", prompt: "What is the current state of Microsoft Purview lineage / glossary / sensitivity labels coverage for {process} data?" },
+  "db-3": [
+    { id: "db-3-open-1", prompt: "Can every critical field used in {process} be traced end-to-end (source → Bronze → Silver → Gold → semantic model → agent grounding)? Where are the lineage BREAKS (manual copy/paste, Excel reformatting, email handoffs)?" },
+    { id: "db-3-open-2", prompt: "What is the current state of Microsoft Purview coverage for {process} data — domains registered, business glossary terms, lineage scans, sensitivity labels?" },
   ],
-  "fd-4": [
-    { id: "fd-4-open-1", prompt: "Classify each known data gap as BLOCKER / CONDITIONAL / WATCH for the lighthouse {process} use case." },
-    { id: "fd-4-open-2", prompt: "Which gaps have known privacy / consent / residency implications that must be remediated before AI use?" },
+  "db-4": [
+    { id: "db-4-open-1", prompt: "Classify each known data gap for the lighthouse {process} use case as BLOCKER (must fix before agent build) / CONDITIONAL (fix before scale) / WATCH (monitor). Note owner and impact for each." },
+    { id: "db-4-open-2", prompt: "Which gaps have privacy / consent / residency implications (GDPR, EU AI Act) that must be remediated before any AI use?" },
   ],
-  "fd-5": [
-    { id: "fd-5-open-1", prompt: "For the top 5 gaps: name the owner, effort, target date and the Bronze→Silver→Gold milestone that closes them." },
-    { id: "fd-5-open-2", prompt: "What Purview configuration (domains, glossary, lineage scan, DLP) is required as part of the remediation plan?" },
+  "db-5": [
+    { id: "db-5-open-1", prompt: "For the top 5 gaps: name the owner, effort, target date and the Bronze→Silver→Gold milestone that closes them. Which transformations currently live in Excel / Anaplan that must shift LEFT into Data Hive (Fabric)?" },
+    { id: "db-5-open-2", prompt: "What Purview configuration (domains, glossary, lineage scan, DLP, certified datasets) and Fabric pipeline work is required to deliver the remediation plan?" },
   ],
-  "fd-6": [
-    { id: "fd-6-open-1", prompt: "Provide a RAG-rated Data Readiness Scorecard for the lighthouse use case — confirm Foundry IQ / Fabric IQ readiness." },
-    { id: "fd-6-open-2", prompt: "Outline the FP&A integration roadmap (sequencing of source onboarding into Data Hive / OneLake) for the next 2 quarters." },
+  "db-6": [
+    { id: "db-6-open-1", prompt: "Does an ONTOLOGY / semantic model exist for {function} (e.g. a Fabric IQ / Foundry IQ semantic layer) so autonomous agents reason on business concepts (Property, Tenancy, Service Charge Head-of-Expenditure, Budget) rather than raw tables? If not, what's the plan to build it?" },
+    { id: "db-6-open-2", prompt: "Provide a RAG-rated Data Readiness Scorecard for the lighthouse {process} use case and confirm the retrieval strategy (Foundry IQ / Fabric IQ / MCP servers) the agent will use." },
+    { id: "db-6-open-3", prompt: "Outline the integration roadmap (sequencing of source onboarding into Data Hive / OneLake, including Anaplan) for the next 2 quarters." },
   ],
 
   // ── Agents Factory ─────────────────────────────────────────────────
