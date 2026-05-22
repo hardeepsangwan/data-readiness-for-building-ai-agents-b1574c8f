@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AiRadar } from "@/components/ai-radar";
 import { analyzeWorkstream } from "@/lib/analysis.functions";
 import { getOpenQuestions, renderPrompt } from "@/lib/open-questions";
+import { getDomainEvidence } from "@/lib/domain-evidence";
 import type { Workstream, MaturityLevel } from "@/lib/assessment-data";
 import type { AiWorkstreamResult, ProcessContext } from "@/lib/analysis.schema";
 
