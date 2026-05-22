@@ -55,6 +55,7 @@ export function AiFindings({ workstream, context, maturityAnswers, openAnswers, 
           answer: openAnswers[oq.id] ?? "",
         }))
       );
+      const domainEvidence = getDomainEvidence(context, workstream.id);
       const result = await runAnalyze({
         data: {
           context,
@@ -66,6 +67,7 @@ export function AiFindings({ workstream, context, maturityAnswers, openAnswers, 
           },
           maturityAnswers: maturityPayload,
           openAnswers: openPayload,
+          domainEvidence,
         },
       });
       onResult(result);
