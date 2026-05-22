@@ -165,8 +165,12 @@ USER OPEN-TEXT ANSWERS:
 ${data.openAnswers
   .map((a) => `[${a.stepName}] Q: ${a.prompt}\nA: ${a.answer || "(no answer provided)"}`)
   .join("\n\n")}
-
-Produce a thorough, evidence-grounded analysis tailored to ${data.context.businessFunction || "the function"} / ${data.context.businessProcess || "the process"}.`;
+${
+  data.domainEvidence
+    ? `\nREFERENCE EVIDENCE (cite these where they ground a pain point — source: ${data.domainEvidence.source}):\n${data.domainEvidence.bulletText}\n`
+    : ""
+}
+Produce a thorough, evidence-grounded analysis tailored to ${data.context.businessFunction || "the function"} / ${data.context.businessProcess || "the process"}. Where the REFERENCE EVIDENCE applies, quote it as evidence in pain points and reflect it in current-state scores.`;
 
     const model = "google/gemini-2.5-pro"; // strong reasoning, fast on gateway
     const body = {
