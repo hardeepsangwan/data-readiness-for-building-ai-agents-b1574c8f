@@ -50,6 +50,13 @@ const AnalyzeInput = z.object({
       })
     )
     .max(200),
+  // Optional domain-specific reference evidence (e.g. the FP&A Service Charge
+  // workbook findings). When provided, the AI grounds its analysis in this
+  // alongside the user's answers.
+  domainEvidence: z
+    .object({ source: z.string().max(400), bulletText: z.string().max(12000) })
+    .nullable()
+    .optional(),
 });
 
 const TOOL_SCHEMA = {
