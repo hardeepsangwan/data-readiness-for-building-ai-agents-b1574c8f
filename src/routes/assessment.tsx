@@ -388,6 +388,7 @@ function ScorePicker({ title, value, onChange, accent, options }: {
         onValueChange={(v) => onChange(Number(v) as MaturityLevel)} className="space-y-2">
         {options.map((opt) => {
           const selected = value === opt.level;
+          const maturityName = MATURITY_LEVELS[opt.level].name;
           return (
             <label key={opt.level} htmlFor={`${title}-${opt.level}`}
               className={cn("flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all",
@@ -395,12 +396,14 @@ function ScorePicker({ title, value, onChange, accent, options }: {
               style={selected ? { boxShadow: `inset 0 0 0 2px ${accent}` } : undefined}>
               <RadioGroupItem id={`${title}-${opt.level}`} value={String(opt.level)} className="mt-1" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded text-[11px] font-semibold"
+                <div className="text-sm leading-relaxed text-foreground">{opt.description}</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="inline-flex h-4 w-4 items-center justify-center rounded text-[10px] font-semibold"
                     style={{ background: `color-mix(in oklab, ${accent} 18%, white)`, color: accent }}>{opt.level}</span>
-                  <span className="text-sm font-medium">{MATURITY_LEVELS[opt.level].name}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Auto-classified: {maturityName}
+                  </span>
                 </div>
-                <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{opt.description}</div>
               </div>
             </label>
           );
