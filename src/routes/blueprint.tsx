@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
 import { generateBlueprint } from "@/lib/blueprint.functions";
 import { BlueprintRadar } from "@/components/blueprint-radar";
+import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -500,7 +501,18 @@ function BlueprintPage() {
                       <Download className="mr-1 h-3.5 w-3.5" /> PDF
                     </Button>
                   </CardHeader>
-                  <CardContent><BlueprintRadar axes={state.result.radar} /></CardContent>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Radar view</div>
+                        <BlueprintRadar axes={state.result.radar} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Horizontal bar view</div>
+                        <BlueprintHorizontalBars axes={state.result.radar} />
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
 
                 <Card ref={stepsRef as any}>
