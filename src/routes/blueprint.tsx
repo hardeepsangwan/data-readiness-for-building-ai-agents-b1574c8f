@@ -199,11 +199,13 @@ function BlueprintPage() {
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Executable framework</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Reusable framework</div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight">Data Blueprint</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Document any business process step-by-step, map its data assets and quality, then generate a hub-and-spoke
-              transformation blueprint with per-step Data & AI interventions aligned to the Fabric / OneLake target state.
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+              A reusable framework for business domains to apply Data &amp; AI to <strong>improve operations</strong>,
+              <strong> deliver measurable value</strong> and <strong>meet governance standards</strong>.
+              Capture the value stream, data assets, quality and target operating model — the AI generates a
+              hub-and-spoke transformation blueprint aligned to the Data Hive (Microsoft Fabric / OneLake) target state.
             </p>
           </div>
           <div className="flex gap-2">
@@ -275,6 +277,22 @@ function BlueprintPage() {
                 <div className="md:col-span-2">
                   <Label>Target timeline</Label>
                   <Input value={state.context.timeline} onChange={(e) => setContext({ timeline: e.target.value })} placeholder="e.g. MVP in 12 weeks, scale by FY26 Q2" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Operations — value drivers, pain &amp; opportunity</Label>
+                  <Textarea rows={3} value={state.context.valueDrivers} onChange={(e) => setContext({ valueDrivers: e.target.value })} placeholder="e.g. Cut manual reconciliation effort, reduce GL allocation errors, accelerate close, reduce customer disputes…" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Value — KPIs the blueprint must move</Label>
+                  <Textarea rows={3} value={state.context.kpis} onChange={(e) => setContext({ kpis: e.target.value })} placeholder="e.g. FTE hours/cycle, days-to-close, error rate %, dispute count, forecast accuracy %…" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Decisions the data &amp; AI must support</Label>
+                  <Textarea rows={3} value={state.context.decisionsSupported} onChange={(e) => setContext({ decisionsSupported: e.target.value })} placeholder="e.g. Annual budget approval, variance investigation, true-up to customer, cost recoverability…" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Governance — compliance, sensitivity &amp; retention constraints</Label>
+                  <Textarea rows={3} value={state.context.complianceConstraints} onChange={(e) => setContext({ complianceConstraints: e.target.value })} placeholder="e.g. UK GDPR, tenant PII, SOX, audit trail 7 years, sensitivity labels, data residency…" />
                 </div>
               </CardContent>
             </Card>
