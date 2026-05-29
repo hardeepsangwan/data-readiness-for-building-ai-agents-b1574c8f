@@ -725,12 +725,21 @@ function BlueprintPage() {
 
                 <Card ref={hubSpokeRef as any}>
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Hub-and-spoke activity backlog</CardTitle>
+                    <CardTitle>Moving to hub-and-spoke ways of working</CardTitle>
                     <Button size="sm" variant="outline" onClick={() => exportSection(hubSpokeRef, "hub-spoke-activities", "Hub-and-Spoke Activities")} disabled={exporting !== null}>
                       <Download className="mr-1 h-3.5 w-3.5" /> PDF
                     </Button>
                   </CardHeader>
-                  <CardContent className="grid gap-3 md:grid-cols-3">
+                  <CardContent className="space-y-4">
+                    <p className="max-w-3xl text-sm text-muted-foreground">
+                      The concrete activities needed to transition this domain to hub-and-spoke ways of working on the Data Hive
+                      (Microsoft Fabric / OneLake). <strong>Hub</strong> = central Data &amp; AI CoE — owns OneLake, reusable
+                      ingestion + SCD framework, Gold + ontology, agent platform, Purview governance.
+                      <strong> Spoke</strong> = the business domain — owns business rules, KPIs, source-of-truth definitions,
+                      HITL approvals, exception handling.
+                      <strong> Handshakes</strong> = data contracts, exception SLAs, joint backlog and gate reviews that bind them together.
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-3">
                     {(["Hub","Handshake","Spoke"] as const).map((pillar) => (
                       <div key={pillar}>
                         <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{pillar}</div>
