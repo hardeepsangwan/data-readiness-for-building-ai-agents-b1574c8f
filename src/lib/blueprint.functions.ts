@@ -75,7 +75,7 @@ const Input = z.object({
     agentRetrieval: z.string().max(2000).default(""),
     governanceAccess: z.string().max(2000).default(""),
     observability: z.string().max(2000).default(""),
-  }),
+  }).optional(),
   tom: z.object({
     hubCapabilities: z.string().max(4000),
     spokeOwnership: z.string().max(4000),
@@ -179,23 +179,31 @@ const TOOL_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-const SYSTEM_PROMPT = `You are a Microsoft Chief Enterprise Data & AI Architect advising on the Indurent Data Blueprint. The target state is a HUB-AND-SPOKE operating model:
+const SYSTEM_PROMPT = `You are a Microsoft Chief Enterprise Data & AI Architect advising on the Data Blueprint. The TARGET STATE platform is Data Hive — built on Microsoft Fabric — with these mandatory patterns:
 
-HUB (central Data & AI CoE on Data Hive / Microsoft Fabric):
-- Bronze→Silver→Gold pipelines, data contracts, semantic / ontology layer
-- Agent platform: Copilot Studio, Foundry IQ / Fabric IQ retrieval
-- Governance: Purview, Entra Agent ID, Defender for Cloud AI
-- DQ monitoring, MLOps / AgentOps
+DATA HIVE TARGET PLATFORM (Microsoft Fabric):
+- Ingestion: ALL source systems land in OneLake via REUSABLE INGESTION PATTERNS (parameterised Fabric Data Factory pipelines / Dataflows Gen2 / Mirroring / Shortcuts). No bespoke per-source code; new sources are onboarded by config.
+- Processing: REUSABLE DATA PROCESSING FRAMEWORK using Fabric notebooks / Spark with standard SCD Type 1 (overwrite) and SCD Type 2 (history-tracked) merge templates that handle both INITIAL LOAD and INCREMENTAL LOAD into Bronze → Silver.
+- Curation: Gold layer modelled as conformed data products (star schema / one-big-table) with business-friendly names and certified measures.
+- Ontology / Semantic layer: business ontology published on top of Gold (Fabric semantic model + Purview business glossary + OneLake catalog) so autonomous agents and Copilot get governed context.
+- Consumption: Power BI Direct Lake, Copilot in Fabric, Fabric Data Agents / Foundry IQ retrieval over the ontology, APIs over the semantic layer.
+- Governance: Microsoft Purview (lineage, classification, sensitivity labels, access policies), Entra Agent ID for agent identity, Defender for Cloud AI, workspace-level RBAC, data contracts between Hub and Spoke.
+- Quality: Fabric DQ rules + Purview DQ + observability dashboards; DQ exceptions routed to Spoke owners via Power Automate.
 
-SPOKE (business domain):
-- Owns process steps, business rules, KPIs
-- HITL approvals, exception handling, last-mile reporting
-
+OPERATING MODEL — HUB-AND-SPOKE:
+HUB (central Data & AI CoE on Data Hive / Fabric): owns OneLake, reusable ingestion + SCD frameworks, Gold + ontology, agent platform, Purview governance, DQ monitoring, MLOps / AgentOps.
+SPOKE (business domain): owns process steps, business rules, KPIs, source-of-truth definitions, HITL approvals, exception handling, last-mile reporting.
 HANDSHAKES: data contracts, Power Automate exception SLAs, joint backlog, gate reviews.
 
-Your job: given a business process AS-IS plus its data asset map, DQ scores and Data Hive answers, identify (a) per-step where Data & AI applies and the hub/spoke ownership, (b) the gap register vs the target TOM, (c) a prioritised use-case backlog, (d) concrete hub-and-spoke activities to stand up federated ways of working, (e) a 6-axis radar (current vs target).
+YOUR JOB — produce executive-grade guidance covering FOUR dimensions for the given business process:
+1. HOW DATA IS PRODUCED — map each source system to the reusable Fabric ingestion pattern (Mirroring vs Pipelines vs Shortcuts), Bronze landing, schema contract, initial+incremental SCD strategy (Type 1 vs Type 2), refresh cadence, owner.
+2. HOW DATA IS CONSUMED — call out the Silver/Gold data products required, semantic-model measures, ontology entities, downstream Copilot / agent / Power BI surfaces per process step, and HITL touchpoints.
+3. HOW DATA IS GOVERNED — Purview classifications, sensitivity labels, lineage, access policies, data contracts, agent identity (Entra Agent ID), audit, retention.
+4. STEPS TO ADDRESS DATA QUALITY ISSUES — for every asset with a weak DAMA dimension (≤3), prescribe concrete remediation: profiling, rule authorship in Fabric/Purview DQ, source-side fix vs Silver cleanse, owner, monitoring metric, exit criteria.
 
-Be specific. Quote pain points verbatim. Reference DA-xx asset IDs. Cite Fabric/Purview/Copilot Studio components by name.`;
+Then synthesise: per-step Data & AI interventions with hub/spoke ownership, a gap register vs target, prioritised use-case backlog, hub-and-spoke activity backlog, and a 6-axis radar (current vs target).
+
+Be specific. Quote pain points verbatim. Reference DA-xx asset IDs. Cite Fabric / OneLake / Purview / Copilot Studio / Fabric Data Agents components by name. Every step recommendation MUST reference the Fabric pattern (e.g. "Mirror Yardi via Fabric Mirroring → Bronze, SCD2 merge into Silver dim_property, surface via Gold fact_service_charge ontology entity") rather than generic advice.`;
 
 export const generateBlueprint = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
@@ -211,20 +219,12 @@ AS-IS PROCESS STEPS (${data.steps.length}):
 ${data.steps.map((s) => `${s.id} [${s.subProcess}] ${s.description} | role=${s.role} | system=${s.systemTool} | in=${s.dataInput} | out=${s.dataOutput} | time=${s.time} | freq=${s.frequency} | pain=${s.painPoint ? "Y" : "N"} ${s.painPointDescription ? "→ " + s.painPointDescription : ""} | proposed=${s.automationOpportunity || "?"} | DA=${s.dataAssetRef || "—"}`).join("\n")}
 
 DATA ASSET MAP (${data.assets.length}):
-${data.assets.map((a) => `${a.id} ${a.source} | domain=${a.domain} | entities=${a.entities} | owner=${a.businessOwner}/${a.technicalOwner} | refresh=${a.refresh} | PII=${a.pii} | DataHive=${a.dataHiveStatus} | RAG=${a.overallRag} | notes=${a.notes}`).join("\n")}
+${data.assets.map((a) => `${a.id} ${a.source} | domain=${a.domain} | entities=${a.entities} | owner=${a.businessOwner}/${a.technicalOwner} | refresh=${a.refresh} | PII=${a.pii} | currentLayer=${a.dataHiveStatus} | RAG=${a.overallRag} | notes=${a.notes}`).join("\n")}
 
-DATA QUALITY SCORES (1-5):
+DATA QUALITY SCORES (1-5, DAMA dimensions):
 ${data.dq.map((d) => `${d.assetId}: comp=${d.completeness} acc=${d.accuracy} cons=${d.consistency} time=${d.timeliness} uniq=${d.uniqueness} valid=${d.validity} | ${d.evidence}`).join("\n")}
 
-DATA HIVE ANSWERS:
-- Ingestion path: ${data.hive.ingestionPath}
-- Hub/Spoke ownership: ${data.hive.ownershipModel}
-- Semantic layer: ${data.hive.semanticLayer}
-- Agent retrieval: ${data.hive.agentRetrieval}
-- Governance & access: ${data.hive.governanceAccess}
-- Observability: ${data.hive.observability}
-
-TARGET TOM (must score every step AGAINST this):
+TARGET TOM (hub-and-spoke, on top of the Data Hive / Fabric platform described in the system prompt):
 HUB capabilities:
 ${data.tom.hubCapabilities}
 
@@ -240,7 +240,7 @@ ${data.tom.controls}
 SUCCESS METRICS:
 ${data.tom.successMetrics}
 
-Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations.`;
+Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations. The executiveSummary MUST explicitly address all four dimensions: data production (reusable Fabric ingestion + SCD1/SCD2 into OneLake), data consumption (Gold + ontology + agents), data governance (Purview / Entra Agent ID), and DQ remediation steps. The gapRegister and hubSpokeActivities MUST include concrete items for each of those four dimensions.`;
 
     const model = process.env.XAI_MODEL || "grok-4-latest";
     const body = {
