@@ -199,11 +199,13 @@ function BlueprintPage() {
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Executable framework</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Reusable framework</div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight">Data Blueprint</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Document any business process step-by-step, map its data assets and quality, then generate a hub-and-spoke
-              transformation blueprint with per-step Data & AI interventions aligned to the Fabric / OneLake target state.
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+              A reusable framework for business domains to apply Data &amp; AI to <strong>improve operations</strong>,
+              <strong> deliver measurable value</strong> and <strong>meet governance standards</strong>.
+              Capture the value stream, data assets, quality and target operating model — the AI generates a
+              hub-and-spoke transformation blueprint aligned to the Data Hive (Microsoft Fabric / OneLake) target state.
             </p>
           </div>
           <div className="flex gap-2">
@@ -275,6 +277,22 @@ function BlueprintPage() {
                 <div className="md:col-span-2">
                   <Label>Target timeline</Label>
                   <Input value={state.context.timeline} onChange={(e) => setContext({ timeline: e.target.value })} placeholder="e.g. MVP in 12 weeks, scale by FY26 Q2" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Operations — value drivers, pain &amp; opportunity</Label>
+                  <Textarea rows={3} value={state.context.valueDrivers} onChange={(e) => setContext({ valueDrivers: e.target.value })} placeholder="e.g. Cut manual reconciliation effort, reduce GL allocation errors, accelerate close, reduce customer disputes…" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Value — KPIs the blueprint must move</Label>
+                  <Textarea rows={3} value={state.context.kpis} onChange={(e) => setContext({ kpis: e.target.value })} placeholder="e.g. FTE hours/cycle, days-to-close, error rate %, dispute count, forecast accuracy %…" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Decisions the data &amp; AI must support</Label>
+                  <Textarea rows={3} value={state.context.decisionsSupported} onChange={(e) => setContext({ decisionsSupported: e.target.value })} placeholder="e.g. Annual budget approval, variance investigation, true-up to customer, cost recoverability…" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Governance — compliance, sensitivity &amp; retention constraints</Label>
+                  <Textarea rows={3} value={state.context.complianceConstraints} onChange={(e) => setContext({ complianceConstraints: e.target.value })} placeholder="e.g. UK GDPR, tenant PII, SOX, audit trail 7 years, sensitivity labels, data residency…" />
                 </div>
               </CardContent>
             </Card>
@@ -535,6 +553,37 @@ function BlueprintPage() {
                 </Card>
 
                 <Card>
+                  <CardHeader><CardTitle>Operations · Value · Governance — what the blueprint delivers</CardTitle></CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-3">
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.55 0.20 30)" }}>Improve operations</div>
+                      <p className="mt-1 text-xs text-muted-foreground">Pain &amp; opportunity captured</p>
+                      <p className="mt-2 text-sm">{state.context.valueDrivers || "—"}</p>
+                      <div className="mt-3 text-[11px] text-muted-foreground">
+                        {state.result.stepRecommendations.filter((r) => r.classification === "AUTOMATE FULL" || r.classification === "AUTOMATE+HUMAN").length} of {state.result.stepRecommendations.length} steps targeted for automation.
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.62 0.16 155)" }}>Deliver value</div>
+                      <p className="mt-1 text-xs text-muted-foreground">KPIs the blueprint must move</p>
+                      <p className="mt-2 text-sm">{state.context.kpis || "—"}</p>
+                      <div className="mt-3 text-[11px] text-muted-foreground">
+                        {state.result.useCaseBacklog.length} prioritised use cases in backlog.
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.50 0.14 195)" }}>Meet governance</div>
+                      <p className="mt-1 text-xs text-muted-foreground">Compliance &amp; sensitivity constraints</p>
+                      <p className="mt-2 text-sm">{state.context.complianceConstraints || "—"}</p>
+                      <div className="mt-3 text-[11px] text-muted-foreground">
+                        {state.result.gapRegister.filter((g) => g.dimension === "Governance").length} governance gaps tracked · Purview + Entra Agent ID required.
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+
+                <Card>
                   <CardHeader><CardTitle>Dimension ranking across maturity levels</CardTitle></CardHeader>
                   <CardContent>
                     <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
@@ -676,12 +725,21 @@ function BlueprintPage() {
 
                 <Card ref={hubSpokeRef as any}>
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Hub-and-spoke activity backlog</CardTitle>
+                    <CardTitle>Moving to hub-and-spoke ways of working</CardTitle>
                     <Button size="sm" variant="outline" onClick={() => exportSection(hubSpokeRef, "hub-spoke-activities", "Hub-and-Spoke Activities")} disabled={exporting !== null}>
                       <Download className="mr-1 h-3.5 w-3.5" /> PDF
                     </Button>
                   </CardHeader>
-                  <CardContent className="grid gap-3 md:grid-cols-3">
+                  <CardContent className="space-y-4">
+                    <p className="max-w-3xl text-sm text-muted-foreground">
+                      The concrete activities needed to transition this domain to hub-and-spoke ways of working on the Data Hive
+                      (Microsoft Fabric / OneLake). <strong>Hub</strong> = central Data &amp; AI CoE — owns OneLake, reusable
+                      ingestion + SCD framework, Gold + ontology, agent platform, Purview governance.
+                      <strong> Spoke</strong> = the business domain — owns business rules, KPIs, source-of-truth definitions,
+                      HITL approvals, exception handling.
+                      <strong> Handshakes</strong> = data contracts, exception SLAs, joint backlog and gate reviews that bind them together.
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-3">
                     {(["Hub","Handshake","Spoke"] as const).map((pillar) => (
                       <div key={pillar}>
                         <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{pillar}</div>
@@ -696,6 +754,7 @@ function BlueprintPage() {
                         </div>
                       </div>
                     ))}
+                    </div>
                   </CardContent>
                 </Card>
 

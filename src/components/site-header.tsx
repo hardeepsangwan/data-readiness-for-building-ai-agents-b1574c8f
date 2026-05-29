@@ -54,7 +54,7 @@ export function SiteHeader() {
           </div>
           <div className="leading-tight">
             <div className="text-sm font-semibold tracking-tight">Data Blueprint</div>
-            <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">For building AI agents</div>
+            <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Reusable Data &amp; AI framework</div>
           </div>
         </Link>
         <nav className="hidden items-center gap-6 text-sm md:flex">
