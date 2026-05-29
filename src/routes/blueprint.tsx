@@ -576,6 +576,7 @@ function BlueprintPage() {
                       </div>
                     </div>
                   </CardContent>
+                </Card>
 
                 <Card>
                   <CardHeader><CardTitle>Operations · Value · Governance — what the blueprint delivers</CardTitle></CardHeader>
