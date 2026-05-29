@@ -103,7 +103,7 @@ function BlueprintPage() {
   };
   const processOptions = BUSINESS_PROCESSES[state.context.businessFunction] || [];
 
-  const exportSection = async (ref: React.RefObject<HTMLElement>, name: string, title: string) => {
+  const exportSection = async (ref: React.RefObject<HTMLElement | null>, name: string, title: string) => {
     if (!ref.current) return;
     setExporting(name);
     try {
