@@ -9,17 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ReportRouteImport } from './routes/report'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BlueprintRouteImport } from './routes/blueprint'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
-const ReportRoute = ReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -46,14 +40,12 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
-  '/report': typeof ReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
-  '/report': typeof ReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +53,13 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
-  '/report': typeof ReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/blueprint' | '/login' | '/report'
+  fullPaths: '/' | '/admin' | '/blueprint' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/blueprint' | '/login' | '/report'
-  id: '__root__' | '/' | '/admin' | '/blueprint' | '/login' | '/report'
+  to: '/' | '/admin' | '/blueprint' | '/login'
+  id: '__root__' | '/' | '/admin' | '/blueprint' | '/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,18 +67,10 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   BlueprintRoute: typeof BlueprintRoute
   LoginRoute: typeof LoginRoute
-  ReportRoute: typeof ReportRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/report': {
-      id: '/report'
-      path: '/report'
-      fullPath: '/report'
-      preLoaderRoute: typeof ReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -124,8 +107,16 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   BlueprintRoute: BlueprintRoute,
   LoginRoute: LoginRoute,
-  ReportRoute: ReportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
