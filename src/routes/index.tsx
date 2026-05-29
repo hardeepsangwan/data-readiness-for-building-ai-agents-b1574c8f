@@ -144,14 +144,14 @@ function Index() {
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="mb-12 max-w-2xl">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">How it works</div>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Assess, gate, hand over, deliver</h2>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Map, score, target, generate</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-4">
             {[
-              { n: "01", t: "Assess", d: "Score each step on the 0–5 CAF maturity scale — current and target." },
-              { n: "02", t: "Gate", d: "Sponsor signs off the handshake before the next workstream unlocks." },
-              { n: "03", t: "Hand over", d: "Star deliverables flow forward: Playbook → Backlog → Scorecard → Agent." },
-              { n: "04", t: "Export", d: "Per-workstream Excel workbooks plus a Master Data Blueprint." },
+              { n: "01", t: "Map", d: "Document the value stream step-by-step and the data assets feeding it." },
+              { n: "02", t: "Score", d: "Rate each data asset on the six DAMA dimensions using the built-in 1–5 rubric." },
+              { n: "03", t: "Target", d: "Define the hub-and-spoke target operating model for OneLake + Fabric IQ." },
+              { n: "04", t: "Generate", d: "AI returns executive summary, radar, prioritised recommendations and AI-agent next steps." },
             ].map((s) => (
               <div key={s.n} className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
                 <div className="text-xs font-mono text-primary">{s.n}</div>
