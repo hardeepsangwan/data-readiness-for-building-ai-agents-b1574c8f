@@ -20,7 +20,6 @@ import {
   SERVICE_CHARGE_CONTEXT,
   SERVICE_CHARGE_STEPS,
   SERVICE_CHARGE_ASSETS,
-  DATA_HIVE_PROMPTS,
 } from "@/lib/blueprint-template";
 import type {
   ProcessStep,
@@ -74,7 +73,7 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
 }
 
 function BlueprintPage() {
-  const { state, hydrated, setContext, setSteps, setAssets, setDq, setHive, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const { state, hydrated, setContext, setSteps, setAssets, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
   const generate = useServerFn(generateBlueprint);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
@@ -193,8 +192,8 @@ function BlueprintPage() {
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Executable framework</div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight">Data Blueprint</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Document any business process step-by-step, map its data assets and quality, answer the Data Hive readiness
-              questions, then generate a hub-and-spoke transformation blueprint with per-step Data & AI interventions.
+              Document any business process step-by-step, map its data assets and quality, then generate a hub-and-spoke
+              transformation blueprint with per-step Data & AI interventions aligned to the Fabric / OneLake target state.
             </p>
           </div>
           <div className="flex gap-2">
@@ -208,14 +207,13 @@ function BlueprintPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="context">1. Context</TabsTrigger>
             <TabsTrigger value="steps">2. AS-IS Steps</TabsTrigger>
             <TabsTrigger value="assets">3. Data Assets</TabsTrigger>
             <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
-            <TabsTrigger value="hive">5. Data Hive</TabsTrigger>
-            <TabsTrigger value="tom">6. Target TOM</TabsTrigger>
-            <TabsTrigger value="result">7. Blueprint</TabsTrigger>
+            <TabsTrigger value="tom">5. Target TOM</TabsTrigger>
+            <TabsTrigger value="result">6. Blueprint</TabsTrigger>
           </TabsList>
 
           <TabsContent value="context" className="mt-6">
@@ -436,23 +434,7 @@ function BlueprintPage() {
                 </table>
               </CardContent>
             </Card>
-            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("assets")}>← Back</Button><Button onClick={() => setTab("hive")}>Next: Data Hive →</Button></div>
-          </TabsContent>
-
-          <TabsContent value="hive" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">Indurent's Data Hive is the Fabric-based platform every domain onboards to. Answer how this process will land there.</p>
-            <div className="grid gap-4 md:grid-cols-2">
-              {DATA_HIVE_PROMPTS.map((p) => (
-                <Card key={p.key}>
-                  <CardHeader className="pb-2"><CardTitle className="text-base">{p.label}</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="mb-2 text-xs text-muted-foreground">{p.help}</p>
-                    <Textarea rows={4} value={state.hive[p.key]} onChange={(e) => setHive({ [p.key]: e.target.value } as any)} />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("dq")}>← Back</Button><Button onClick={() => setTab("tom")}>Next: Target TOM →</Button></div>
+            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("assets")}>← Back</Button><Button onClick={() => setTab("tom")}>Next: Target TOM →</Button></div>
           </TabsContent>
 
           <TabsContent value="tom" className="mt-6 space-y-4">
@@ -472,7 +454,7 @@ function BlueprintPage() {
               ))}
             </div>
             <div className="flex items-center justify-between">
-              <Button variant="ghost" onClick={() => setTab("hive")}>← Back</Button>
+              <Button variant="ghost" onClick={() => setTab("dq")}>← Back</Button>
               <Button size="lg" onClick={onGenerate} disabled={busy}>
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate Blueprint
