@@ -16,6 +16,7 @@ import { generateBlueprint } from "@/lib/blueprint.functions";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
+import targetArchitectureDiagram from "@/assets/target-state-architecture.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   SERVICE_CHARGE_CONTEXT,
@@ -841,6 +842,46 @@ function BlueprintPage() {
                           <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-foreground/80">
                             {p.items.map((it, i) => <li key={i} dangerouslySetInnerHTML={{ __html: it }} />)}
                           </ul>
+                        </div>
+                      ))}
+                    </div>
+
+                    <figure className="overflow-hidden rounded-lg border border-border bg-card">
+                      <img
+                        src={targetArchitectureDiagram}
+                        alt="Target data architecture — Data Hive on Microsoft Fabric and OneLake reference diagram"
+                        className="w-full h-auto"
+                        loading="lazy"
+                      />
+                      <figcaption className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
+                        Reference target-state diagram — Data Hive on Microsoft Fabric &amp; OneLake.
+                      </figcaption>
+                    </figure>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Data Hive — target state</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="max-w-3xl text-sm text-muted-foreground">
+                      The Data Hive is the shared product the Hub operates and Spokes consume. It is the single, governed
+                      foundation on OneLake where every domain lands its data, conforms it to enterprise standards, and
+                      exposes certified products to people, BI and agents.
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {[
+                        { t: "Foundation", d: "Single OneLake tenant · Fabric capacities sized per domain · Fabric Git + Azure DevOps for CI/CD · environment promotion (dev → test → prod)." },
+                        { t: "Ingestion &amp; storage", d: "Metadata-driven ingestion framework · CDC and full/incremental patterns · Bronze raw with source identity, lineage and sensitivity labels preserved." },
+                        { t: "Conformance &amp; quality", d: "Silver with conformed keys, SCD1/SCD2 history, reusable DQ rules (the 6 DAMA dimensions) and exception queues with owners and SLAs." },
+                        { t: "Certified products", d: "Gold star-schemas + Direct Lake semantic model and a business ontology — the single source of truth for KPIs, dimensions and definitions." },
+                        { t: "Consumption", d: "Power BI, Copilot Studio, Foundry and Microsoft Agent 365 read only from Gold + ontology; no agent or report reaches Bronze/Silver directly." },
+                        { t: "Governance &amp; identity", d: "Purview catalog, lineage, classification, DLP and access reviews · Entra Agent ID for agent identity · evals, approvals and rollback in Foundry." },
+                        { t: "Operating model", d: "Hub owns the platform, standards and certified Gold; Spokes own source-of-truth, rules and HITL; bound by data contracts, SLAs and gate reviews." },
+                        { t: "Success signals", d: "Time-to-onboard a new source, % of decisions served from Gold, DQ pass rate, agent task success rate, audit findings closed on time." },
+                      ].map((b) => (
+                        <div key={b.t} className="rounded-md border border-border bg-card p-4">
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary" dangerouslySetInnerHTML={{ __html: b.t }} />
+                          <div className="mt-2 text-sm text-foreground/80" dangerouslySetInnerHTML={{ __html: b.d }} />
                         </div>
                       ))}
                     </div>
