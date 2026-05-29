@@ -754,6 +754,7 @@ function BlueprintPage() {
                         </div>
                       </div>
                     ))}
+                    </div>
                   </CardContent>
                 </Card>
 
