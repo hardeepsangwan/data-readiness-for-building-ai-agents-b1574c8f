@@ -254,13 +254,14 @@ function BlueprintPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="context">1. Context</TabsTrigger>
             <TabsTrigger value="steps">2. Value Stream</TabsTrigger>
-            <TabsTrigger value="assets">3. Data Asset Map</TabsTrigger>
-            <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
-            <TabsTrigger value="tom">5. Target TOM</TabsTrigger>
-            <TabsTrigger value="result">6. Blueprint</TabsTrigger>
+            <TabsTrigger value="usecases">3. Use Case Priority</TabsTrigger>
+            <TabsTrigger value="assets">4. Data Asset Map</TabsTrigger>
+            <TabsTrigger value="dq">5. Data Quality</TabsTrigger>
+            <TabsTrigger value="tom">6. Target TOM</TabsTrigger>
+            <TabsTrigger value="result">7. Blueprint</TabsTrigger>
           </TabsList>
 
           <TabsContent value="context" className="mt-6">
