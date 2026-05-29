@@ -222,20 +222,52 @@ function BlueprintPage() {
             <Card>
               <CardHeader><CardTitle>Process context</CardTitle></CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
-                {([
-                  ["organisation", "Organisation"],
-                  ["businessFunction", "Business function"],
-                  ["businessProcess", "Business process"],
-                  ["sponsor", "Executive sponsor"],
-                  ["cycleVolume", "Cycle volume"],
-                  ["baselineEffort", "Baseline effort"],
-                  ["timeline", "Target timeline"],
-                ] as const).map(([k, label]) => (
-                  <div key={k}>
-                    <Label>{label}</Label>
-                    <Input value={state.context[k]} onChange={(e) => setContext({ [k]: e.target.value } as any)} />
-                  </div>
-                ))}
+                <div>
+                  <Label>Organisation</Label>
+                  <Input value={state.context.organisation} onChange={(e) => setContext({ organisation: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Business function</Label>
+                  <Select value={state.context.businessFunction || undefined} onValueChange={(v) => setContext({ businessFunction: v, businessProcess: "" })}>
+                    <SelectTrigger><SelectValue placeholder="Select a function…" /></SelectTrigger>
+                    <SelectContent>
+                      {BUSINESS_FUNCTIONS.map((bf) => <SelectItem key={bf} value={bf}>{bf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Business process</Label>
+                  {processOptions.length > 0 ? (
+                    <Select value={state.context.businessProcess || undefined} onValueChange={(v) => setContext({ businessProcess: v === "__other__" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="Select a process…" /></SelectTrigger>
+                      <SelectContent>
+                        {processOptions.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        <SelectItem value="__other__">Other / custom…</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={state.context.businessProcess} onChange={(e) => setContext({ businessProcess: e.target.value })} placeholder="e.g. Service Charge" />
+                  )}
+                  {state.context.businessFunction && processOptions.length > 0 && !processOptions.includes(state.context.businessProcess) && (
+                    <Input className="mt-2" value={state.context.businessProcess} placeholder="Type custom process name" onChange={(e) => setContext({ businessProcess: e.target.value })} />
+                  )}
+                </div>
+                <div>
+                  <Label>Executive sponsor</Label>
+                  <Input value={state.context.sponsor} onChange={(e) => setContext({ sponsor: e.target.value })} placeholder="e.g. CFO, VP FP&A" />
+                </div>
+                <div>
+                  <Label>Cycle volume</Label>
+                  <Input value={state.context.cycleVolume} onChange={(e) => setContext({ cycleVolume: e.target.value })} placeholder="e.g. 1,200 invoices / quarter" />
+                </div>
+                <div>
+                  <Label>Baseline effort</Label>
+                  <Input value={state.context.baselineEffort} onChange={(e) => setContext({ baselineEffort: e.target.value })} placeholder="e.g. 18 FTE-days / cycle" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Target timeline</Label>
+                  <Input value={state.context.timeline} onChange={(e) => setContext({ timeline: e.target.value })} placeholder="e.g. MVP in 12 weeks, scale by FY26 Q2" />
+                </div>
               </CardContent>
             </Card>
             <div className="mt-4 flex justify-end"><Button onClick={() => setTab("steps")}>Next: AS-IS Steps →</Button></div>
