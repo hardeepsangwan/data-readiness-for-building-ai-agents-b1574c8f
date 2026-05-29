@@ -403,7 +403,34 @@ function BlueprintPage() {
           </TabsContent>
 
           <TabsContent value="dq" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">Score each data asset on the six DAMA DQ dimensions (1=Poor → 5=Excellent).</p>
+            <p className="text-sm text-muted-foreground">Score each data asset on the six DAMA DQ dimensions (1=Poor → 5=Excellent). Use the criteria below as a guide.</p>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">Data Quality scoring criteria</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/40 uppercase">
+                    <tr>
+                      <th className="p-2 text-left">Dimension</th>
+                      <th className="p-2 text-left">What it measures</th>
+                      <th className="p-2 text-left">1 — Poor</th>
+                      <th className="p-2 text-left">3 — Acceptable</th>
+                      <th className="p-2 text-left">5 — Excellent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DQ_CRITERIA.map((c) => (
+                      <tr key={c.dim} className="border-t align-top">
+                        <td className="p-2 font-semibold">{c.dim}</td>
+                        <td className="p-2 text-muted-foreground">{c.what}</td>
+                        <td className="p-2">{c.poor}</td>
+                        <td className="p-2">{c.ok}</td>
+                        <td className="p-2">{c.great}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
             <Card>
               <CardContent className="overflow-x-auto p-0">
                 <table className="w-full text-sm">
