@@ -553,7 +553,7 @@ function BlueprintPage() {
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
-            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("steps")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
+            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("usecases")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
           </TabsContent>
 
           <TabsContent value="dq" className="mt-6 space-y-4">
