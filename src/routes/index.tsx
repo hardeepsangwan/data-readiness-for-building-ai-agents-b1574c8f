@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Data Blueprint for AI Agents" },
-      { name: "description", content: "An end-to-end Data Blueprint to assess and deliver AI agents — CoE governance, Business Transformation, Data Readiness and Agents Factory, aligned to Azure CAF." },
+      { title: "FP&A Data Blueprint — Reusable Data & AI Framework" },
+      { name: "description", content: "A reusable framework for business domains to apply Data and AI to improve operations, deliver value and meet governance standards — on Microsoft Fabric, OneLake and Agent 365, in a hub-and-spoke operating model." },
     ],
   }),
   component: Index,
@@ -16,33 +16,33 @@ export const Route = createFileRoute("/")({
 const SECTIONS: { n: string; name: string; icon: any; color: string; description: string; outputs: string[] }[] = [
   {
     n: "01", name: "Context", icon: FileText, color: "oklch(0.55 0.18 255)",
-    description: "Capture organisation, business function, process, sponsor, volumes and target timeline.",
-    outputs: ["Process scope", "Sponsor & cycle volume", "Target timeline"],
+    description: "Capture organisation, function, process, sponsor, volumes, timeline AND the critical inputs that frame value: operational pain, KPIs, decisions to support and compliance constraints.",
+    outputs: ["Process scope & sponsor", "Operations pain & value drivers", "KPIs to move + decisions supported", "Compliance / sensitivity constraints"],
   },
   {
     n: "02", name: "Value Stream", icon: Workflow, color: "oklch(0.55 0.20 30)",
-    description: "Map the AS-IS process step-by-step — roles, systems, inputs, outputs, time, frequency and pain points.",
-    outputs: ["Per-step roles & systems", "Pain points captured", "Automation opportunities flagged"],
+    description: "Map the AS-IS process step-by-step — roles, systems, inputs, outputs, time, frequency and pain points. The systems column auto-feeds the Data Asset Map.",
+    outputs: ["Per-step roles & systems", "Pain points captured verbatim", "Automation opportunities flagged"],
   },
   {
     n: "03", name: "Data Asset Map", icon: Database, color: "oklch(0.62 0.16 155)",
-    description: "Catalogue every system / data asset that feeds the value stream, with owners, refresh, sensitivity and medallion fit.",
-    outputs: ["Source + domain + owners", "Bronze / Silver / Gold fit", "PII & refresh cadence"],
+    description: "Catalogue every system / data asset that feeds the value stream — domain, entities, owners, refresh, sensitivity and Bronze / Silver / Gold fit on the Data Hive.",
+    outputs: ["Source + domain + owners", "Bronze / Silver / Gold fit", "PII flagging & refresh cadence"],
   },
   {
     n: "04", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
-    description: "Score every asset on the six DAMA dimensions using a 1–5 rubric: Completeness, Accuracy, Consistency, Timeliness, Uniqueness, Validity.",
-    outputs: ["DQ score per asset", "Evidence captured", "Uplift targets"],
+    description: "Score every asset on the six DAMA dimensions using a 1–5 rubric: Completeness, Accuracy, Consistency, Timeliness, Uniqueness, Validity — with anchored criteria and evidence.",
+    outputs: ["DQ score per asset", "Evidence captured", "Uplift targets & SLAs"],
   },
   {
     n: "05", name: "Target TOM", icon: Network, color: "oklch(0.50 0.14 195)",
-    description: "Define the hub-and-spoke target operating model — hub capabilities, spoke ownership, handshakes, controls and success metrics.",
-    outputs: ["Hub vs spoke responsibilities", "Mandatory controls / HITL", "Success metrics"],
+    description: "Define the hub-and-spoke target operating model — what the central CoE (Hub) owns, what the business domain (Spoke) owns, the handshakes between them, mandatory controls and success metrics.",
+    outputs: ["Hub vs Spoke responsibilities", "Handshakes & data contracts", "Mandatory controls / HITL", "Success metrics"],
   },
   {
     n: "06", name: "Blueprint", icon: Sparkles, color: "oklch(0.60 0.18 295)",
-    description: "AI-generated executive summary, per-step interventions, readiness radar, dimension ranking, prioritised next steps and AI-agent readiness guidance.",
-    outputs: ["Executive summary (bullets)", "Readiness radar + dimension ranking", "Prioritised recommendations", "AI agent readiness next steps"],
+    description: "AI-generated guidance showing exactly how Data & AI will improve operations, deliver value and meet governance — plus the activities needed to move to hub-and-spoke ways of working.",
+    outputs: ["Operations · Value · Governance framing", "Readiness radar & dimension ranking", "Per-step Data & AI interventions", "Hub-and-spoke activity backlog", "Gap register & prioritised use cases"],
   },
 ];
 
@@ -59,15 +59,15 @@ function Index() {
           <div className="max-w-3xl text-primary-foreground">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              Microsoft Fabric · OneLake · Foundry · Agent 365
+              Data Hive · Microsoft Fabric · OneLake · Agent 365
             </div>
             <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              Data Blueprint for AI Agents
+              FP&amp;A Data Blueprint
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-white/85 md:text-xl">
-              Six gated sections that take any business process from value-stream map and data
-              quality scoring through to an AI-generated hub-and-spoke blueprint, ready for
-              Fabric, OneLake and Microsoft Agent 365.
+              A reusable framework for business domains to apply Data &amp; AI to <strong>improve operations</strong>,
+              <strong> deliver measurable value</strong> and <strong>meet governance standards</strong> — generated as a
+              hub-and-spoke blueprint on the Data Hive (Microsoft Fabric / OneLake / Agent 365) target state.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 shadow-[var(--shadow-elegant)]">
@@ -77,7 +77,7 @@ function Index() {
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/80">
               <Stat label="Sections" value="6" />
               <Stat label="DQ dimensions" value="6" />
-              <Stat label="Medallion layers" value="Bronze · Silver · Gold" />
+              <Stat label="Operating model" value="Hub · Spoke · Handshakes" />
             </div>
           </div>
         </div>
@@ -194,8 +194,8 @@ function Index() {
 
       <footer className="border-t border-border bg-card">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-6 text-xs text-muted-foreground md:flex-row">
-          <div>Data Blueprint for AI Agents · For internal advisory use</div>
-          <div>Aligned to Azure Cloud Adoption Framework for AI Agents</div>
+          <div>FP&amp;A Data Blueprint · Reusable Data &amp; AI framework · For internal advisory use</div>
+          <div>Hub-and-spoke operating model on Microsoft Fabric / OneLake / Agent 365</div>
         </div>
       </footer>
     </div>
