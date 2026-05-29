@@ -351,7 +351,7 @@ function BlueprintPage() {
             </div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setTab("context")}>← Back</Button>
-              <Button onClick={() => setTab("assets")}>Next: Data Assets →</Button>
+              <Button onClick={() => setTab("assets")}>Next: Data Asset Map →</Button>
             </div>
           </TabsContent>
 
