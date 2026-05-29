@@ -14,6 +14,10 @@ const ContextSchema = z.object({
   cycleVolume: z.string().max(400).default(""),
   baselineEffort: z.string().max(400).default(""),
   timeline: z.string().max(200).default(""),
+  valueDrivers: z.string().max(2000).default(""),
+  kpis: z.string().max(2000).default(""),
+  complianceConstraints: z.string().max(2000).default(""),
+  decisionsSupported: z.string().max(2000).default(""),
 });
 
 const StepSchema = z.object({

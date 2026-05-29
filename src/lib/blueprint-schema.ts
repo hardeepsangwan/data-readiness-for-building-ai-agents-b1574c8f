@@ -88,6 +88,11 @@ export interface ProcessContext {
   cycleVolume: string;
   baselineEffort: string;
   timeline: string;
+  // Critical inputs to ensure the blueprint speaks to Operations / Value / Governance
+  valueDrivers: string;        // operational pain & opportunity (efficiency, cycle time, risk, revenue)
+  kpis: string;                // value metrics the blueprint must move
+  complianceConstraints: string; // regulatory / data residency / sensitivity / retention
+  decisionsSupported: string;  // key business decisions / questions the data + AI must answer
 }
 
 // ── LLM output ──────────────────────────────────────────────────────────────
