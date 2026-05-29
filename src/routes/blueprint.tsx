@@ -274,7 +274,7 @@ function BlueprintPage() {
 
           <TabsContent value="steps" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">One row per process step. The <strong>System / Tool</strong> column auto-feeds the Data Asset map.</p>
+              <p className="text-sm text-muted-foreground">One row per value stream step. The <strong>System / Tool</strong> column auto-feeds the Data Asset Map.</p>
               <Button size="sm" onClick={() => setSteps([...state.steps, { ...newStep(), stepNumber: state.steps.length + 1 }])}>
                 <Plus className="mr-1 h-4 w-4" /> Add step
               </Button>
