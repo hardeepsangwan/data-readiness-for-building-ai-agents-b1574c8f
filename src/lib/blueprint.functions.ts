@@ -1,8 +1,6 @@
-// Server function: generate the executable Data Blueprint via the Lovable AI
-// Gateway. The user asked for "Claude" but the Lovable AI Gateway currently
-// fronts Google Gemini and OpenAI GPT model families (see the gateway model
-// list). We use `google/gemini-2.5-pro` as the strongest reasoning model on
-// the gateway today and surface the model name in the result for auditability.
+// Server function: generate the executable Data Blueprint by calling xAI's
+// Grok reasoning model directly. The user supplied XAI_API_KEY for this.
+// Override the endpoint with XAI_BASE_URL (e.g. for Azure AI Foundry).
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
