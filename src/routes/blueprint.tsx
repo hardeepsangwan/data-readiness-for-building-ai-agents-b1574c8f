@@ -210,8 +210,8 @@ function BlueprintPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="context">1. Context</TabsTrigger>
-            <TabsTrigger value="steps">2. AS-IS Steps</TabsTrigger>
-            <TabsTrigger value="assets">3. Data Assets</TabsTrigger>
+            <TabsTrigger value="steps">2. Value Stream</TabsTrigger>
+            <TabsTrigger value="assets">3. Data Asset Map</TabsTrigger>
             <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
             <TabsTrigger value="tom">5. Target TOM</TabsTrigger>
             <TabsTrigger value="result">6. Blueprint</TabsTrigger>
