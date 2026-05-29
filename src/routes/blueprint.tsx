@@ -527,12 +527,17 @@ function BlueprintPage() {
               <div ref={fullRef} className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
                   <div className="text-xs text-muted-foreground">
-                    Export the full blueprint or any individual section as PDF.
+                    Print, save or export the full blueprint — or any individual section — as PDF.
                   </div>
-                  <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
-                    {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
-                    Export full PDF
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => window.print()}>
+                      <Download className="mr-1 h-4 w-4" /> Print / Save
+                    </Button>
+                    <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
+                      {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
+                      Export full PDF
+                    </Button>
+                  </div>
                 </div>
 
                 <Card ref={summaryRef as any}>
