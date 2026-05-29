@@ -221,7 +221,25 @@ export const generateBlueprint = createServerFn({ method: "POST" })
     const baseUrl = process.env.XAI_BASE_URL || "https://api.x.ai/v1";
 
     const userMessage = `BUSINESS PROCESS CONTEXT:
-${JSON.stringify(data.context, null, 2)}
+Organisation: ${data.context.organisation}
+Business function: ${data.context.businessFunction}
+Business process: ${data.context.businessProcess}
+Sponsor: ${data.context.sponsor}
+Cycle volume: ${data.context.cycleVolume}
+Baseline effort: ${data.context.baselineEffort}
+Timeline: ${data.context.timeline}
+
+OPERATIONS — value drivers / pain & opportunity:
+${data.context.valueDrivers || "(not provided)"}
+
+VALUE — KPIs the blueprint must move:
+${data.context.kpis || "(not provided)"}
+
+DECISIONS the data + AI must support:
+${data.context.decisionsSupported || "(not provided)"}
+
+GOVERNANCE — compliance / sensitivity / retention constraints:
+${data.context.complianceConstraints || "(not provided)"}
 
 AS-IS PROCESS STEPS (${data.steps.length}):
 ${data.steps.map((s) => `${s.id} [${s.subProcess}] ${s.description} | role=${s.role} | system=${s.systemTool} | in=${s.dataInput} | out=${s.dataOutput} | time=${s.time} | freq=${s.frequency} | pain=${s.painPoint ? "Y" : "N"} ${s.painPointDescription ? "→ " + s.painPointDescription : ""} | proposed=${s.automationOpportunity || "?"} | DA=${s.dataAssetRef || "—"}`).join("\n")}
