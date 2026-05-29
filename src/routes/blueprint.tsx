@@ -698,3 +698,157 @@ function BlueprintPage() {
     </div>
   );
 }
+
+function summaryBullets(text: string): string[] {
+  if (!text) return [];
+  // Prefer existing line/bullet breaks; otherwise split into sentences.
+  const lineSplit = text
+    .split(/\r?\n+/)
+    .map((l) => l.replace(/^\s*[-•*\d.)]+\s*/, "").trim())
+    .filter(Boolean);
+  if (lineSplit.length >= 2) return lineSplit;
+  return text
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+const AXIS_COLORS = [
+  "oklch(0.55 0.18 255)",
+  "oklch(0.62 0.16 155)",
+  "oklch(0.55 0.20 30)",
+  "oklch(0.50 0.14 195)",
+  "oklch(0.60 0.18 295)",
+  "oklch(0.68 0.16 75)",
+];
+
+const LEVEL_COLORS = [
+  "oklch(0.62 0.18 25)",
+  "oklch(0.68 0.16 45)",
+  "oklch(0.78 0.14 75)",
+  "oklch(0.72 0.14 145)",
+  "oklch(0.58 0.16 160)",
+  "oklch(0.50 0.18 180)",
+];
+const LEVEL_NAMES = ["No Capability", "Initial", "Repeatable", "Defined", "Managed", "Transformational"];
+
+function RadarMaturityTable({ axes }: { axes: { axis: string; current: number; target: number }[] }) {
+  return (
+    <div className="w-full overflow-x-auto">
+      <table className="w-full min-w-[760px] border-separate border-spacing-y-1.5 text-sm">
+        <thead>
+          <tr className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            <th className="w-[220px] px-2 py-2 text-left">Axis</th>
+            {LEVEL_NAMES.map((n, i) => (
+              <th key={i} className="px-1 py-2 text-center">
+                <div className="font-semibold">L{i}</div>
+                <div className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">{n}</div>
+              </th>
+            ))}
+            <th className="w-[110px] px-2 py-2 text-right">Now → Tgt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {axes.map((r, idx) => {
+            const cur = Math.max(0, Math.min(5, Math.round(r.current)));
+            const tgt = Math.max(0, Math.min(5, Math.round(r.target)));
+            const accent = AXIS_COLORS[idx % AXIS_COLORS.length];
+            return (
+              <tr key={idx}>
+                <td className="rounded-l-md bg-card px-3 py-2 align-middle">
+                  <div className="text-sm font-medium text-foreground" style={{ color: accent }}>{r.axis}</div>
+                </td>
+                {LEVEL_COLORS.map((c, i) => {
+                  const isCurrent = i === cur;
+                  const isTarget = i === tgt;
+                  const filled = isCurrent || isTarget;
+                  return (
+                    <td key={i} className="bg-card px-1 py-2 text-center align-middle">
+                      <div
+                        className="mx-auto flex h-9 w-full max-w-[64px] items-center justify-center rounded-md text-[10px] font-semibold uppercase tracking-wider"
+                        style={{
+                          background: filled ? c : `color-mix(in oklab, ${c} 18%, white)`,
+                          color: filled ? "white" : `color-mix(in oklab, ${c} 60%, black)`,
+                          border: isTarget && !isCurrent ? `2px dashed ${c}` : `1px solid color-mix(in oklab, ${c} 25%, white)`,
+                          boxShadow: isCurrent ? `0 0 0 2px white inset, 0 1px 4px color-mix(in oklab, ${c} 40%, transparent)` : undefined,
+                        }}
+                        title={`Level ${i} · ${LEVEL_NAMES[i]}${isCurrent ? " (current)" : ""}${isTarget ? " (target)" : ""}`}
+                      >
+                        {isCurrent ? "Now" : isTarget ? "Tgt" : ""}
+                      </div>
+                    </td>
+                  );
+                })}
+                <td className="rounded-r-md bg-card px-3 py-2 text-right align-middle">
+                  <div className="text-sm font-bold">{r.current.toFixed(1)} → {r.target.toFixed(1)}</div>
+                  <div className="text-[10px] text-muted-foreground">{LEVEL_NAMES[cur]}</div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function axisRecommendation(axis: string, gap: number): string {
+  if (gap <= 0) return "Maintain current state and look for opportunities to extend this capability further.";
+  const a = axis.toLowerCase();
+  if (a.includes("ingest")) return "Stand up a metadata-driven ingestion framework into OneLake Bronze — config-driven sources, standard CDC and full/incremental patterns, centralised monitoring.";
+  if (a.includes("process") || a.includes("transform")) return "Standardise reusable Fabric notebooks for SCD1/SCD2 merges of initial and incremental loads to build Silver and Gold; enforce medallion contracts and mandatory natural keys.";
+  if (a.includes("consum") || a.includes("ontolog") || a.includes("semantic")) return "Publish a certified Direct Lake semantic / ontology layer for the data products with glossary terms and synonyms — the grounding surface for Copilot and Foundry agents.";
+  if (a.includes("quality") || a.includes("dq")) return "Define DQ rules per certified dataset (completeness, validity, freshness, uniqueness), monitor with scorecards, and gate AI surfaces on DQ SLAs.";
+  if (a.includes("govern") || a.includes("security")) return "Assign owners and stewards in Microsoft Purview, classify and label sensitive data, enforce least-privilege RLS/OLS, and register agents in Microsoft Agent 365.";
+  if (a.includes("cicd") || a.includes("devops") || a.includes("ops")) return "Adopt Fabric Git integration with Azure DevOps pipelines, branching + PR review, and add automated data + AI-eval tests as promotion gates.";
+  if (a.includes("people") || a.includes("operating") || a.includes("hub") || a.includes("spoke")) return "Run the hub-and-spoke target operating model — hub owns platform / standards / agent factory, spokes own domain data products and stewardship.";
+  return "Close the gap by sequencing the hub-and-spoke handshakes and the medallion controls described in the target TOM.";
+}
+
+function agentReadinessSteps(bizFn: string, bizProc: string): string[] {
+  const fn = bizFn || "your function";
+  const proc = bizProc ? ` (${bizProc})` : "";
+  return [
+    `Ingest data for ${fn}${proc} from the current source systems into OneLake using a reusable metadata-driven ingestion framework (full + incremental + CDC patterns).`,
+    `Land each source in Bronze with source identity, sensitivity labels and lineage preserved; standardise the load pattern per source.`,
+    `Use the reusable data processing framework to merge initial and incremental loads with SCD Type 1 and Type 2 logic into the Silver layer.`,
+    `Apply DQ rules (completeness, accuracy, validity, timeliness, uniqueness) at the Silver → Gold transition; block the AI-grounding surface if SLAs are breached.`,
+    `Build the Gold and ontology layer for ${fn} data products — entities, relationships and metrics — and publish a certified Direct Lake semantic model.`,
+    `Expose the ontology as a Fabric IQ / Foundry IQ data agent so Copilot Studio and Foundry agents ground answers in governed enterprise context, not raw tables.`,
+    `Register every agent in Microsoft Agent 365: assign owner, scope tools, inherit caller identity, enforce DLP and add groundedness / accuracy eval suites as release gates.`,
+  ];
+}
+
+function agentUseCases(bizFn: string, bizProc: string): { title: string; steps: string[] }[] {
+  const fn = bizFn || "your function";
+  const proc = bizProc || "the pilot process";
+  return [
+    {
+      title: `Copilot Studio agent over ${fn} (${proc})`,
+      steps: [
+        `Ingest ${fn} source systems into OneLake via the metadata-driven framework.`,
+        "Apply DQ rules and reconciliation so the agent only sees trusted, reconciled facts.",
+        `Define a ${fn} ontology (entities, relationships, metrics) and publish a certified Direct Lake model.`,
+        "Expose it as a Fabric IQ data agent with synonyms, descriptions and RLS by Entra group.",
+      ],
+    },
+    {
+      title: "Foundry agent grounded on enterprise knowledge",
+      steps: [
+        "Build a Foundry IQ index referencing curated OneLake gold tables and unstructured stores.",
+        `Wire the agent to the ${fn} ontology so retrieval is entity-aware, not just keyword based.`,
+        "Add eval suites (groundedness, accuracy, safety) as CI/CD release gates.",
+        "Enforce Agent 365 access control: identity, data scope and tool scopes per caller.",
+      ],
+    },
+    {
+      title: "M365 / Work IQ agent over SharePoint, Teams, Outlook",
+      steps: [
+        "Inventory content sources via Graph connectors and tag them with Purview sensitivity labels.",
+        "Curate the corpus: certify owners, retire stale documents, deduplicate.",
+        "Use Foundry IQ / Fabric IQ indexes with standardised chunking + embeddings.",
+        "Register the agent in Microsoft Agent 365 with scoped Graph permissions and DLP policies.",
+      ],
+    },
+  ];
+}
