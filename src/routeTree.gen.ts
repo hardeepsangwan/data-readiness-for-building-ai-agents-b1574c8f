@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BlueprintRouteImport } from './routes/blueprint'
-import { Route as AssessmentRouteImport } from './routes/assessment'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -31,11 +30,6 @@ const BlueprintRoute = BlueprintRouteImport.update({
   path: '/blueprint',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AssessmentRoute = AssessmentRouteImport.update({
-  id: '/assessment',
-  path: '/assessment',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -50,7 +44,6 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/assessment': typeof AssessmentRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
@@ -58,7 +51,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/assessment': typeof AssessmentRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
@@ -67,36 +59,21 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/assessment': typeof AssessmentRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
   '/report': typeof ReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/admin'
-    | '/assessment'
-    | '/blueprint'
-    | '/login'
-    | '/report'
+  fullPaths: '/' | '/admin' | '/blueprint' | '/login' | '/report'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/assessment' | '/blueprint' | '/login' | '/report'
-  id:
-    | '__root__'
-    | '/'
-    | '/admin'
-    | '/assessment'
-    | '/blueprint'
-    | '/login'
-    | '/report'
+  to: '/' | '/admin' | '/blueprint' | '/login' | '/report'
+  id: '__root__' | '/' | '/admin' | '/blueprint' | '/login' | '/report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  AssessmentRoute: typeof AssessmentRoute
   BlueprintRoute: typeof BlueprintRoute
   LoginRoute: typeof LoginRoute
   ReportRoute: typeof ReportRoute
@@ -125,13 +102,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlueprintRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/assessment': {
-      id: '/assessment'
-      path: '/assessment'
-      fullPath: '/assessment'
-      preLoaderRoute: typeof AssessmentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -152,7 +122,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  AssessmentRoute: AssessmentRoute,
   BlueprintRoute: BlueprintRoute,
   LoginRoute: LoginRoute,
   ReportRoute: ReportRoute,
@@ -160,3 +129,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

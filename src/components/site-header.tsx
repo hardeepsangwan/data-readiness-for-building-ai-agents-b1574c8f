@@ -42,7 +42,7 @@ export function SiteHeader() {
     create(wsName, user.email);
     setWsName("");
     setDialogOpen(false);
-    navigate({ to: "/assessment" });
+    navigate({ to: "/blueprint" });
   };
 
   return (
@@ -60,7 +60,7 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-6 text-sm md:flex">
           <Link to="/" activeOptions={{ exact: true }} className="text-muted-foreground transition-colors hover:text-foreground" activeProps={{ className: "text-foreground font-medium" }}>Overview</Link>
           <Link to="/blueprint" className="text-muted-foreground transition-colors hover:text-foreground" activeProps={{ className: "text-foreground font-medium" }}>Blueprint</Link>
-          <Link to="/assessment" className="text-muted-foreground transition-colors hover:text-foreground" activeProps={{ className: "text-foreground font-medium" }}>Assessment</Link>
+          
           <Link to="/report" className="text-muted-foreground transition-colors hover:text-foreground" activeProps={{ className: "text-foreground font-medium" }}>Report</Link>
           {hydrated && user?.role === "facilitator" && (
             <Link to="/admin" className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground" activeProps={{ className: "text-foreground font-medium" }}>

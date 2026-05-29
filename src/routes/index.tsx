@@ -42,9 +42,6 @@ function Index() {
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 shadow-[var(--shadow-elegant)]">
                 <Link to="/blueprint">Build a Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/0 text-white hover:bg-white/10 hover:text-white">
-                <Link to="/assessment">Maturity assessment</Link>
-              </Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/80">
               <Stat label="Workstreams" value="4" />
