@@ -17,6 +17,7 @@ import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
 import targetArchitectureDiagram from "@/assets/target-state-architecture.png";
+import dataHiveTargetState from "@/assets/data-hive-target-state.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   SERVICE_CHARGE_CONTEXT,
