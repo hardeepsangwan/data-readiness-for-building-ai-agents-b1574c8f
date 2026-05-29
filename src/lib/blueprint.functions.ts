@@ -242,7 +242,7 @@ ${data.tom.successMetrics}
 
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations. The executiveSummary MUST explicitly address all four dimensions: data production (reusable Fabric ingestion + SCD1/SCD2 into OneLake), data consumption (Gold + ontology + agents), data governance (Purview / Entra Agent ID), and DQ remediation steps. The gapRegister and hubSpokeActivities MUST include concrete items for each of those four dimensions.`;
 
-    const model = process.env.XAI_MODEL || "grok-4-latest";
+    const model = process.env.XAI_MODEL || "grok-4";
     const body = {
       model,
       messages: [
@@ -262,20 +262,28 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
       tool_choice: { type: "function", function: { name: "emit_blueprint" } },
     };
 
-    const resp = await fetch(`${baseUrl}/chat/completions`, {
+    // Azure AI Foundry / Azure OpenAI uses `api-key` header (not Bearer) and
+    // requires an api-version query param. Detect by hostname.
+    const isAzure = /\.azure\.com/i.test(baseUrl);
+    const url = isAzure
+      ? `${baseUrl.replace(/\/$/, "")}/chat/completions?api-version=preview`
+      : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (isAzure) headers["api-key"] = apiKey;
+    else headers["Authorization"] = `Bearer ${apiKey}`;
+
+    const resp = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      if (resp.status === 429) throw new Error("Grok rate limit exceeded. Try again in a moment.");
-      if (resp.status === 401) throw new Error("XAI_API_KEY invalid or unauthorized.");
-      throw new Error(`xAI error ${resp.status}: ${text.slice(0, 400)}`);
+      if (resp.status === 429) throw new Error("Model rate limit exceeded. Try again in a moment.");
+      if (resp.status === 401) throw new Error("API key invalid or unauthorized for the configured endpoint.");
+      if (resp.status === 404) throw new Error(`Model/deployment not found at ${url}. Set XAI_MODEL to the Azure deployment name. Upstream: ${text.slice(0, 300)}`);
+      throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
     }
 
     const json = await resp.json();
