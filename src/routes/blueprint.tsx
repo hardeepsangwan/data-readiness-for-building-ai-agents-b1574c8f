@@ -414,9 +414,100 @@ function BlueprintPage() {
             </div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setTab("context")}>← Back</Button>
+              <Button onClick={() => setTab("usecases")}>Next: Use Case Priority →</Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="usecases" className="mt-6 space-y-4">
+            <p className="text-sm text-muted-foreground">Score each candidate use case 1–5 against the seven parameters. Total /35 drives the tier (Tier 1 ≥28 Now · Tier 2 22–27 Next · Tier 3 &lt;22 Later).</p>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">Use case scoring criteria</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/40 uppercase">
+                    <tr>
+                      <th className="p-2 text-left">Parameter</th>
+                      <th className="p-2 text-left">Definition</th>
+                      <th className="p-2 text-left">1</th>
+                      <th className="p-2 text-left">2</th>
+                      <th className="p-2 text-left">3</th>
+                      <th className="p-2 text-left">4</th>
+                      <th className="p-2 text-left">5</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {UC_PARAMS.map((p) => (
+                      <tr key={p.key} className="border-t align-top">
+                        <td className="p-2 font-semibold">{p.label}</td>
+                        <td className="p-2 text-muted-foreground">{p.definition}</td>
+                        <td className="p-2">{p.s1}</td>
+                        <td className="p-2">{p.s2}</td>
+                        <td className="p-2">{p.s3}</td>
+                        <td className="p-2">{p.s4}</td>
+                        <td className="p-2">{p.s5}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase">
+                    <tr>
+                      <th className="p-2 text-left">ID</th>
+                      <th className="p-2 text-left">Use case</th>
+                      <th className="p-2 text-left">Process area</th>
+                      {UC_PARAMS.map((p) => <th key={p.key} className="p-2 text-left" title={p.definition}>{p.label.split(" ")[0]}</th>)}
+                      <th className="p-2 text-left">Total</th>
+                      <th className="p-2 text-left">Tier</th>
+                      <th className="p-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {useCases.map((u, i) => {
+                      const total = ucTotal(u);
+                      const tier = ucTier(total);
+                      const update = (patch: Partial<UseCaseRow>) => {
+                        const n = [...useCases]; n[i] = { ...u, ...patch }; setUseCases(n);
+                      };
+                      return (
+                        <tr key={u.id} className="border-t align-top">
+                          <td className="p-2"><Input className="h-8 w-20 font-mono text-xs" value={u.id} onChange={(e) => update({ id: e.target.value })} /></td>
+                          <td className="p-2"><Input className="h-8 min-w-[200px]" value={u.name} onChange={(e) => update({ name: e.target.value })} placeholder="e.g. Service Charge Pack Generator" /></td>
+                          <td className="p-2"><Input className="h-8 min-w-[140px]" value={u.processArea} onChange={(e) => update({ processArea: e.target.value })} placeholder="e.g. Reconciliation" /></td>
+                          {UC_PARAMS.map((p) => (
+                            <td key={p.key} className="p-2">
+                              <select className="h-8 w-14 rounded border bg-transparent px-1 text-sm" value={u[p.key] as number} onChange={(e) => update({ [p.key]: Number(e.target.value) } as Partial<UseCaseRow>)}>
+                                {[1,2,3,4,5].map((v) => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </td>
+                          ))}
+                          <td className="p-2 font-semibold">{total}/35</td>
+                          <td className="p-2"><Badge variant="outline" className={tier.cls}>{tier.label}</Badge></td>
+                          <td className="p-2"><Button size="icon" variant="ghost" onClick={() => setUseCases(useCases.filter((x) => x.id !== u.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
+                        </tr>
+                      );
+                    })}
+                    {useCases.length === 0 && (
+                      <tr><td colSpan={12} className="p-6 text-center text-sm text-muted-foreground">No use cases yet. Add candidates to prioritise.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+            <Button size="sm" variant="outline" onClick={() => setUseCases([...useCases, newUseCase(useCases.length + 1)])}>
+              <Plus className="mr-1 h-4 w-4" /> Add use case
+            </Button>
+
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => setTab("steps")}>← Back</Button>
               <Button onClick={() => setTab("assets")}>Next: Data Asset Map →</Button>
             </div>
           </TabsContent>
+
 
           <TabsContent value="assets" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
