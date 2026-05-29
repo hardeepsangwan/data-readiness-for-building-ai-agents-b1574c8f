@@ -553,6 +553,37 @@ function BlueprintPage() {
                 </Card>
 
                 <Card>
+                  <CardHeader><CardTitle>Operations · Value · Governance — what the blueprint delivers</CardTitle></CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-3">
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.55 0.20 30)" }}>Improve operations</div>
+                      <p className="mt-1 text-xs text-muted-foreground">Pain &amp; opportunity captured</p>
+                      <p className="mt-2 text-sm">{state.context.valueDrivers || "—"}</p>
+                      <div className="mt-3 text-[11px] text-muted-foreground">
+                        {state.result.stepRecommendations.filter((r) => r.classification === "AUTOMATE FULL" || r.classification === "AUTOMATE+HUMAN").length} of {state.result.stepRecommendations.length} steps targeted for automation.
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.62 0.16 155)" }}>Deliver value</div>
+                      <p className="mt-1 text-xs text-muted-foreground">KPIs the blueprint must move</p>
+                      <p className="mt-2 text-sm">{state.context.kpis || "—"}</p>
+                      <div className="mt-3 text-[11px] text-muted-foreground">
+                        {state.result.useCaseBacklog.length} prioritised use cases in backlog.
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.50 0.14 195)" }}>Meet governance</div>
+                      <p className="mt-1 text-xs text-muted-foreground">Compliance &amp; sensitivity constraints</p>
+                      <p className="mt-2 text-sm">{state.context.complianceConstraints || "—"}</p>
+                      <div className="mt-3 text-[11px] text-muted-foreground">
+                        {state.result.gapRegister.filter((g) => g.dimension === "Governance").length} governance gaps tracked · Purview + Entra Agent ID required.
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+
+                <Card>
                   <CardHeader><CardTitle>Dimension ranking across maturity levels</CardTitle></CardHeader>
                   <CardContent>
                     <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
