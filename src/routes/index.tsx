@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, Briefcase, Database, Bot, CheckCircle2, ArrowDown } from "lucide-react";
+import { ArrowRight, ArrowDown, CheckCircle2, FileText, Workflow, Database, Gauge, Network, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { WORKSTREAMS, TOTAL_QUESTIONS } from "@/lib/assessment-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
