@@ -1,76 +1,70 @@
+
 ## Goal
 
-Pivot the Data Blueprint app from a fixed maturity-level picker into a **generic, process-agnostic assessment** whose questions come directly from the uploaded templates, and whose results (pain points, next-best actions, current-vs-target radar) are produced by a reasoning LLM from the user's free-text and structured answers. Service Charge in FP&A is the first instance; the framework must work for any process in any function.
+Pivot the app from a maturity-scoring questionnaire into an **executable Data Blueprint framework**, generic across business processes, seeded with the FP&A Service Charge template (`Indurent_DataBlueprint_Workbook_v4.xlsx`). Business users build their own blueprint by entering process steps, mapping data assets, scoring data quality, and answering Data Hive consumption questions. Claude then produces gap analysis vs the hub-and-spoke target TOM and recommends where Data & AI applies at each step.
 
-## Scope of change
+## What the user will do, end-to-end
 
-### 1. Process Context (new step)
-Add a "Context" step at the top of the assessment capturing:
-- Business Function (default: FP&A — editable)
-- Business Process (default: Service Charge — editable)
-- Executive sponsor, in-scope systems, success definition, timeline
-This context is persisted and injected into every AI prompt so the reasoning model tailors findings to the chosen process.
+1. **Process context** — name, function, process, sponsor, cycle volume, baseline effort, timeline.
+2. **AS-IS Process Map (WS2-B)** — repeatable rows: Step Ref, #, Description, Role, System/Tool, Data In, Data Out, Time, Frequency, Pain?, Pain Point, Automation Opportunity, Priority. "Add step" / "Add sub-process" buttons. The Service Charge rows are available as a one-click "Load example".
+3. **Data Asset Map (WS3-A)** — auto-seeded from unique `System/Tool` values entered in WS2-B. User fills Domain, Entities, Access Method, Business/Tech Owner, Refresh, PII, **Data Hive Status (None / Bronze / Silver / Gold)**, Bronze/Silver/Gold Fit, Overall RAG, Notes.
+4. **Data Quality (WS3-B)** — per asset: Completeness, Accuracy, Consistency, Timeliness, Uniqueness, Validity (1–5 + evidence). Critical-step linkage to the steps that consume the asset.
+5. **Data Hive readiness** — generic prompts: ingestion path to Fabric, ownership model (hub vs spoke), semantic / ontology layer, agent retrieval pattern, governance & access, observability.
+6. **TO-BE TOM target** — pre-filled with the hub-and-spoke target architecture (editable). Used as the "target state" for the LLM.
+7. **Generate Blueprint** — POSTs everything to a `createServerFn` that calls Claude via Lovable AI Gateway.
 
-### 2. Questions sourced from the templates
-Replace the current 72 maturity-level questions with the actual structured discovery questions extracted from the uploaded workbooks, organised by the 4 workstreams and their sub-sections (e.g. WS1 → Programme Scope, AI Ethics, Guardrails, Compliance; WS2 → Business Problems, AS-IS, TO-BE, Gap & Use Case; WS3 → Data Assets, DQ, Lineage, Readiness; WS4 → Charter, Model, Build/Test, Deploy).
-Each question supports a free-text answer plus an optional current-state / target-state self-rating (1–5) used to seed the radar before the AI refines it.
+## What Claude returns (structured output)
 
-### 3. AI reasoning backend
-- New `createServerFn` `analyzeWorkstream` that takes `{ context, workstream, answers }` and calls the Lovable AI Gateway with a strong reasoning model (`openai/gpt-5.5` with `reasoning.effort: "high"`) using tool-calling for structured JSON output.
-- Schema returned per workstream:
-  - `dimensions[]` → { name, currentScore (0-5), targetScore (0-5), rationale }
-  - `painPoints[]` → { title, severity, evidence (quotes user answers), affectedDimensions }
-  - `nextBestActions[]` → { title, addresses (painPoint refs), CAF pillar, owner, effort, prescriptiveSteps[] }
-  - `summary` (3–5 lines)
-- A second serverFn `analyzeProgramme` produces the cross-workstream executive view.
-- Uses `LOVABLE_API_KEY` (auto-provisioned via Lovable Cloud).
+For each AS-IS step:
+- **Classification** — RETAIN / OPTIMISE / AUTOMATE+HUMAN / AUTOMATE FULL / CONTROL.
+- **Data & AI intervention** — what to do at this step (e.g. "Fabric Bronze auto-ingest GL", "Copilot Studio exception agent", "Semantic Gold model for apportionment").
+- **Hub vs Spoke ownership** — which moves to the central Data Hub, which stays in the business spoke.
+- **Required data assets + DQ uplifts** referencing DA-xx and gap refs.
+- **Governance gates** required before automation (HITL, controls).
 
-### 4. Results UI rewrite
-- Per-workstream tab shows:
-  - **Radar chart** (current vs target) built from AI `dimensions` (full names, no truncation).
-  - **Pain Points** card grouped by severity with evidence chips.
-  - **Next Best Actions** list, each tagged to the pain point it addresses + CAF pillar.
-- Programme view: cross-workstream radar, top pain points, gate-readiness summary.
-- "Run analysis" button per workstream + "Analyse full programme" at top.
-- Loading + error states (handle 429 / 402 from gateway).
+Aggregate:
+- **Gap Register (G-xx)** vs target TOM — Process / Data / Tech / People / Governance dimensions.
+- **Use Case backlog** with Business Impact / Desirability / Feasibility (1–5) and solution type.
+- **Hub-and-spoke activity list** — concrete activities to stand up federated ways of working.
+- **Radar charts** (current vs target) for: Process automation, Data foundations, Data quality, Data Hive readiness, AI/Agent readiness, Governance.
 
-### 5. Generic-by-design
-- Strip all hardcoded FP&A / Service Charge phrasing from question text — instead use `{process}` / `{function}` placeholders rendered at runtime from Context.
-- The Service Charge example becomes a *preset* (one-click "Load Service Charge example") rather than baked into questions.
+Model: `anthropic/claude-sonnet-4` via Lovable AI Gateway (the user explicitly said "Claude"). Falls back to `google/gemini-3-flash-preview` if Anthropic unavailable.
 
-### 6. Cleanup
-- Keep `assessment-data.ts` for the question catalogue only; remove the static `CAF_GUIDANCE` map (AI now produces guidance dynamically).
-- Replace `workstream-action-plan.tsx` with `ai-findings.tsx` (pain points + actions).
-- Rewrite `workstream-radar.tsx` to consume AI `dimensions`.
-- Update `excel-export.ts` to export answers + AI findings.
+## Files to change / add
+
+**New**
+- `src/lib/blueprint-schema.ts` — types for `ProcessStep`, `DataAsset`, `DataQualityScore`, `DataHiveAnswers`, `TargetTOM`, `BlueprintResult`.
+- `src/lib/blueprint-template.ts` — Service Charge seed rows extracted from the workbook (steps, assets, gaps, TOM decisions) for "Load example".
+- `src/lib/blueprint.functions.ts` — `generateBlueprint` server fn (Claude call + structured output via AI SDK `Output.object`).
+- `src/routes/blueprint.tsx` — replaces/sits alongside `/assessment` with stepper: Context → AS-IS Steps → Data Assets → Data Quality → Data Hive → TO-BE TOM → Generate.
+- `src/components/blueprint/steps-editor.tsx`, `assets-editor.tsx`, `dq-editor.tsx`, `hive-editor.tsx`, `tom-editor.tsx`, `blueprint-result.tsx` (renders per-step recommendations, gap register, hub-spoke activities, radar charts).
+
+**Edit**
+- `src/lib/assessment-store.ts` — add `blueprint` slice (steps[], assets[], dq[], hive, tom, result) persisted alongside existing state. Keep current maturity flow intact for backwards compatibility (do not break `/assessment`).
+- `src/lib/excel-export.ts` — add sheets mirroring the original workbook: WS2-B, WS3-A, WS3-B, WS2-D Gap Register, plus an "AI Blueprint Output" sheet.
+- `src/router.tsx` / route tree regen — register `/blueprint`.
+- `src/routes/index.tsx` — primary CTA → `/blueprint` (keep `/assessment` link as "Maturity assessment").
+
+**Unchanged**
+- Auth, workshops store, admin/report routes (will keep working with the existing maturity data).
+
+## Hub-and-spoke target TOM (default, editable)
+
+Hard-coded default fed to Claude as the "target state":
+- **Hub (central Data & AI CoE on Data Hive / Fabric):** Bronze→Silver→Gold pipelines, semantic/ontology layer, agent platform (Copilot Studio + Foundry/Fabric IQ), DQ monitoring, governance & access, MLOps/AgentOps.
+- **Spoke (business domain, e.g. FP&A Service Charge):** owns process steps, business rules, KPIs, HITL approvals, exception handling, last-mile reporting.
+- **Handshakes:** data contracts, SLAs, exception workflows via Power Automate, shared backlog.
 
 ## Technical notes
 
-- Enable Lovable Cloud (if not already) so `LOVABLE_API_KEY` is provisioned.
-- Server function lives at `src/lib/analysis.functions.ts`; helper schema at `src/lib/analysis.schema.ts`.
-- Cache AI results in `assessment-store.ts` keyed by `workstreamId + answersHash` so repeat renders don't re-bill.
-- Model default `openai/gpt-5.5`, fallback `google/gemini-3-pro-preview` (configurable).
-- Radar uses Recharts as today; full angle-tick labels (already wrapped).
+- Server fn lives in `src/lib/blueprint.functions.ts`, called via `useServerFn` from the Generate button (not from a public-route loader — `requireSupabaseAuth` is not used here; if added later, route must move under `_authenticated/`).
+- Structured output via `Output.object` with a Zod schema mirroring `BlueprintResult`.
+- Per-step recommendations are rendered inline next to each AS-IS row; aggregate views show gap register, hub/spoke activity board, and 6-axis radar (current vs target).
+- Excel export reuses `exceljs` already in the project.
+- Current `/assessment` page stays functional; once the new flow is validated we can deprecate it in a follow-up.
 
-## Files to add / change
+## Out of scope (next iterations)
 
-Add:
-- `src/routes/assessment.context.tsx` (or inline Context step in existing assessment route)
-- `src/lib/analysis.functions.ts`
-- `src/lib/analysis.schema.ts`
-- `src/components/ai-findings.tsx`
-- `src/components/programme-summary.tsx`
-
-Change:
-- `src/lib/assessment-data.ts` — replace question catalogue with template-driven questions; remove CAF_GUIDANCE.
-- `src/lib/assessment-store.ts` — add context + aiResults state.
-- `src/components/workstream-radar.tsx` — consume AI dimensions.
-- `src/routes/assessment.tsx` — Context step, free-text answers, "Run AI analysis" CTA, render `<AiFindings>`.
-- `src/lib/excel-export.ts` — include AI findings.
-- Remove `src/components/workstream-action-plan.tsx` (superseded).
-
-## Out of scope (this iteration)
-
-- Persisting assessments to a database (currently lives in localStorage via assessment-store).
-- Multi-user collaboration.
-- Streaming the AI response (results delivered as a single structured payload).
+- Multi-user collaboration / locking on a blueprint.
+- Sharepoint / Teams export.
+- Versioned snapshots of blueprints.
