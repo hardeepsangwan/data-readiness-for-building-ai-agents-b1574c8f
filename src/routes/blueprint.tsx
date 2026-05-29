@@ -269,7 +269,7 @@ function BlueprintPage() {
                 </div>
               </CardContent>
             </Card>
-            <div className="mt-4 flex justify-end"><Button onClick={() => setTab("steps")}>Next: AS-IS Steps →</Button></div>
+            <div className="mt-4 flex justify-end"><Button onClick={() => setTab("steps")}>Next: Value Stream →</Button></div>
           </TabsContent>
 
           <TabsContent value="steps" className="mt-6 space-y-4">
