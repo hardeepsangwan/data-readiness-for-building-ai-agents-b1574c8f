@@ -56,6 +56,38 @@ const DQ_CRITERIA: { dim: string; what: string; poor: string; ok: string; great:
   { dim: "Validity", what: "Values conform to defined formats, ranges, code lists.", poor: "No schema validation; invalid codes / formats common.", ok: "Schema + reference data validated at load; some quarantine.", great: "Contract tests + reference data governance; invalid rows rejected with lineage." },
 ];
 
+type UCParam = "businessValue" | "frequency" | "dataReadiness" | "feasibility" | "effort" | "risk" | "alignment";
+const UC_PARAMS: { key: UCParam; label: string; definition: string; s1: string; s2: string; s3: string; s4: string; s5: string }[] = [
+  { key: "businessValue", label: "Business Value", definition: "Effort, cost or error saved across the cycle.", s1: "Minor effort saved", s2: "Modest, single-team", s3: "Material per cycle", s4: "Significant cross-team", s5: "Transformational (multi-day or audit-grade)" },
+  { key: "frequency", label: "Frequency / Volume", definition: "How often the pain recurs and at what scale.", s1: "Annual / one-off", s2: "Quarterly", s3: "Monthly, single team", s4: "Monthly across stacks", s5: "Continuous / per-transaction at 100s–1000s scale" },
+  { key: "dataReadiness", label: "Data Readiness", definition: "Quality and accessibility of the source data today.", s1: "Unstructured / paper", s2: "Partially structured, multiple sources", s3: "Structured but manual extracts", s4: "Structured + accessible via Power BI / SOP-defined", s5: "Already in Data Hive or canonical system" },
+  { key: "feasibility", label: "Technical Feasibility", definition: "Maturity of the solution pattern and tooling fit.", s1: "Net-new pattern, unknowns", s2: "Bespoke build needed", s3: "Known pattern, needs adaptation", s4: "Standard agent / Power Automate fit", s5: "Already prototyped or vendor-ready" },
+  { key: "effort", label: "Implementation Effort", definition: "Lower effort = higher score (L/M/H inverted).", s1: "Very high effort (>6 months)", s2: "High effort (3–6 months)", s3: "Medium effort (~3 months)", s4: "Low effort (4–8 weeks)", s5: "Very low effort (<4 weeks)" },
+  { key: "risk", label: "Risk / Control Improvement", definition: "Reduces SOP control, audit or compliance risk.", s1: "Neutral", s2: "Marginal control uplift", s3: "Replaces a manual control", s4: "Strengthens a named SOP control", s5: "Closes a flagged SFR / TAX risk" },
+  { key: "alignment", label: "Strategic Alignment", definition: "Fit with agentic, governance & Data Hive agenda.", s1: "Tangential", s2: "Useful but isolated", s3: "Aligned with one workstream", s4: "Aligned with multiple workstreams", s5: "Anchor use case for the programme" },
+];
+
+type UseCaseRow = {
+  id: string;
+  name: string;
+  processArea: string;
+  businessValue: number;
+  frequency: number;
+  dataReadiness: number;
+  feasibility: number;
+  effort: number;
+  risk: number;
+  alignment: number;
+};
+const newUseCase = (n: number): UseCaseRow => ({
+  id: `UC-${String(n).padStart(2, "0")}`,
+  name: "",
+  processArea: "",
+  businessValue: 3, frequency: 3, dataReadiness: 3, feasibility: 3, effort: 3, risk: 3, alignment: 3,
+});
+const ucTotal = (u: UseCaseRow) => UC_PARAMS.reduce((s, p) => s + (u[p.key] as number), 0);
+const ucTier = (t: number) => t >= 28 ? { label: "Tier 1 — Now", cls: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" } : t >= 22 ? { label: "Tier 2 — Next", cls: "bg-amber-500/15 text-amber-700 border-amber-500/30" } : { label: "Tier 3 — Later", cls: "bg-slate-500/15 text-slate-700 border-slate-500/30" };
+
 function newStep(): ProcessStep {
   return {
     id: `S-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
