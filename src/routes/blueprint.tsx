@@ -527,12 +527,17 @@ function BlueprintPage() {
               <div ref={fullRef} className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
                   <div className="text-xs text-muted-foreground">
-                    Export the full blueprint or any individual section as PDF.
+                    Print, save or export the full blueprint — or any individual section — as PDF.
                   </div>
-                  <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
-                    {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
-                    Export full PDF
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => window.print()}>
+                      <Download className="mr-1 h-4 w-4" /> Print / Save
+                    </Button>
+                    <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
+                      {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
+                      Export full PDF
+                    </Button>
+                  </div>
                 </div>
 
                 <Card ref={summaryRef as any}>
@@ -549,6 +554,27 @@ function BlueprintPage() {
                       ))}
                     </ul>
                     <div className="mt-3 text-xs text-muted-foreground">Model: {state.result.model} · {new Date(state.result.generatedAt).toLocaleString()}</div>
+                  </CardContent>
+                </Card>
+
+                <Card ref={radarRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Current vs Target — 6-axis readiness</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(radarRef, "readiness-radar", "Readiness Radar")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Radar view</div>
+                        <BlueprintRadar axes={state.result.radar} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Horizontal bar view</div>
+                        <BlueprintHorizontalBars axes={state.result.radar} />
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -646,26 +672,6 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card ref={radarRef as any}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Current vs Target — 6-axis readiness</CardTitle>
-                    <Button size="sm" variant="outline" onClick={() => exportSection(radarRef, "readiness-radar", "Readiness Radar")} disabled={exporting !== null}>
-                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Radar view</div>
-                        <BlueprintRadar axes={state.result.radar} />
-                      </div>
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Horizontal bar view</div>
-                        <BlueprintHorizontalBars axes={state.result.radar} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
                 <Card ref={stepsRef as any}>
                   <CardHeader className="flex flex-row items-center justify-between">
@@ -783,6 +789,61 @@ function BlueprintPage() {
                         ))}
                       </tbody>
                     </table>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Target architecture — Data Hive on Microsoft Fabric &amp; OneLake</CardTitle></CardHeader>
+                  <CardContent className="space-y-5">
+                    <p className="max-w-3xl text-sm text-muted-foreground">
+                      The reference target architecture this blueprint converges on. Source systems land in <strong>Bronze</strong>,
+                      are conformed in <strong>Silver</strong> (SCD1/SCD2), curated in <strong>Gold</strong> with a certified
+                      semantic / ontology layer, and exposed to humans &amp; agents through <strong>Copilot Studio</strong>,
+                      <strong> Foundry</strong> and <strong>Microsoft Agent 365</strong>, all governed end-to-end by
+                      <strong> Microsoft Purview</strong> and <strong>Entra Agent ID</strong>.
+                    </p>
+
+                    <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
+                      <div className="grid min-w-[820px] grid-cols-5 gap-3 text-center text-xs">
+                        {[
+                          { t: "Sources", d: "ERP · CRM · Excel · Files · APIs", c: "oklch(0.55 0.18 255)" },
+                          { t: "Bronze (Raw)", d: "Metadata-driven ingestion · CDC · audit", c: "oklch(0.62 0.18 45)" },
+                          { t: "Silver (Conformed)", d: "SCD1 / SCD2 · keys · DQ rules", c: "oklch(0.72 0.14 145)" },
+                          { t: "Gold (Curated)", d: "Direct Lake semantic + ontology", c: "oklch(0.58 0.16 160)" },
+                          { t: "Consumption", d: "Copilot Studio · Foundry · Agent 365 · Power BI", c: "oklch(0.55 0.20 295)" },
+                        ].map((s) => (
+                          <div key={s.t} className="rounded-md border border-border p-3" style={{ background: `color-mix(in oklab, ${s.c} 8%, white)`, borderColor: `color-mix(in oklab, ${s.c} 30%, white)` }}>
+                            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: s.c }}>{s.t}</div>
+                            <div className="mt-1 text-[11px] text-foreground/80">{s.d}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 grid min-w-[820px] grid-cols-2 gap-3 text-xs">
+                        <div className="rounded-md border border-dashed border-border p-3">
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Governance plane</div>
+                          <div className="mt-1">Microsoft Purview — catalog, lineage, classification, sensitivity labels, DLP, access reviews.</div>
+                        </div>
+                        <div className="rounded-md border border-dashed border-border p-3">
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Agent &amp; identity plane</div>
+                          <div className="mt-1">Entra Agent ID · Microsoft Agent 365 registry · Foundry evaluations · CI/CD via Fabric Git + Azure DevOps.</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {[
+                        { t: "Hub — Data &amp; AI CoE", items: ["OneLake foundation &amp; capacity", "Reusable ingestion + SCD framework", "Certified Gold + ontology", "Agent platform &amp; evals", "Purview policy &amp; standards"] },
+                        { t: "Spoke — Business domain", items: ["Source-of-truth definitions", "Business rules &amp; KPI logic", "HITL approvals &amp; exceptions", "Domain semantic extensions", "Adoption &amp; change mgmt"] },
+                        { t: "Handshakes", items: ["Data contracts", "DQ &amp; freshness SLAs", "Joint backlog &amp; gate reviews", "Shared incident process", "Agent release &amp; rollback"] },
+                      ].map((p) => (
+                        <div key={p.t} className="rounded-md border border-border bg-card p-4">
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary" dangerouslySetInnerHTML={{ __html: p.t }} />
+                          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-foreground/80">
+                            {p.items.map((it, i) => <li key={i} dangerouslySetInnerHTML={{ __html: it }} />)}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
