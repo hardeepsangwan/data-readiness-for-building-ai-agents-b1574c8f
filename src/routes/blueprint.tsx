@@ -73,7 +73,7 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
 }
 
 function BlueprintPage() {
-  const { state, hydrated, setContext, setSteps, setAssets, setDq, setHive, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const { state, hydrated, setContext, setSteps, setAssets, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
   const generate = useServerFn(generateBlueprint);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
