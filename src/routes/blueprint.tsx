@@ -129,6 +129,7 @@ function BlueprintPage() {
   const useCasesRef = useRef<HTMLDivElement>(null);
   const fullRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [useCases, setUseCases] = useState<UseCaseRow[]>([]);
 
   const BUSINESS_FUNCTIONS = ["Finance & FP&A", "Sales", "Marketing", "Operations", "Supply Chain", "HR", "Customer Service", "IT", "Procurement", "Legal", "Other"];
   const BUSINESS_PROCESSES: Record<string, string[]> = {
