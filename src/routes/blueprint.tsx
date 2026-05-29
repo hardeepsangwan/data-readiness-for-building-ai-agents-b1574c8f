@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-import { Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Download, FileDown, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
 import { generateBlueprint } from "@/lib/blueprint.functions";
 import { BlueprintRadar } from "@/components/blueprint-radar";
+import { exportElementToPdf } from "@/lib/pdf-export";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   SERVICE_CHARGE_CONTEXT,
   SERVICE_CHARGE_STEPS,
