@@ -869,6 +869,17 @@ function BlueprintPage() {
                       foundation on OneLake where every domain lands its data, conforms it to enterprise standards, and
                       exposes certified products to people, BI and agents.
                     </p>
+                    <figure className="overflow-hidden rounded-lg border border-border bg-card">
+                      <img
+                        src={dataHiveTargetState}
+                        alt="Data Hive target state — business domains, gold/silver/bronze layers, core platform tools and CoE functions"
+                        className="w-full h-auto"
+                        loading="lazy"
+                      />
+                      <figcaption className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
+                        Data Hive target state — domains, layered data products and CoE operating functions.
+                      </figcaption>
+                    </figure>
                     <div className="grid gap-3 md:grid-cols-2">
                       {[
                         { t: "Foundation", d: "Single OneLake tenant · Fabric capacities sized per domain · Fabric Git + Azure DevOps for CI/CD · environment promotion (dev → test → prod)." },
