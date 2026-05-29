@@ -1,8 +1,6 @@
-// Server function: generate the executable Data Blueprint via the Lovable AI
-// Gateway. The user asked for "Claude" but the Lovable AI Gateway currently
-// fronts Google Gemini and OpenAI GPT model families (see the gateway model
-// list). We use `google/gemini-2.5-pro` as the strongest reasoning model on
-// the gateway today and surface the model name in the result for auditability.
+// Server function: generate the executable Data Blueprint by calling xAI's
+// Grok reasoning model directly. The user supplied XAI_API_KEY for this.
+// Override the endpoint with XAI_BASE_URL (e.g. for Azure AI Foundry).
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -202,8 +200,9 @@ Be specific. Quote pain points verbatim. Reference DA-xx asset IDs. Cite Fabric/
 export const generateBlueprint = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
   .handler(async ({ data }): Promise<BlueprintResult> => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured.");
+    const apiKey = process.env.XAI_API_KEY;
+    if (!apiKey) throw new Error("XAI_API_KEY is not configured.");
+    const baseUrl = process.env.XAI_BASE_URL || "https://api.x.ai/v1";
 
     const userMessage = `BUSINESS PROCESS CONTEXT:
 ${JSON.stringify(data.context, null, 2)}
@@ -243,7 +242,7 @@ ${data.tom.successMetrics}
 
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations.`;
 
-    const model = "google/gemini-2.5-pro";
+    const model = process.env.XAI_MODEL || "grok-4-latest";
     const body = {
       model,
       messages: [
@@ -263,7 +262,7 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
       tool_choice: { type: "function", function: { name: "emit_blueprint" } },
     };
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -274,9 +273,9 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      if (resp.status === 429) throw new Error("Rate limit exceeded on the AI gateway. Try again in a moment.");
-      if (resp.status === 402) throw new Error("Lovable AI credits exhausted. Add credits in Settings → Workspace → Usage.");
-      throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
+      if (resp.status === 429) throw new Error("Grok rate limit exceeded. Try again in a moment.");
+      if (resp.status === 401) throw new Error("XAI_API_KEY invalid or unauthorized.");
+      throw new Error(`xAI error ${resp.status}: ${text.slice(0, 400)}`);
     }
 
     const json = await resp.json();

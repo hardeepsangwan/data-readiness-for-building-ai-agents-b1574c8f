@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-import { Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Download, FileDown, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
 import { generateBlueprint } from "@/lib/blueprint.functions";
 import { BlueprintRadar } from "@/components/blueprint-radar";
+import { exportElementToPdf } from "@/lib/pdf-export";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   SERVICE_CHARGE_CONTEXT,
   SERVICE_CHARGE_STEPS,
@@ -76,6 +78,43 @@ function BlueprintPage() {
   const generate = useServerFn(generateBlueprint);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const radarRef = useRef<HTMLDivElement>(null);
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const gapsRef = useRef<HTMLDivElement>(null);
+  const hubSpokeRef = useRef<HTMLDivElement>(null);
+  const useCasesRef = useRef<HTMLDivElement>(null);
+  const fullRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  const BUSINESS_FUNCTIONS = ["Finance & FP&A", "Sales", "Marketing", "Operations", "Supply Chain", "HR", "Customer Service", "IT", "Procurement", "Legal", "Other"];
+  const BUSINESS_PROCESSES: Record<string, string[]> = {
+    "Finance & FP&A": ["Service Charge", "Budgeting & Planning", "Forecasting", "Management Reporting", "AR Collections", "AP Invoice Processing", "Month-end Close", "Cash Flow Management"],
+    "Sales": ["Lead Qualification", "Pipeline Management", "Quote-to-Cash", "Account Planning", "Sales Forecasting"],
+    "Marketing": ["Campaign Management", "Lead Scoring", "Content Personalisation", "Attribution Reporting"],
+    "Operations": ["Order Management", "Service Delivery", "Capacity Planning", "Incident Management"],
+    "Supply Chain": ["Demand Planning", "Inventory Optimisation", "Supplier Management", "Logistics Tracking"],
+    "HR": ["Hire-to-Retire", "Workforce Planning", "Performance Management", "Payroll"],
+    "Customer Service": ["Ticket Triage", "Knowledge Search", "Customer Onboarding", "Renewals"],
+    "IT": ["Incident Management", "Change Management", "Asset Management", "Access Reviews"],
+    "Procurement": ["Source-to-Contract", "Procure-to-Pay", "Supplier Onboarding"],
+    "Legal": ["Contract Lifecycle", "Compliance Reporting", "Matter Management"],
+    "Other": [],
+  };
+  const processOptions = BUSINESS_PROCESSES[state.context.businessFunction] || [];
+
+  const exportSection = async (ref: React.RefObject<HTMLElement | null>, name: string, title: string) => {
+    if (!ref.current) return;
+    setExporting(name);
+    try {
+      await exportElementToPdf(ref.current, `${name}.pdf`, title);
+      toast.success(`Exported ${name}.pdf`);
+    } catch (e: any) {
+      toast.error(e?.message || "PDF export failed");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const uniqueSystems = useMemo(() => {
     const sys = new Set<string>();
@@ -183,20 +222,52 @@ function BlueprintPage() {
             <Card>
               <CardHeader><CardTitle>Process context</CardTitle></CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
-                {([
-                  ["organisation", "Organisation"],
-                  ["businessFunction", "Business function"],
-                  ["businessProcess", "Business process"],
-                  ["sponsor", "Executive sponsor"],
-                  ["cycleVolume", "Cycle volume"],
-                  ["baselineEffort", "Baseline effort"],
-                  ["timeline", "Target timeline"],
-                ] as const).map(([k, label]) => (
-                  <div key={k}>
-                    <Label>{label}</Label>
-                    <Input value={state.context[k]} onChange={(e) => setContext({ [k]: e.target.value } as any)} />
-                  </div>
-                ))}
+                <div>
+                  <Label>Organisation</Label>
+                  <Input value={state.context.organisation} onChange={(e) => setContext({ organisation: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Business function</Label>
+                  <Select value={state.context.businessFunction || undefined} onValueChange={(v) => setContext({ businessFunction: v, businessProcess: "" })}>
+                    <SelectTrigger><SelectValue placeholder="Select a function…" /></SelectTrigger>
+                    <SelectContent>
+                      {BUSINESS_FUNCTIONS.map((bf) => <SelectItem key={bf} value={bf}>{bf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Business process</Label>
+                  {processOptions.length > 0 ? (
+                    <Select value={state.context.businessProcess || undefined} onValueChange={(v) => setContext({ businessProcess: v === "__other__" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="Select a process…" /></SelectTrigger>
+                      <SelectContent>
+                        {processOptions.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        <SelectItem value="__other__">Other / custom…</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={state.context.businessProcess} onChange={(e) => setContext({ businessProcess: e.target.value })} placeholder="e.g. Service Charge" />
+                  )}
+                  {state.context.businessFunction && processOptions.length > 0 && !processOptions.includes(state.context.businessProcess) && (
+                    <Input className="mt-2" value={state.context.businessProcess} placeholder="Type custom process name" onChange={(e) => setContext({ businessProcess: e.target.value })} />
+                  )}
+                </div>
+                <div>
+                  <Label>Executive sponsor</Label>
+                  <Input value={state.context.sponsor} onChange={(e) => setContext({ sponsor: e.target.value })} placeholder="e.g. CFO, VP FP&A" />
+                </div>
+                <div>
+                  <Label>Cycle volume</Label>
+                  <Input value={state.context.cycleVolume} onChange={(e) => setContext({ cycleVolume: e.target.value })} placeholder="e.g. 1,200 invoices / quarter" />
+                </div>
+                <div>
+                  <Label>Baseline effort</Label>
+                  <Input value={state.context.baselineEffort} onChange={(e) => setContext({ baselineEffort: e.target.value })} placeholder="e.g. 18 FTE-days / cycle" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Target timeline</Label>
+                  <Input value={state.context.timeline} onChange={(e) => setContext({ timeline: e.target.value })} placeholder="e.g. MVP in 12 weeks, scale by FY26 Q2" />
+                </div>
               </CardContent>
             </Card>
             <div className="mt-4 flex justify-end"><Button onClick={() => setTab("steps")}>Next: AS-IS Steps →</Button></div>
@@ -416,22 +487,47 @@ function BlueprintPage() {
                 <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
               </CardContent></Card>
             ) : (
-              <>
-                <Card>
-                  <CardHeader><CardTitle>Executive summary</CardTitle></CardHeader>
+              <div ref={fullRef} className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
+                  <div className="text-xs text-muted-foreground">
+                    Export the full blueprint or any individual section as PDF.
+                  </div>
+                  <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
+                    {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
+                    Export full PDF
+                  </Button>
+                </div>
+
+                <Card ref={summaryRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Executive summary</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(summaryRef, "executive-summary", "Executive Summary")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent>
                     <p className="text-sm leading-relaxed">{state.result.executiveSummary}</p>
                     <div className="mt-2 text-xs text-muted-foreground">Model: {state.result.model} · {new Date(state.result.generatedAt).toLocaleString()}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Current vs Target — 6-axis readiness</CardTitle></CardHeader>
+                <Card ref={radarRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Current vs Target — 6-axis readiness</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(radarRef, "readiness-radar", "Readiness Radar")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent><BlueprintRadar axes={state.result.radar} /></CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Per-step Data & AI interventions</CardTitle></CardHeader>
+                <Card ref={stepsRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Per-step Data & AI interventions</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(stepsRef, "step-interventions", "Per-step Data & AI Interventions")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="space-y-3">
                     {state.result.stepRecommendations.map((r) => {
                       const step = state.steps.find((s) => s.id === r.stepId);
@@ -453,8 +549,13 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Gap register (vs hub-and-spoke target)</CardTitle></CardHeader>
+                <Card ref={gapsRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Gap register (vs hub-and-spoke target)</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(gapsRef, "gap-register", "Gap Register")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-xs uppercase"><tr>{["Ref","Dimension","Class","Description","Impact","Remediation","Owner","Pri"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
@@ -476,8 +577,13 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Hub-and-spoke activity backlog</CardTitle></CardHeader>
+                <Card ref={hubSpokeRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Hub-and-spoke activity backlog</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(hubSpokeRef, "hub-spoke-activities", "Hub-and-Spoke Activities")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="grid gap-3 md:grid-cols-3">
                     {(["Hub","Handshake","Spoke"] as const).map((pillar) => (
                       <div key={pillar}>
@@ -496,8 +602,13 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Prioritised use-case backlog</CardTitle></CardHeader>
+                <Card ref={useCasesRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Prioritised use-case backlog</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(useCasesRef, "use-case-backlog", "Use-case Backlog")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-xs uppercase"><tr>{["#","Use case","Impact","Desirab.","Feas.","Total","Data RAG","Solution"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
@@ -518,7 +629,7 @@ function BlueprintPage() {
                     </table>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             )}
           </TabsContent>
         </Tabs>
