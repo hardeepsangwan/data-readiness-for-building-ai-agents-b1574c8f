@@ -19,6 +19,10 @@ export const SERVICE_CHARGE_CONTEXT: ProcessContext = {
   cycleVolume: "200 properties × annual reconciliation",
   baselineEffort: "~500 FTE hours per cycle (budget pack alone)",
   timeline: "2026 phased delivery; Gate C blockers cleared by Aug 2026",
+  valueDrivers: "Cut manual GL reconciliation effort, eliminate Word/Excel/PDF budget-pack assembly, reduce customer disputes from inconsistent allocation, accelerate EOY close.",
+  kpis: "FTE hours per cycle; % budget packs produced auto; GL allocation error rate; days to reconcile; customer dispute volume.",
+  complianceConstraints: "Tenant-level financial data, lease PII; UK GDPR; audit trail retention 7 years; sensitivity-labelled documents.",
+  decisionsSupported: "Annual budget approval per property; year-end reconciliation true-up to customers; variance investigation; cost recoverability assessment.",
 };
 
 export const SERVICE_CHARGE_STEPS: ProcessStep[] = [
