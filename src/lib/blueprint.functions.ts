@@ -199,15 +199,19 @@ HUB (central Data & AI CoE on Data Hive / Fabric): owns OneLake, reusable ingest
 SPOKE (business domain): owns process steps, business rules, KPIs, source-of-truth definitions, HITL approvals, exception handling, last-mile reporting.
 HANDSHAKES: data contracts, Power Automate exception SLAs, joint backlog, gate reviews.
 
-YOUR JOB — produce executive-grade guidance covering FOUR dimensions for the given business process:
+YOUR JOB — produce executive-grade guidance that proves how Data & AI will (a) IMPROVE OPERATIONS, (b) DELIVER VALUE against the stated KPIs and (c) MEET GOVERNANCE STANDARDS, covering FOUR dimensions for the given business process:
 1. HOW DATA IS PRODUCED — map each source system to the reusable Fabric ingestion pattern (Mirroring vs Pipelines vs Shortcuts), Bronze landing, schema contract, initial+incremental SCD strategy (Type 1 vs Type 2), refresh cadence, owner.
-2. HOW DATA IS CONSUMED — call out the Silver/Gold data products required, semantic-model measures, ontology entities, downstream Copilot / agent / Power BI surfaces per process step, and HITL touchpoints.
-3. HOW DATA IS GOVERNED — Purview classifications, sensitivity labels, lineage, access policies, data contracts, agent identity (Entra Agent ID), audit, retention.
+2. HOW DATA IS CONSUMED — call out the Silver/Gold data products required, semantic-model measures, ontology entities, downstream Copilot / agent / Power BI surfaces per process step, and HITL touchpoints — tied to the decisions the business must make.
+3. HOW DATA IS GOVERNED — Purview classifications, sensitivity labels, lineage, access policies, data contracts, agent identity (Entra Agent ID), audit, retention; explicitly address the stated compliance constraints.
 4. STEPS TO ADDRESS DATA QUALITY ISSUES — for every asset with a weak DAMA dimension (≤3), prescribe concrete remediation: profiling, rule authorship in Fabric/Purview DQ, source-side fix vs Silver cleanse, owner, monitoring metric, exit criteria.
+
+The hubSpokeActivities array MUST describe the concrete activities the organisation needs to perform to MOVE to hub-and-spoke ways of working — stand up the hub CoE, federate spoke ownership, sign data contracts, establish exception SLAs, run gate reviews, build agent factory, etc. Sequence them in adoption order.
 
 Then synthesise: per-step Data & AI interventions with hub/spoke ownership, a gap register vs target, prioritised use-case backlog, hub-and-spoke activity backlog, and a 6-axis radar (current vs target).
 
-Be specific. Quote pain points verbatim. Reference DA-xx asset IDs. Cite Fabric / OneLake / Purview / Copilot Studio / Fabric Data Agents components by name. Every step recommendation MUST reference the Fabric pattern (e.g. "Mirror Yardi via Fabric Mirroring → Bronze, SCD2 merge into Silver dim_property, surface via Gold fact_service_charge ontology entity") rather than generic advice.`;
+Be specific. Quote pain points verbatim. Reference DA-xx asset IDs. Cite Fabric / OneLake / Purview / Copilot Studio / Fabric Data Agents components by name. Every step recommendation MUST reference the Fabric pattern (e.g. "Mirror Yardi via Fabric Mirroring → Bronze, SCD2 merge into Silver dim_property, surface via Gold fact_service_charge ontology entity") rather than generic advice.
+
+The executiveSummary MUST be a SHORT bullet list (8–12 lines, one idea per line, prefixed with "- ") organised under: Operations uplift, Value delivered (referencing the stated KPIs), Governance posture (referencing the stated compliance constraints), and Top risks / next moves.`;
 
 export const generateBlueprint = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
