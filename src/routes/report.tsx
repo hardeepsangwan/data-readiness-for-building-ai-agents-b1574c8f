@@ -63,7 +63,7 @@ function ReportPage() {
       <div className="no-print border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-3">
           <Button asChild variant="ghost" size="sm">
-            <Link to="/assessment"><ArrowLeft className="mr-1 h-4 w-4" /> Back to assessment</Link>
+            <Link to="/blueprint"><ArrowLeft className="mr-1 h-4 w-4" /> Back to blueprint</Link>
           </Button>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => downloadAssessmentExcel(state)}>
@@ -102,7 +102,7 @@ function ReportPage() {
           <div className="mt-8 flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 p-5 text-sm">
             <AlertCircle className="h-5 w-5 shrink-0 text-warning" />
             <div>
-              No answers found yet. <Link to="/assessment" className="font-medium underline">Start the assessment</Link> to populate this report. Sample zeroed scores are shown below.
+              No answers found yet. <Link to="/blueprint" className="font-medium underline">Start the blueprint</Link> to populate this report. Sample zeroed scores are shown below.
             </div>
           </div>
         )}
