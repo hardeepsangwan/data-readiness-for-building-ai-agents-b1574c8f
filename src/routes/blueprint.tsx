@@ -56,6 +56,38 @@ const DQ_CRITERIA: { dim: string; what: string; poor: string; ok: string; great:
   { dim: "Validity", what: "Values conform to defined formats, ranges, code lists.", poor: "No schema validation; invalid codes / formats common.", ok: "Schema + reference data validated at load; some quarantine.", great: "Contract tests + reference data governance; invalid rows rejected with lineage." },
 ];
 
+type UCParam = "businessValue" | "frequency" | "dataReadiness" | "feasibility" | "effort" | "risk" | "alignment";
+const UC_PARAMS: { key: UCParam; label: string; definition: string; s1: string; s2: string; s3: string; s4: string; s5: string }[] = [
+  { key: "businessValue", label: "Business Value", definition: "Effort, cost or error saved across the cycle.", s1: "Minor effort saved", s2: "Modest, single-team", s3: "Material per cycle", s4: "Significant cross-team", s5: "Transformational (multi-day or audit-grade)" },
+  { key: "frequency", label: "Frequency / Volume", definition: "How often the pain recurs and at what scale.", s1: "Annual / one-off", s2: "Quarterly", s3: "Monthly, single team", s4: "Monthly across stacks", s5: "Continuous / per-transaction at 100s–1000s scale" },
+  { key: "dataReadiness", label: "Data Readiness", definition: "Quality and accessibility of the source data today.", s1: "Unstructured / paper", s2: "Partially structured, multiple sources", s3: "Structured but manual extracts", s4: "Structured + accessible via Power BI / SOP-defined", s5: "Already in Data Hive or canonical system" },
+  { key: "feasibility", label: "Technical Feasibility", definition: "Maturity of the solution pattern and tooling fit.", s1: "Net-new pattern, unknowns", s2: "Bespoke build needed", s3: "Known pattern, needs adaptation", s4: "Standard agent / Power Automate fit", s5: "Already prototyped or vendor-ready" },
+  { key: "effort", label: "Implementation Effort", definition: "Lower effort = higher score (L/M/H inverted).", s1: "Very high effort (>6 months)", s2: "High effort (3–6 months)", s3: "Medium effort (~3 months)", s4: "Low effort (4–8 weeks)", s5: "Very low effort (<4 weeks)" },
+  { key: "risk", label: "Risk / Control Improvement", definition: "Reduces SOP control, audit or compliance risk.", s1: "Neutral", s2: "Marginal control uplift", s3: "Replaces a manual control", s4: "Strengthens a named SOP control", s5: "Closes a flagged SFR / TAX risk" },
+  { key: "alignment", label: "Strategic Alignment", definition: "Fit with agentic, governance & Data Hive agenda.", s1: "Tangential", s2: "Useful but isolated", s3: "Aligned with one workstream", s4: "Aligned with multiple workstreams", s5: "Anchor use case for the programme" },
+];
+
+type UseCaseRow = {
+  id: string;
+  name: string;
+  processArea: string;
+  businessValue: number;
+  frequency: number;
+  dataReadiness: number;
+  feasibility: number;
+  effort: number;
+  risk: number;
+  alignment: number;
+};
+const newUseCase = (n: number): UseCaseRow => ({
+  id: `UC-${String(n).padStart(2, "0")}`,
+  name: "",
+  processArea: "",
+  businessValue: 3, frequency: 3, dataReadiness: 3, feasibility: 3, effort: 3, risk: 3, alignment: 3,
+});
+const ucTotal = (u: UseCaseRow) => UC_PARAMS.reduce((s, p) => s + (u[p.key] as number), 0);
+const ucTier = (t: number) => t >= 28 ? { label: "Tier 1 — Now", cls: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" } : t >= 22 ? { label: "Tier 2 — Next", cls: "bg-amber-500/15 text-amber-700 border-amber-500/30" } : { label: "Tier 3 — Later", cls: "bg-slate-500/15 text-slate-700 border-slate-500/30" };
+
 function newStep(): ProcessStep {
   return {
     id: `S-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
@@ -97,6 +129,7 @@ function BlueprintPage() {
   const useCasesRef = useRef<HTMLDivElement>(null);
   const fullRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [useCases, setUseCases] = useState<UseCaseRow[]>([]);
 
   const BUSINESS_FUNCTIONS = ["Finance & FP&A", "Sales", "Marketing", "Operations", "Supply Chain", "HR", "Customer Service", "IT", "Procurement", "Legal", "Other"];
   const BUSINESS_PROCESSES: Record<string, string[]> = {
@@ -221,13 +254,14 @@ function BlueprintPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="context">1. Context</TabsTrigger>
             <TabsTrigger value="steps">2. Value Stream</TabsTrigger>
-            <TabsTrigger value="assets">3. Data Asset Map</TabsTrigger>
-            <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
-            <TabsTrigger value="tom">5. Target TOM</TabsTrigger>
-            <TabsTrigger value="result">6. Blueprint</TabsTrigger>
+            <TabsTrigger value="usecases">3. Use Case Priority</TabsTrigger>
+            <TabsTrigger value="assets">4. Data Asset Map</TabsTrigger>
+            <TabsTrigger value="dq">5. Data Quality</TabsTrigger>
+            <TabsTrigger value="tom">6. Target TOM</TabsTrigger>
+            <TabsTrigger value="result">7. Blueprint</TabsTrigger>
           </TabsList>
 
           <TabsContent value="context" className="mt-6">
@@ -380,9 +414,100 @@ function BlueprintPage() {
             </div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setTab("context")}>← Back</Button>
+              <Button onClick={() => setTab("usecases")}>Next: Use Case Priority →</Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="usecases" className="mt-6 space-y-4">
+            <p className="text-sm text-muted-foreground">Score each candidate use case 1–5 against the seven parameters. Total /35 drives the tier (Tier 1 ≥28 Now · Tier 2 22–27 Next · Tier 3 &lt;22 Later).</p>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">Use case scoring criteria</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/40 uppercase">
+                    <tr>
+                      <th className="p-2 text-left">Parameter</th>
+                      <th className="p-2 text-left">Definition</th>
+                      <th className="p-2 text-left">1</th>
+                      <th className="p-2 text-left">2</th>
+                      <th className="p-2 text-left">3</th>
+                      <th className="p-2 text-left">4</th>
+                      <th className="p-2 text-left">5</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {UC_PARAMS.map((p) => (
+                      <tr key={p.key} className="border-t align-top">
+                        <td className="p-2 font-semibold">{p.label}</td>
+                        <td className="p-2 text-muted-foreground">{p.definition}</td>
+                        <td className="p-2">{p.s1}</td>
+                        <td className="p-2">{p.s2}</td>
+                        <td className="p-2">{p.s3}</td>
+                        <td className="p-2">{p.s4}</td>
+                        <td className="p-2">{p.s5}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase">
+                    <tr>
+                      <th className="p-2 text-left">ID</th>
+                      <th className="p-2 text-left">Use case</th>
+                      <th className="p-2 text-left">Process area</th>
+                      {UC_PARAMS.map((p) => <th key={p.key} className="p-2 text-left" title={p.definition}>{p.label.split(" ")[0]}</th>)}
+                      <th className="p-2 text-left">Total</th>
+                      <th className="p-2 text-left">Tier</th>
+                      <th className="p-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {useCases.map((u, i) => {
+                      const total = ucTotal(u);
+                      const tier = ucTier(total);
+                      const update = (patch: Partial<UseCaseRow>) => {
+                        const n = [...useCases]; n[i] = { ...u, ...patch }; setUseCases(n);
+                      };
+                      return (
+                        <tr key={u.id} className="border-t align-top">
+                          <td className="p-2"><Input className="h-8 w-20 font-mono text-xs" value={u.id} onChange={(e) => update({ id: e.target.value })} /></td>
+                          <td className="p-2"><Input className="h-8 min-w-[200px]" value={u.name} onChange={(e) => update({ name: e.target.value })} placeholder="e.g. Service Charge Pack Generator" /></td>
+                          <td className="p-2"><Input className="h-8 min-w-[140px]" value={u.processArea} onChange={(e) => update({ processArea: e.target.value })} placeholder="e.g. Reconciliation" /></td>
+                          {UC_PARAMS.map((p) => (
+                            <td key={p.key} className="p-2">
+                              <select className="h-8 w-14 rounded border bg-transparent px-1 text-sm" value={u[p.key] as number} onChange={(e) => update({ [p.key]: Number(e.target.value) } as Partial<UseCaseRow>)}>
+                                {[1,2,3,4,5].map((v) => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </td>
+                          ))}
+                          <td className="p-2 font-semibold">{total}/35</td>
+                          <td className="p-2"><Badge variant="outline" className={tier.cls}>{tier.label}</Badge></td>
+                          <td className="p-2"><Button size="icon" variant="ghost" onClick={() => setUseCases(useCases.filter((x) => x.id !== u.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
+                        </tr>
+                      );
+                    })}
+                    {useCases.length === 0 && (
+                      <tr><td colSpan={12} className="p-6 text-center text-sm text-muted-foreground">No use cases yet. Add candidates to prioritise.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+            <Button size="sm" variant="outline" onClick={() => setUseCases([...useCases, newUseCase(useCases.length + 1)])}>
+              <Plus className="mr-1 h-4 w-4" /> Add use case
+            </Button>
+
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => setTab("steps")}>← Back</Button>
               <Button onClick={() => setTab("assets")}>Next: Data Asset Map →</Button>
             </div>
           </TabsContent>
+
 
           <TabsContent value="assets" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -428,7 +553,7 @@ function BlueprintPage() {
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
-            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("steps")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
+            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("usecases")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
           </TabsContent>
 
           <TabsContent value="dq" className="mt-6 space-y-4">
