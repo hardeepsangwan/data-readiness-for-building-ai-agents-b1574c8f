@@ -557,6 +557,26 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
+                <Card ref={radarRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Current vs Target — 6-axis readiness</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(radarRef, "readiness-radar", "Readiness Radar")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Radar view</div>
+                        <BlueprintRadar axes={state.result.radar} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Horizontal bar view</div>
+                        <BlueprintHorizontalBars axes={state.result.radar} />
+                      </div>
+                    </div>
+                  </CardContent>
+
                 <Card>
                   <CardHeader><CardTitle>Operations · Value · Governance — what the blueprint delivers</CardTitle></CardHeader>
                   <CardContent className="grid gap-3 md:grid-cols-3">
