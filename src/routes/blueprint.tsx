@@ -487,22 +487,47 @@ function BlueprintPage() {
                 <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
               </CardContent></Card>
             ) : (
-              <>
-                <Card>
-                  <CardHeader><CardTitle>Executive summary</CardTitle></CardHeader>
+              <div ref={fullRef} className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
+                  <div className="text-xs text-muted-foreground">
+                    Export the full blueprint or any individual section as PDF.
+                  </div>
+                  <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
+                    {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
+                    Export full PDF
+                  </Button>
+                </div>
+
+                <Card ref={summaryRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Executive summary</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(summaryRef, "executive-summary", "Executive Summary")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent>
                     <p className="text-sm leading-relaxed">{state.result.executiveSummary}</p>
                     <div className="mt-2 text-xs text-muted-foreground">Model: {state.result.model} · {new Date(state.result.generatedAt).toLocaleString()}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Current vs Target — 6-axis readiness</CardTitle></CardHeader>
+                <Card ref={radarRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Current vs Target — 6-axis readiness</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(radarRef, "readiness-radar", "Readiness Radar")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent><BlueprintRadar axes={state.result.radar} /></CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Per-step Data & AI interventions</CardTitle></CardHeader>
+                <Card ref={stepsRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Per-step Data & AI interventions</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(stepsRef, "step-interventions", "Per-step Data & AI Interventions")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="space-y-3">
                     {state.result.stepRecommendations.map((r) => {
                       const step = state.steps.find((s) => s.id === r.stepId);
@@ -524,8 +549,13 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Gap register (vs hub-and-spoke target)</CardTitle></CardHeader>
+                <Card ref={gapsRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Gap register (vs hub-and-spoke target)</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(gapsRef, "gap-register", "Gap Register")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-xs uppercase"><tr>{["Ref","Dimension","Class","Description","Impact","Remediation","Owner","Pri"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
@@ -547,8 +577,13 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Hub-and-spoke activity backlog</CardTitle></CardHeader>
+                <Card ref={hubSpokeRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Hub-and-spoke activity backlog</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(hubSpokeRef, "hub-spoke-activities", "Hub-and-Spoke Activities")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="grid gap-3 md:grid-cols-3">
                     {(["Hub","Handshake","Spoke"] as const).map((pillar) => (
                       <div key={pillar}>
@@ -567,8 +602,13 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle>Prioritised use-case backlog</CardTitle></CardHeader>
+                <Card ref={useCasesRef as any}>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Prioritised use-case backlog</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => exportSection(useCasesRef, "use-case-backlog", "Use-case Backlog")} disabled={exporting !== null}>
+                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
+                    </Button>
+                  </CardHeader>
                   <CardContent className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-xs uppercase"><tr>{["#","Use case","Impact","Desirab.","Feas.","Total","Data RAG","Solution"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
@@ -589,7 +629,7 @@ function BlueprintPage() {
                     </table>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             )}
           </TabsContent>
         </Tabs>
