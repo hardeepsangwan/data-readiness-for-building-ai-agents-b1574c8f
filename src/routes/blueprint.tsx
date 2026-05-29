@@ -78,6 +78,43 @@ function BlueprintPage() {
   const generate = useServerFn(generateBlueprint);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const radarRef = useRef<HTMLDivElement>(null);
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const gapsRef = useRef<HTMLDivElement>(null);
+  const hubSpokeRef = useRef<HTMLDivElement>(null);
+  const useCasesRef = useRef<HTMLDivElement>(null);
+  const fullRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  const BUSINESS_FUNCTIONS = ["Finance & FP&A", "Sales", "Marketing", "Operations", "Supply Chain", "HR", "Customer Service", "IT", "Procurement", "Legal", "Other"];
+  const BUSINESS_PROCESSES: Record<string, string[]> = {
+    "Finance & FP&A": ["Service Charge", "Budgeting & Planning", "Forecasting", "Management Reporting", "AR Collections", "AP Invoice Processing", "Month-end Close", "Cash Flow Management"],
+    "Sales": ["Lead Qualification", "Pipeline Management", "Quote-to-Cash", "Account Planning", "Sales Forecasting"],
+    "Marketing": ["Campaign Management", "Lead Scoring", "Content Personalisation", "Attribution Reporting"],
+    "Operations": ["Order Management", "Service Delivery", "Capacity Planning", "Incident Management"],
+    "Supply Chain": ["Demand Planning", "Inventory Optimisation", "Supplier Management", "Logistics Tracking"],
+    "HR": ["Hire-to-Retire", "Workforce Planning", "Performance Management", "Payroll"],
+    "Customer Service": ["Ticket Triage", "Knowledge Search", "Customer Onboarding", "Renewals"],
+    "IT": ["Incident Management", "Change Management", "Asset Management", "Access Reviews"],
+    "Procurement": ["Source-to-Contract", "Procure-to-Pay", "Supplier Onboarding"],
+    "Legal": ["Contract Lifecycle", "Compliance Reporting", "Matter Management"],
+    "Other": [],
+  };
+  const processOptions = BUSINESS_PROCESSES[state.context.businessFunction] || [];
+
+  const exportSection = async (ref: React.RefObject<HTMLElement>, name: string, title: string) => {
+    if (!ref.current) return;
+    setExporting(name);
+    try {
+      await exportElementToPdf(ref.current, `${name}.pdf`, title);
+      toast.success(`Exported ${name}.pdf`);
+    } catch (e: any) {
+      toast.error(e?.message || "PDF export failed");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const uniqueSystems = useMemo(() => {
     const sys = new Set<string>();
