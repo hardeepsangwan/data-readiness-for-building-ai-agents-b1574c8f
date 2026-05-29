@@ -29,7 +29,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (hydrated && user) {
-      navigate({ to: user.role === "facilitator" ? "/admin" : "/assessment" });
+      navigate({ to: user.role === "facilitator" ? "/admin" : "/blueprint" });
     }
   }, [hydrated, user, navigate]);
 
@@ -50,7 +50,7 @@ function LoginPage() {
       return;
     }
     login({ email: clean, role });
-    navigate({ to: "/assessment" });
+    navigate({ to: "/blueprint" });
   };
 
   return (
