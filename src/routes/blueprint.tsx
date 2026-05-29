@@ -489,8 +489,75 @@ function BlueprintPage() {
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm leading-relaxed">{state.result.executiveSummary}</p>
-                    <div className="mt-2 text-xs text-muted-foreground">Model: {state.result.model} · {new Date(state.result.generatedAt).toLocaleString()}</div>
+                    <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed">
+                      {summaryBullets(state.result.executiveSummary).map((b, i) => (
+                        <li key={i}>{b}</li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 text-xs text-muted-foreground">Model: {state.result.model} · {new Date(state.result.generatedAt).toLocaleString()}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Dimension ranking across maturity levels</CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+                      One row per readiness axis, six columns for the maturity levels (L0 → L5).
+                      The filled cell shows the current state and the dashed cell shows the target.
+                    </p>
+                    <RadarMaturityTable axes={state.result.radar} />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Next steps — prioritised recommendations</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {[...state.result.radar]
+                        .map((a) => ({ ...a, gap: a.target - a.current }))
+                        .sort((a, b) => b.gap - a.gap)
+                        .map((a, i) => (
+                          <div key={i} className="rounded-md border border-border bg-card p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm font-semibold">{a.axis}</div>
+                              <Badge variant={a.gap >= 2 ? "destructive" : a.gap >= 1 ? "secondary" : "outline"}>
+                                {a.gap >= 2 ? "High" : a.gap >= 1 ? "Medium" : "Maintain"}
+                              </Badge>
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Move from <strong>{a.current.toFixed(1)}</strong> → <strong>{a.target.toFixed(1)}</strong> (gap {a.gap.toFixed(1)})
+                            </div>
+                            <p className="mt-2 text-sm text-muted-foreground">{axisRecommendation(a.axis, a.gap)}</p>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>AI agent readiness — next steps for {state.context.businessFunction || "your function"}{state.context.businessProcess ? ` (${state.context.businessProcess})` : ""}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Recommended sequence</div>
+                      <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-foreground/90">
+                        {agentReadinessSteps(state.context.businessFunction, state.context.businessProcess).map((s, i) => <li key={i}>{s}</li>)}
+                      </ol>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Steps by business use case</div>
+                      <div className="mt-3 grid gap-3 md:grid-cols-3">
+                        {agentUseCases(state.context.businessFunction, state.context.businessProcess).map((uc) => (
+                          <div key={uc.title} className="rounded-lg border border-border bg-card p-4">
+                            <div className="text-sm font-semibold">{uc.title}</div>
+                            <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-xs text-muted-foreground">
+                              {uc.steps.map((s, i) => <li key={i}>{s}</li>)}
+                            </ol>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
