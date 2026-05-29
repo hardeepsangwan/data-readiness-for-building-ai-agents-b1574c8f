@@ -45,6 +45,15 @@ const AUTOMATION_OPTIONS: AutomationClass[] = ["RETAIN", "OPTIMISE", "AUTOMATE+H
 const HIVE_OPTIONS: DataHiveStatus[] = ["None", "Bronze", "Silver", "Gold"];
 const RAG_OPTIONS: RAG[] = ["Red", "Amber", "Green"];
 
+const DQ_CRITERIA: { dim: string; what: string; poor: string; ok: string; great: string }[] = [
+  { dim: "Completeness", what: "% of mandatory fields populated vs expected.", poor: "Many critical fields blank; nulls block downstream use.", ok: "Most mandatory fields populated; some optional fields missing.", great: "≥99% of mandatory fields populated; nulls tracked + justified." },
+  { dim: "Accuracy", what: "Values match the real-world entity / source of truth.", poor: "Frequent factual errors; no reconciliation.", ok: "Periodic reconciliation; minor known discrepancies.", great: "Continuous reconciliation against source of truth; <1% error." },
+  { dim: "Consistency", what: "Same value across systems / records (e.g. customer ID).", poor: "Same entity represented differently across systems; no MDM.", ok: "Some cross-system mapping; manual reconciliation.", great: "Mastered keys + golden record; automated cross-system consistency." },
+  { dim: "Timeliness", what: "Data is fresh enough for the intended decision / use case.", poor: "Stale by days/weeks; SLA undefined.", ok: "Refresh meets most use cases; occasional lag.", great: "Near real-time or meets defined SLA every cycle, monitored." },
+  { dim: "Uniqueness", what: "No unintended duplicate records for the same entity.", poor: "Duplicates common; no dedup logic.", ok: "Dedup applied periodically; residual duplicates known.", great: "Natural keys enforced; duplicates prevented at ingestion." },
+  { dim: "Validity", what: "Values conform to defined formats, ranges, code lists.", poor: "No schema validation; invalid codes / formats common.", ok: "Schema + reference data validated at load; some quarantine.", great: "Contract tests + reference data governance; invalid rows rejected with lineage." },
+];
+
 function newStep(): ProcessStep {
   return {
     id: `S-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
@@ -210,8 +219,8 @@ function BlueprintPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="context">1. Context</TabsTrigger>
-            <TabsTrigger value="steps">2. AS-IS Steps</TabsTrigger>
-            <TabsTrigger value="assets">3. Data Assets</TabsTrigger>
+            <TabsTrigger value="steps">2. Value Stream</TabsTrigger>
+            <TabsTrigger value="assets">3. Data Asset Map</TabsTrigger>
             <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
             <TabsTrigger value="tom">5. Target TOM</TabsTrigger>
             <TabsTrigger value="result">6. Blueprint</TabsTrigger>
@@ -269,12 +278,12 @@ function BlueprintPage() {
                 </div>
               </CardContent>
             </Card>
-            <div className="mt-4 flex justify-end"><Button onClick={() => setTab("steps")}>Next: AS-IS Steps →</Button></div>
+            <div className="mt-4 flex justify-end"><Button onClick={() => setTab("steps")}>Next: Value Stream →</Button></div>
           </TabsContent>
 
           <TabsContent value="steps" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">One row per process step. The <strong>System / Tool</strong> column auto-feeds the Data Asset map.</p>
+              <p className="text-sm text-muted-foreground">One row per value stream step. The <strong>System / Tool</strong> column auto-feeds the Data Asset Map.</p>
               <Button size="sm" onClick={() => setSteps([...state.steps, { ...newStep(), stepNumber: state.steps.length + 1 }])}>
                 <Plus className="mr-1 h-4 w-4" /> Add step
               </Button>
@@ -351,7 +360,7 @@ function BlueprintPage() {
             </div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setTab("context")}>← Back</Button>
-              <Button onClick={() => setTab("assets")}>Next: Data Assets →</Button>
+              <Button onClick={() => setTab("assets")}>Next: Data Asset Map →</Button>
             </div>
           </TabsContent>
 
@@ -403,7 +412,34 @@ function BlueprintPage() {
           </TabsContent>
 
           <TabsContent value="dq" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">Score each data asset on the six DAMA DQ dimensions (1=Poor → 5=Excellent).</p>
+            <p className="text-sm text-muted-foreground">Score each data asset on the six DAMA DQ dimensions (1=Poor → 5=Excellent). Use the criteria below as a guide.</p>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">Data Quality scoring criteria</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/40 uppercase">
+                    <tr>
+                      <th className="p-2 text-left">Dimension</th>
+                      <th className="p-2 text-left">What it measures</th>
+                      <th className="p-2 text-left">1 — Poor</th>
+                      <th className="p-2 text-left">3 — Acceptable</th>
+                      <th className="p-2 text-left">5 — Excellent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DQ_CRITERIA.map((c) => (
+                      <tr key={c.dim} className="border-t align-top">
+                        <td className="p-2 font-semibold">{c.dim}</td>
+                        <td className="p-2 text-muted-foreground">{c.what}</td>
+                        <td className="p-2">{c.poor}</td>
+                        <td className="p-2">{c.ok}</td>
+                        <td className="p-2">{c.great}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
             <Card>
               <CardContent className="overflow-x-auto p-0">
                 <table className="w-full text-sm">

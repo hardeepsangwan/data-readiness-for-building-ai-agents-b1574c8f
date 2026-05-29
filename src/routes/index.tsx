@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, Briefcase, Database, Bot, CheckCircle2, ArrowDown } from "lucide-react";
+import { ArrowRight, ArrowDown, CheckCircle2, FileText, Workflow, Database, Gauge, Network, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { WORKSTREAMS, TOTAL_QUESTIONS } from "@/lib/assessment-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,7 +13,38 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const WS_ICONS = [ShieldCheck, Briefcase, Database, Bot];
+const SECTIONS: { n: string; name: string; icon: any; color: string; description: string; outputs: string[] }[] = [
+  {
+    n: "01", name: "Context", icon: FileText, color: "oklch(0.55 0.18 255)",
+    description: "Capture organisation, business function, process, sponsor, volumes and target timeline.",
+    outputs: ["Process scope", "Sponsor & cycle volume", "Target timeline"],
+  },
+  {
+    n: "02", name: "Value Stream", icon: Workflow, color: "oklch(0.55 0.20 30)",
+    description: "Map the AS-IS process step-by-step — roles, systems, inputs, outputs, time, frequency and pain points.",
+    outputs: ["Per-step roles & systems", "Pain points captured", "Automation opportunities flagged"],
+  },
+  {
+    n: "03", name: "Data Asset Map", icon: Database, color: "oklch(0.62 0.16 155)",
+    description: "Catalogue every system / data asset that feeds the value stream, with owners, refresh, sensitivity and medallion fit.",
+    outputs: ["Source + domain + owners", "Bronze / Silver / Gold fit", "PII & refresh cadence"],
+  },
+  {
+    n: "04", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
+    description: "Score every asset on the six DAMA dimensions using a 1–5 rubric: Completeness, Accuracy, Consistency, Timeliness, Uniqueness, Validity.",
+    outputs: ["DQ score per asset", "Evidence captured", "Uplift targets"],
+  },
+  {
+    n: "05", name: "Target TOM", icon: Network, color: "oklch(0.50 0.14 195)",
+    description: "Define the hub-and-spoke target operating model — hub capabilities, spoke ownership, handshakes, controls and success metrics.",
+    outputs: ["Hub vs spoke responsibilities", "Mandatory controls / HITL", "Success metrics"],
+  },
+  {
+    n: "06", name: "Blueprint", icon: Sparkles, color: "oklch(0.60 0.18 295)",
+    description: "AI-generated executive summary, per-step interventions, readiness radar, dimension ranking, prioritised next steps and AI-agent readiness guidance.",
+    outputs: ["Executive summary (bullets)", "Readiness radar + dimension ranking", "Prioritised recommendations", "AI agent readiness next steps"],
+  },
+];
 
 function Index() {
   return (
@@ -29,14 +59,15 @@ function Index() {
           <div className="max-w-3xl text-primary-foreground">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              Azure CAF · Microsoft Fabric · Foundry · Agent 365
+              Microsoft Fabric · OneLake · Foundry · Agent 365
             </div>
             <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
               Data Blueprint for AI Agents
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-white/85 md:text-xl">
-              A single, gated blueprint that takes you from CoE guardrails through to deployed
-              agents — four workstreams, sequential handshakes, one auditable trail.
+              Six gated sections that take any business process from value-stream map and data
+              quality scoring through to an AI-generated hub-and-spoke blueprint, ready for
+              Fabric, OneLake and Microsoft Agent 365.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 shadow-[var(--shadow-elegant)]">
@@ -44,35 +75,31 @@ function Index() {
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/80">
-              <Stat label="Workstreams" value="4" />
-              <Stat label="Steps" value="24" />
-              <Stat label="Questions" value={String(TOTAL_QUESTIONS)} />
-              <Stat label="Gated handshakes" value="3" />
+              <Stat label="Sections" value="6" />
+              <Stat label="DQ dimensions" value="6" />
+              <Stat label="Medallion layers" value="Bronze · Silver · Gold" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* WORKSTREAMS */}
+      {/* SECTIONS */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12 max-w-2xl">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">The blueprint</div>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Four sequential workstreams</h2>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Six sequential sections</h2>
           <p className="mt-3 text-muted-foreground">
-            Each workstream produces a starred deliverable (★) that becomes the input — the
-            handshake — to the next. Nothing skips ahead until its gate is signed off.
+            Each section produces an artefact that feeds the next — value stream → data asset
+            map → data quality → target TOM → AI-generated blueprint.
           </p>
         </div>
 
         <div className="space-y-4">
-          {WORKSTREAMS.map((w, i) => {
-            const Icon = WS_ICONS[i] ?? Database;
-            const star = w.steps.find((s) => s.name.includes("★"));
+          {SECTIONS.map((w, i) => {
+            const Icon = w.icon;
             return (
-              <div key={w.id}>
-                <div
-                  className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-elegant)]"
-                >
+              <div key={w.n}>
+                <div className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-elegant)]">
                   <div className="flex flex-col gap-6 md:flex-row md:items-start">
                     <div
                       className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
@@ -82,47 +109,26 @@ function Index() {
                     </div>
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-xs font-mono text-muted-foreground">WS 0{i + 1}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{w.n}</span>
                         <h3 className="text-xl font-semibold tracking-tight">{w.name}</h3>
                       </div>
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.description}</p>
 
-                      <div className="mt-5 grid gap-4 md:grid-cols-3">
-                        <div>
-                          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Steps</div>
-                          <ul className="mt-1.5 space-y-1 text-sm">
-                            {w.steps.map((s) => (
-                              <li key={s.id} className="flex items-start gap-1.5">
-                                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: w.color }} />
-                                <span>{s.short ?? s.name.replace(" ★", "")}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Star deliverable ★</div>
-                          <div className="mt-1.5 rounded-md border border-border bg-muted/40 p-3 text-sm font-medium">
-                            {w.keyOutput}
-                          </div>
-                          {star && (
-                            <p className="mt-2 text-xs text-muted-foreground">{star.description}</p>
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {w.handshakeTo ? `Handshake → ${w.handshakeTo}` : "Final outputs"}
-                          </div>
-                          <ul className="mt-1.5 space-y-1 text-sm">
-                            {w.handshakeOutputs.slice(0, 4).map((o) => (
-                              <li key={o} className="text-muted-foreground">• {o}</li>
-                            ))}
-                          </ul>
-                        </div>
+                      <div className="mt-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Key outputs</div>
+                        <ul className="mt-1.5 grid gap-1 text-sm md:grid-cols-2">
+                          {w.outputs.map((o) => (
+                            <li key={o} className="flex items-start gap-1.5">
+                              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: w.color }} />
+                              <span>{o}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   </div>
                 </div>
-                {i < WORKSTREAMS.length - 1 && (
+                {i < SECTIONS.length - 1 && (
                   <div className="flex justify-center py-2 text-muted-foreground">
                     <ArrowDown className="h-5 w-5" />
                   </div>
@@ -138,14 +144,14 @@ function Index() {
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="mb-12 max-w-2xl">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">How it works</div>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Assess, gate, hand over, deliver</h2>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Map, score, target, generate</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-4">
             {[
-              { n: "01", t: "Assess", d: "Score each step on the 0–5 CAF maturity scale — current and target." },
-              { n: "02", t: "Gate", d: "Sponsor signs off the handshake before the next workstream unlocks." },
-              { n: "03", t: "Hand over", d: "Star deliverables flow forward: Playbook → Backlog → Scorecard → Agent." },
-              { n: "04", t: "Export", d: "Per-workstream Excel workbooks plus a Master Data Blueprint." },
+              { n: "01", t: "Map", d: "Document the value stream step-by-step and the data assets feeding it." },
+              { n: "02", t: "Score", d: "Rate each data asset on the six DAMA dimensions using the built-in 1–5 rubric." },
+              { n: "03", t: "Target", d: "Define the hub-and-spoke target operating model for OneLake + Fabric IQ." },
+              { n: "04", t: "Generate", d: "AI returns executive summary, radar, prioritised recommendations and AI-agent next steps." },
             ].map((s) => (
               <div key={s.n} className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
                 <div className="text-xs font-mono text-primary">{s.n}</div>
