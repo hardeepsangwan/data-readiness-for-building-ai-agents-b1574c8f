@@ -192,6 +192,9 @@ async function parseDrawio(file: File): Promise<ProcessStep[]> {
       description: desc,
     };
   });
+}
+
+
 
 function newAssetFromSystem(id: string, source: string): DataAsset {
   return {
