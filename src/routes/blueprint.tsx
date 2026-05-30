@@ -209,6 +209,7 @@ function BlueprintPage() {
   const generate = useServerFn(generateBlueprint);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const radarRef = useRef<HTMLDivElement>(null);
   const stepsRef = useRef<HTMLDivElement>(null);
@@ -270,7 +271,9 @@ function BlueprintPage() {
   };
 
   const onGenerate = async () => {
+    setGenerationError(null);
     if (state.steps.length === 0) {
+      setGenerationError("Add at least one process step first.");
       toast.error("Add at least one process step first.");
       return;
     }
@@ -285,6 +288,7 @@ function BlueprintPage() {
         tom: state.tom,
       } });
       if (!response.ok) {
+        setGenerationError(response.error);
         toast.error(response.error);
         return;
       }
@@ -292,7 +296,9 @@ function BlueprintPage() {
       setTab("result");
       toast.success("Blueprint generated.");
     } catch (e: any) {
-      toast.error(e?.message || "Failed to generate blueprint.");
+      const message = e?.message || "Failed to generate blueprint.";
+      setGenerationError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -754,10 +760,17 @@ function BlueprintPage() {
             </div>
             <div className="flex items-center justify-between">
               <Button variant="ghost" onClick={() => setTab("dq")}>← Back</Button>
-              <Button size="lg" onClick={onGenerate} disabled={busy}>
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate Blueprint
-              </Button>
+              <div className="flex flex-col items-end gap-2">
+                {generationError && (
+                  <div className="max-w-xl rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {generationError}
+                  </div>
+                )}
+                <Button size="lg" onClick={onGenerate} disabled={busy}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate Blueprint
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
@@ -765,6 +778,11 @@ function BlueprintPage() {
             {!state.result ? (
               <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
                 No blueprint yet. Complete the previous steps and click <strong>Generate Blueprint</strong>.
+                {generationError && (
+                  <div className="mx-auto mt-4 max-w-3xl rounded-md border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
+                    {generationError}
+                  </div>
+                )}
                 <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
               </CardContent></Card>
             ) : (
