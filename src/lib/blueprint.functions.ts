@@ -68,7 +68,7 @@ const DqSchema = z.object({
 
 const Input = z.object({
   context: ContextSchema,
-  steps: z.array(StepSchema).max(80),
+  steps: z.array(StepSchema).max(1000),
   assets: z.array(AssetSchema).max(60),
   dq: z.array(DqSchema).max(60),
   hive: z.object({
