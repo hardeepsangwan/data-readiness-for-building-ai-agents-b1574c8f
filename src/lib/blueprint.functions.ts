@@ -268,7 +268,7 @@ ${data.tom.successMetrics}
 
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations. The executiveSummary MUST explicitly address all four dimensions: data production (reusable Fabric ingestion + SCD1/SCD2 into OneLake), data consumption (Gold + ontology + agents), data governance (Purview / Entra Agent ID), and DQ remediation steps. The gapRegister and hubSpokeActivities MUST include concrete items for each of those four dimensions.`;
 
-    const model = process.env.XAI_MODEL || "grok-4";
+    const model = process.env.XAI_MODEL || "gpt-5.4";
     const body = {
       model,
       messages: [
