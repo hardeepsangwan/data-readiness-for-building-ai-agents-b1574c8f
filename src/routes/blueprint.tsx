@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, FileDown, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
-import { generateBlueprint } from "@/lib/blueprint.functions";
+import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
@@ -204,11 +204,16 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
   };
 }
 
+const JOB_STORAGE_KEY = "indurent-blueprint-job-v1";
+
 function BlueprintPage() {
   const { state, hydrated, setContext, setSteps, setAssets, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
-  const generate = useServerFn(generateBlueprint);
+  const startJob = useServerFn(startBlueprintJob);
+  const fetchJob = useServerFn(getBlueprintJob);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
+  const [jobStatus, setJobStatus] = useState<"idle" | "queued" | "running" | "completed" | "error">("idle");
+  const [jobId, setJobId] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const radarRef = useRef<HTMLDivElement>(null);
@@ -270,6 +275,54 @@ function BlueprintPage() {
     toast.success(`Synced ${next.length} data assets from process steps.`);
   };
 
+  // Poll an active job until it completes or errors.
+  useEffect(() => {
+    if (!jobId || jobStatus === "completed" || jobStatus === "error") return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const r = await fetchJob({ data: { jobId } });
+        if (cancelled) return;
+        if (!r.ok) {
+          setJobStatus("error");
+          setGenerationError(r.error);
+          setBusy(false);
+          localStorage.removeItem(JOB_STORAGE_KEY);
+          return;
+        }
+        setJobStatus(r.status);
+        if (r.status === "completed" && r.result) {
+          setResult(r.result);
+          setBusy(false);
+          toast.success("Blueprint generated.");
+          setTab("result");
+          localStorage.removeItem(JOB_STORAGE_KEY);
+        } else if (r.status === "error") {
+          setGenerationError(r.error || "Generation failed.");
+          toast.error(r.error || "Generation failed.");
+          setBusy(false);
+          localStorage.removeItem(JOB_STORAGE_KEY);
+        }
+      } catch {
+        // network blip — keep polling
+      }
+    };
+    const id = window.setInterval(tick, 4000);
+    void tick();
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [jobId, jobStatus, fetchJob, setResult]);
+
+  // Resume a job across reloads.
+  useEffect(() => {
+    if (!hydrated) return;
+    const saved = localStorage.getItem(JOB_STORAGE_KEY);
+    if (saved && !jobId) {
+      setJobId(saved);
+      setJobStatus("running");
+      setBusy(true);
+    }
+  }, [hydrated, jobId]);
+
   const onGenerate = async () => {
     setGenerationError(null);
     if (state.steps.length === 0) {
@@ -278,8 +331,9 @@ function BlueprintPage() {
       return;
     }
     setBusy(true);
+    setJobStatus("queued");
     try {
-      const response = await generate({ data: {
+      const response = await startJob({ data: {
         context: state.context,
         steps: state.steps,
         assets: state.assets,
@@ -290,22 +344,29 @@ function BlueprintPage() {
       if (!response.ok) {
         setGenerationError(response.error);
         toast.error(response.error);
+        setBusy(false);
+        setJobStatus("error");
         return;
       }
-      setResult(response.result);
-      setTab("result");
-      toast.success("Blueprint generated.");
+      const newJobId = response.jobId;
+      localStorage.setItem(JOB_STORAGE_KEY, newJobId);
+      setJobId(newJobId);
+      setJobStatus("running");
+      toast.info("Blueprint generation started. Results will appear under '7. Blueprint Generated' when ready.");
+      // Fire the background runner. Don't await — it may take minutes and the
+      // gateway may 504 the client connection; the job continues server-side
+      // and the polling loop above picks up the result.
+      void fetch("/api/public/blueprint/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: newJobId }),
+        keepalive: true,
+      }).catch(() => { /* expected on long-running 504s */ });
     } catch (e: any) {
-      const raw = e?.message || "Failed to generate blueprint.";
-      const isTimeout = /timeout|504|upstream/i.test(raw);
-      const message = isTimeout
-        ? "The blueprint is still being generated. Once ready, it will be available under '7. Blueprint Generated'."
-        : raw;
-      setGenerationError(message);
-      if (isTimeout) toast.info(message);
-      else toast.error(message);
-    } finally {
+      setGenerationError(e?.message || "Failed to start blueprint generation.");
+      toast.error(e?.message || "Failed to start blueprint generation.");
       setBusy(false);
+      setJobStatus("error");
     }
   };
 
