@@ -364,7 +364,7 @@ function BlueprintPage() {
             <TabsTrigger value="assets">4. Data Asset Map</TabsTrigger>
             <TabsTrigger value="dq">5. Data Quality</TabsTrigger>
             <TabsTrigger value="tom">6. Target TOM</TabsTrigger>
-            <TabsTrigger value="result">7. {state.result ? "Blueprint Generated" : "Blueprint"}</TabsTrigger>
+            <TabsTrigger value="result">7. Data Blueprint Generated</TabsTrigger>
           </TabsList>
 
           <TabsContent value="context" className="mt-6">
