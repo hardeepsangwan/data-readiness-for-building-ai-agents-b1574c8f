@@ -296,9 +296,14 @@ function BlueprintPage() {
       setTab("result");
       toast.success("Blueprint generated.");
     } catch (e: any) {
-      const message = e?.message || "Failed to generate blueprint.";
+      const raw = e?.message || "Failed to generate blueprint.";
+      const isTimeout = /timeout|504|upstream/i.test(raw);
+      const message = isTimeout
+        ? "The blueprint is still being generated. Once ready, it will be available under '7. Data Blueprint Generated'."
+        : raw;
       setGenerationError(message);
-      toast.error(message);
+      if (isTimeout) toast.info(message);
+      else toast.error(message);
     } finally {
       setBusy(false);
     }
