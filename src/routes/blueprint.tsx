@@ -760,10 +760,17 @@ function BlueprintPage() {
             </div>
             <div className="flex items-center justify-between">
               <Button variant="ghost" onClick={() => setTab("dq")}>← Back</Button>
-              <Button size="lg" onClick={onGenerate} disabled={busy}>
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate Blueprint
-              </Button>
+              <div className="flex flex-col items-end gap-2">
+                {generationError && (
+                  <div className="max-w-xl rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {generationError}
+                  </div>
+                )}
+                <Button size="lg" onClick={onGenerate} disabled={busy}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate Blueprint
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
