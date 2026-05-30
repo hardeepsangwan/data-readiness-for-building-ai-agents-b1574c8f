@@ -1,6 +1,5 @@
 // Server function: generate the executable Data Blueprint by calling the
-// configured OpenAI-compatible endpoint. XAI_BASE_URL may point at Azure
-// AI Foundry / Azure OpenAI, e.g. https://...openai.azure.com/openai/v1.
+// configured Azure OpenAI endpoint, e.g. https://...openai.azure.com/openai/v1.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -232,8 +231,8 @@ export const generateBlueprint = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
   .handler(async ({ data }): Promise<GenerateBlueprintResponse> => {
     const apiKey = process.env.XAI_API_KEY;
-    if (!apiKey) return { ok: false, error: "XAI_API_KEY is not configured." };
-    const baseUrl = process.env.XAI_BASE_URL || "https://api.x.ai/v1";
+    if (!apiKey) return { ok: false, error: "Azure OpenAI API key is not configured." };
+    const baseUrl = process.env.XAI_BASE_URL || "https://foundry-sc-poc-hs.openai.azure.com/openai/v1";
 
     const userMessage = `BUSINESS PROCESS CONTEXT:
 Organisation: ${data.context.organisation}
@@ -284,9 +283,7 @@ ${data.tom.successMetrics}
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations. The executiveSummary MUST explicitly address all four dimensions: data production (reusable Fabric ingestion + SCD1/SCD2 into OneLake), data consumption (Gold + ontology + agents), data governance (Purview / Entra Agent ID), and DQ remediation steps. The gapRegister and hubSpokeActivities MUST include concrete items for each of those four dimensions.`;
 
     const isAzure = /\.azure\.com/i.test(baseUrl);
-    const model = isAzure
-      ? deploymentNameForAzure(process.env.XAI_MODEL || "gpt-5.4")
-      : process.env.XAI_MODEL || "gpt-5.4";
+    const model = deploymentNameForAzure(process.env.XAI_MODEL || "gpt-5.4");
     const body = {
       model,
       messages: [
@@ -330,12 +327,12 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
       if (resp.status === 429) return { ok: false, error: "Model rate limit exceeded. Try again in a moment." };
-      if (resp.status === 401) return { ok: false, error: "API key invalid or unauthorized for the configured endpoint." };
+      if (resp.status === 401) return { ok: false, error: "Azure OpenAI API key is invalid or unauthorized for the configured endpoint." };
       if (resp.status === 404) {
         return {
           ok: false,
           error: isAzure
-            ? `Azure reached the endpoint, but deployment "${model}" was not found. In Azure AI Foundry, set XAI_MODEL to the exact deployment name for gpt-5.4. Upstream: ${text.slice(0, 220)}`
+            ? `Azure OpenAI reached the endpoint, but deployment "${model}" was not found. In Azure AI Foundry, set XAI_MODEL to the exact deployment name for gpt-5.4. Upstream: ${text.slice(0, 220)}`
             : `Model "${model}" was not found at ${url}. Upstream: ${text.slice(0, 220)}`,
         };
       }
