@@ -832,9 +832,20 @@ function BlueprintPage() {
                     {generationError}
                   </div>
                 )}
+                {busy && (jobStatus === "queued" || jobStatus === "running") && (
+                  <div className="max-w-xl rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 font-medium text-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {jobStatus === "queued" ? "Queuing blueprint job…" : "Generating blueprint…"}
+                    </div>
+                    <div className="mt-1 text-xs">
+                      This can take several minutes. You can stay on this page or switch tabs — the result will appear under <strong>7. Blueprint Generated</strong> automatically.
+                    </div>
+                  </div>
+                )}
                 <Button size="lg" onClick={onGenerate} disabled={busy}>
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Generate Blueprint
+                  {busy ? "Generating…" : "Generate Blueprint"}
                 </Button>
               </div>
             </div>
@@ -843,7 +854,19 @@ function BlueprintPage() {
           <TabsContent value="result" className="mt-6 space-y-6">
             {!state.result ? (
               <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
-                No blueprint yet. Complete the previous steps and click <strong>Generate Blueprint</strong>.
+                {busy && (jobStatus === "queued" || jobStatus === "running") ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="font-medium text-foreground">Generating your blueprint…</div>
+                    <div className="max-w-lg text-xs">
+                      This typically takes 2–5 minutes for a full process. The page will update automatically when the result is ready — you can switch tabs in the meantime.
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    No blueprint yet. Complete the previous steps and click <strong>Generate Blueprint</strong>.
+                  </>
+                )}
                 {generationError && (
                   <div className="mx-auto mt-4 max-w-3xl rounded-md border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
                     {generationError}
