@@ -299,7 +299,7 @@ function BlueprintPage() {
       const raw = e?.message || "Failed to generate blueprint.";
       const isTimeout = /timeout|504|upstream/i.test(raw);
       const message = isTimeout
-        ? "The blueprint is still being generated. Once ready, it will be available under '7. Data Blueprint Generated'."
+        ? "The blueprint is still being generated. Once ready, it will be available under '7. Blueprint Generated'."
         : raw;
       setGenerationError(message);
       if (isTimeout) toast.info(message);
