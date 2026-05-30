@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, FileDown, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
-import { generateBlueprint } from "@/lib/blueprint.functions";
+import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
@@ -204,11 +204,16 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
   };
 }
 
+const JOB_STORAGE_KEY = "indurent-blueprint-job-v1";
+
 function BlueprintPage() {
   const { state, hydrated, setContext, setSteps, setAssets, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
-  const generate = useServerFn(generateBlueprint);
+  const startJob = useServerFn(startBlueprintJob);
+  const fetchJob = useServerFn(getBlueprintJob);
   const [tab, setTab] = useState("context");
   const [busy, setBusy] = useState(false);
+  const [jobStatus, setJobStatus] = useState<"idle" | "queued" | "running" | "completed" | "error">("idle");
+  const [jobId, setJobId] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const radarRef = useRef<HTMLDivElement>(null);
@@ -270,6 +275,54 @@ function BlueprintPage() {
     toast.success(`Synced ${next.length} data assets from process steps.`);
   };
 
+  // Poll an active job until it completes or errors.
+  useEffect(() => {
+    if (!jobId || jobStatus === "completed" || jobStatus === "error") return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const r = await fetchJob({ data: { jobId } });
+        if (cancelled) return;
+        if (!r.ok) {
+          setJobStatus("error");
+          setGenerationError(r.error);
+          setBusy(false);
+          localStorage.removeItem(JOB_STORAGE_KEY);
+          return;
+        }
+        setJobStatus(r.status);
+        if (r.status === "completed" && r.result) {
+          setResult(r.result);
+          setBusy(false);
+          toast.success("Blueprint generated.");
+          setTab("result");
+          localStorage.removeItem(JOB_STORAGE_KEY);
+        } else if (r.status === "error") {
+          setGenerationError(r.error || "Generation failed.");
+          toast.error(r.error || "Generation failed.");
+          setBusy(false);
+          localStorage.removeItem(JOB_STORAGE_KEY);
+        }
+      } catch {
+        // network blip — keep polling
+      }
+    };
+    const id = window.setInterval(tick, 4000);
+    void tick();
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [jobId, jobStatus, fetchJob, setResult]);
+
+  // Resume a job across reloads.
+  useEffect(() => {
+    if (!hydrated) return;
+    const saved = localStorage.getItem(JOB_STORAGE_KEY);
+    if (saved && !jobId) {
+      setJobId(saved);
+      setJobStatus("running");
+      setBusy(true);
+    }
+  }, [hydrated, jobId]);
+
   const onGenerate = async () => {
     setGenerationError(null);
     if (state.steps.length === 0) {
@@ -278,8 +331,9 @@ function BlueprintPage() {
       return;
     }
     setBusy(true);
+    setJobStatus("queued");
     try {
-      const response = await generate({ data: {
+      const response = await startJob({ data: {
         context: state.context,
         steps: state.steps,
         assets: state.assets,
@@ -290,22 +344,29 @@ function BlueprintPage() {
       if (!response.ok) {
         setGenerationError(response.error);
         toast.error(response.error);
+        setBusy(false);
+        setJobStatus("error");
         return;
       }
-      setResult(response.result);
-      setTab("result");
-      toast.success("Blueprint generated.");
+      const newJobId = response.jobId;
+      localStorage.setItem(JOB_STORAGE_KEY, newJobId);
+      setJobId(newJobId);
+      setJobStatus("running");
+      toast.info("Blueprint generation started. Results will appear under '7. Blueprint Generated' when ready.");
+      // Fire the background runner. Don't await — it may take minutes and the
+      // gateway may 504 the client connection; the job continues server-side
+      // and the polling loop above picks up the result.
+      void fetch("/api/public/blueprint/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: newJobId }),
+        keepalive: true,
+      }).catch(() => { /* expected on long-running 504s */ });
     } catch (e: any) {
-      const raw = e?.message || "Failed to generate blueprint.";
-      const isTimeout = /timeout|504|upstream/i.test(raw);
-      const message = isTimeout
-        ? "The blueprint is still being generated. Once ready, it will be available under '7. Blueprint Generated'."
-        : raw;
-      setGenerationError(message);
-      if (isTimeout) toast.info(message);
-      else toast.error(message);
-    } finally {
+      setGenerationError(e?.message || "Failed to start blueprint generation.");
+      toast.error(e?.message || "Failed to start blueprint generation.");
       setBusy(false);
+      setJobStatus("error");
     }
   };
 
@@ -771,9 +832,20 @@ function BlueprintPage() {
                     {generationError}
                   </div>
                 )}
+                {busy && (jobStatus === "queued" || jobStatus === "running") && (
+                  <div className="max-w-xl rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 font-medium text-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {jobStatus === "queued" ? "Queuing blueprint job…" : "Generating blueprint…"}
+                    </div>
+                    <div className="mt-1 text-xs">
+                      This can take several minutes. You can stay on this page or switch tabs — the result will appear under <strong>7. Blueprint Generated</strong> automatically.
+                    </div>
+                  </div>
+                )}
                 <Button size="lg" onClick={onGenerate} disabled={busy}>
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Generate Blueprint
+                  {busy ? "Generating…" : "Generate Blueprint"}
                 </Button>
               </div>
             </div>
@@ -782,7 +854,19 @@ function BlueprintPage() {
           <TabsContent value="result" className="mt-6 space-y-6">
             {!state.result ? (
               <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
-                No blueprint yet. Complete the previous steps and click <strong>Generate Blueprint</strong>.
+                {busy && (jobStatus === "queued" || jobStatus === "running") ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="font-medium text-foreground">Generating your blueprint…</div>
+                    <div className="max-w-lg text-xs">
+                      This typically takes 2–5 minutes for a full process. The page will update automatically when the result is ready — you can switch tabs in the meantime.
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    No blueprint yet. Complete the previous steps and click <strong>Generate Blueprint</strong>.
+                  </>
+                )}
                 {generationError && (
                   <div className="mx-auto mt-4 max-w-3xl rounded-md border border-destructive/30 bg-destructive/10 p-3 text-left text-sm text-destructive">
                     {generationError}
