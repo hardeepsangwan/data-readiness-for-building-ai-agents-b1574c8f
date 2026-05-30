@@ -424,11 +424,36 @@ function BlueprintPage() {
           </TabsContent>
 
           <TabsContent value="steps" className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">One row per value stream step. The <strong>System / Tool</strong> column auto-feeds the Data Asset Map.</p>
-              <Button size="sm" onClick={() => setSteps([...state.steps, { ...newStep(), stepNumber: state.steps.length + 1 }])}>
-                <Plus className="mr-1 h-4 w-4" /> Add step
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">One row per value stream step. Import a <strong>draw.io</strong> diagram to auto-populate steps, or add manually. The <strong>System / Tool</strong> column auto-feeds the Data Asset Map.</p>
+              <div className="flex items-center gap-2">
+                <input
+                  id="drawio-upload"
+                  type="file"
+                  accept=".drawio,.xml,application/xml,text/xml"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    try {
+                      const parsed = await parseDrawio(file);
+                      if (!parsed.length) { toast.error("No shapes with labels found in the diagram."); return; }
+                      setSteps([...state.steps, ...parsed.map((p, idx) => ({ ...p, stepNumber: state.steps.length + idx + 1, id: `S-${String(state.steps.length + idx + 1).padStart(2, "0")}` }))]);
+                      toast.success(`Imported ${parsed.length} step(s) from ${file.name}`);
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Could not parse the draw.io file. Export as uncompressed XML and retry.");
+                    }
+                  }}
+                />
+                <Button size="sm" variant="outline" onClick={() => document.getElementById("drawio-upload")?.click()}>
+                  <Upload className="mr-1 h-4 w-4" /> Import draw.io
+                </Button>
+                <Button size="sm" onClick={() => setSteps([...state.steps, { ...newStep(), stepNumber: state.steps.length + 1 }])}>
+                  <Plus className="mr-1 h-4 w-4" /> Add step
+                </Button>
+              </div>
             </div>
             {state.steps.length === 0 && (
               <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
