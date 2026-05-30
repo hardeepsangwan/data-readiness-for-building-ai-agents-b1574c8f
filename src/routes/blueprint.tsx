@@ -276,7 +276,7 @@ function BlueprintPage() {
     }
     setBusy(true);
     try {
-      const result = await generate({ data: {
+      const response = await generate({ data: {
         context: state.context,
         steps: state.steps,
         assets: state.assets,
@@ -284,7 +284,11 @@ function BlueprintPage() {
         hive: state.hive,
         tom: state.tom,
       } });
-      setResult(result);
+      if (!response.ok) {
+        toast.error(response.error);
+        return;
+      }
+      setResult(response.result);
       setTab("result");
       toast.success("Blueprint generated.");
     } catch (e: any) {

@@ -1,6 +1,6 @@
-// Server function: generate the executable Data Blueprint by calling xAI's
-// Grok reasoning model directly. The user supplied XAI_API_KEY for this.
-// Override the endpoint with XAI_BASE_URL (e.g. for Azure AI Foundry).
+// Server function: generate the executable Data Blueprint by calling the
+// configured OpenAI-compatible endpoint. XAI_BASE_URL may point at Azure
+// AI Foundry / Azure OpenAI, e.g. https://...openai.azure.com/openai/v1.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -213,11 +213,26 @@ Be specific. Quote pain points verbatim. Reference DA-xx asset IDs. Cite Fabric 
 
 The executiveSummary MUST be a SHORT bullet list (8–12 lines, one idea per line, prefixed with "- ") organised under: Operations uplift, Value delivered (referencing the stated KPIs), Governance posture (referencing the stated compliance constraints), and Top risks / next moves.`;
 
+type GenerateBlueprintResponse =
+  | { ok: true; result: BlueprintResult }
+  | { ok: false; error: string };
+
+function azureChatCompletionsUrl(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, "");
+  if (/\/openai\/v1$/i.test(trimmed)) return `${trimmed}/chat/completions`;
+  if (/\/openai$/i.test(trimmed)) return `${trimmed}/v1/chat/completions`;
+  return `${trimmed}/openai/v1/chat/completions`;
+}
+
+function deploymentNameForAzure(model: string): string {
+  return model.replace(/^openai\//i, "").trim();
+}
+
 export const generateBlueprint = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
-  .handler(async ({ data }): Promise<BlueprintResult> => {
+  .handler(async ({ data }): Promise<GenerateBlueprintResponse> => {
     const apiKey = process.env.XAI_API_KEY;
-    if (!apiKey) throw new Error("XAI_API_KEY is not configured.");
+    if (!apiKey) return { ok: false, error: "XAI_API_KEY is not configured." };
     const baseUrl = process.env.XAI_BASE_URL || "https://api.x.ai/v1";
 
     const userMessage = `BUSINESS PROCESS CONTEXT:
@@ -268,7 +283,10 @@ ${data.tom.successMetrics}
 
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations. The executiveSummary MUST explicitly address all four dimensions: data production (reusable Fabric ingestion + SCD1/SCD2 into OneLake), data consumption (Gold + ontology + agents), data governance (Purview / Entra Agent ID), and DQ remediation steps. The gapRegister and hubSpokeActivities MUST include concrete items for each of those four dimensions.`;
 
-    const model = process.env.XAI_MODEL || "gpt-5.4";
+    const isAzure = /\.azure\.com/i.test(baseUrl);
+    const model = isAzure
+      ? deploymentNameForAzure(process.env.XAI_MODEL || "gpt-5.4")
+      : process.env.XAI_MODEL || "gpt-5.4";
     const body = {
       model,
       messages: [
@@ -288,49 +306,64 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
       tool_choice: { type: "function", function: { name: "emit_blueprint" } },
     };
 
-    // Azure AI Foundry / Azure OpenAI uses `api-key` header (not Bearer) and
-    // requires an api-version query param. Detect by hostname.
-    const isAzure = /\.azure\.com/i.test(baseUrl);
+    // Azure AI Foundry / Azure OpenAI v1 uses `api-key` and the deployment name
+    // in the `model` field. The v1 endpoint does not use the legacy api-version
+    // query string or /deployments/{name} URL pattern.
     const url = isAzure
-      ? `${baseUrl.replace(/\/$/, "")}/chat/completions?api-version=preview`
+      ? azureChatCompletionsUrl(baseUrl)
       : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (isAzure) headers["api-key"] = apiKey;
     else headers["Authorization"] = `Bearer ${apiKey}`;
 
-    const resp = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
+    let resp: Response;
+    try {
+      resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+    } catch {
+      return { ok: false, error: `Could not reach the configured AI endpoint at ${url}.` };
+    }
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      if (resp.status === 429) throw new Error("Model rate limit exceeded. Try again in a moment.");
-      if (resp.status === 401) throw new Error("API key invalid or unauthorized for the configured endpoint.");
-      if (resp.status === 404) throw new Error(`Model/deployment not found at ${url}. Set XAI_MODEL to the Azure deployment name. Upstream: ${text.slice(0, 300)}`);
-      throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
+      if (resp.status === 429) return { ok: false, error: "Model rate limit exceeded. Try again in a moment." };
+      if (resp.status === 401) return { ok: false, error: "API key invalid or unauthorized for the configured endpoint." };
+      if (resp.status === 404) {
+        return {
+          ok: false,
+          error: isAzure
+            ? `Azure reached the endpoint, but deployment "${model}" was not found. In Azure AI Foundry, set XAI_MODEL to the exact deployment name for gpt-5.4. Upstream: ${text.slice(0, 220)}`
+            : `Model "${model}" was not found at ${url}. Upstream: ${text.slice(0, 220)}`,
+        };
+      }
+      return { ok: false, error: `AI gateway error ${resp.status}: ${text.slice(0, 400)}` };
     }
 
     const json = await resp.json();
     const call = json?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!call?.function?.arguments) throw new Error("AI did not return a structured response.");
+    if (!call?.function?.arguments) return { ok: false, error: "AI did not return a structured response." };
 
     let parsed: any;
     try {
       parsed = JSON.parse(call.function.arguments);
     } catch {
-      throw new Error("AI returned malformed JSON.");
+      return { ok: false, error: "AI returned malformed JSON." };
     }
 
     return {
-      generatedAt: new Date().toISOString(),
-      model,
-      executiveSummary: String(parsed.executiveSummary || ""),
-      stepRecommendations: Array.isArray(parsed.stepRecommendations) ? parsed.stepRecommendations : [],
-      gapRegister: Array.isArray(parsed.gapRegister) ? parsed.gapRegister : [],
-      useCaseBacklog: Array.isArray(parsed.useCaseBacklog) ? parsed.useCaseBacklog : [],
-      hubSpokeActivities: Array.isArray(parsed.hubSpokeActivities) ? parsed.hubSpokeActivities : [],
-      radar: Array.isArray(parsed.radar) ? parsed.radar : [],
+      ok: true,
+      result: {
+        generatedAt: new Date().toISOString(),
+        model,
+        executiveSummary: String(parsed.executiveSummary || ""),
+        stepRecommendations: Array.isArray(parsed.stepRecommendations) ? parsed.stepRecommendations : [],
+        gapRegister: Array.isArray(parsed.gapRegister) ? parsed.gapRegister : [],
+        useCaseBacklog: Array.isArray(parsed.useCaseBacklog) ? parsed.useCaseBacklog : [],
+        hubSpokeActivities: Array.isArray(parsed.hubSpokeActivities) ? parsed.hubSpokeActivities : [],
+        radar: Array.isArray(parsed.radar) ? parsed.radar : [],
+      },
     };
   });
