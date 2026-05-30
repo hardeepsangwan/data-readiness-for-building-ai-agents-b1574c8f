@@ -108,6 +108,91 @@ function newStep(): ProcessStep {
   };
 }
 
+// Parse a draw.io / diagrams.net file (XML or compressed) and return ordered ProcessStep[].
+async function parseDrawio(file: File): Promise<ProcessStep[]> {
+  const pako = await import("pako");
+  const text = await file.text();
+  const parser = new DOMParser();
+  let xmlDoc = parser.parseFromString(text, "application/xml");
+
+  // If <mxfile><diagram>...</diagram></mxfile>, diagram body may be deflate-compressed + base64-encoded.
+  const diagramEl = xmlDoc.querySelector("diagram");
+  if (diagramEl && !xmlDoc.querySelector("mxGraphModel")) {
+    const raw = (diagramEl.textContent || "").trim();
+    try {
+      const bin = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+      const inflated = pako.inflateRaw(bin, { to: "string" });
+      const decoded = decodeURIComponent(inflated);
+      xmlDoc = parser.parseFromString(decoded, "application/xml");
+    } catch {
+      // assume already plain XML inside <diagram>
+      xmlDoc = parser.parseFromString(raw, "application/xml");
+    }
+  }
+
+  const cells = Array.from(xmlDoc.querySelectorAll("mxCell"));
+  type Node = { id: string; label: string; x: number; y: number };
+  const nodes = new Map<string, Node>();
+  const edges: { source: string; target: string }[] = [];
+
+  const stripHtml = (s: string) => s.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
+
+  for (const c of cells) {
+    const id = c.getAttribute("id") || "";
+    const isVertex = c.getAttribute("vertex") === "1";
+    const isEdge = c.getAttribute("edge") === "1";
+    const value = stripHtml(c.getAttribute("value") || "");
+    if (isVertex && value) {
+      const geom = c.querySelector("mxGeometry");
+      const x = Number(geom?.getAttribute("x") || 0);
+      const y = Number(geom?.getAttribute("y") || 0);
+      nodes.set(id, { id, label: value, x, y });
+    } else if (isEdge) {
+      const src = c.getAttribute("source") || "";
+      const tgt = c.getAttribute("target") || "";
+      if (src && tgt) edges.push({ source: src, target: tgt });
+    }
+  }
+
+  // Order: topologically by edges; fall back to (y, x).
+  let ordered: Node[] = [];
+  if (edges.length && nodes.size) {
+    const incoming = new Map<string, number>();
+    nodes.forEach((_, id) => incoming.set(id, 0));
+    edges.forEach((e) => { if (nodes.has(e.target)) incoming.set(e.target, (incoming.get(e.target) || 0) + 1); });
+    const queue = Array.from(nodes.values()).filter((n) => (incoming.get(n.id) || 0) === 0).sort((a, b) => a.y - b.y || a.x - b.x);
+    const adj = new Map<string, string[]>();
+    edges.forEach((e) => { const a = adj.get(e.source) || []; a.push(e.target); adj.set(e.source, a); });
+    const seen = new Set<string>();
+    while (queue.length) {
+      const n = queue.shift()!;
+      if (seen.has(n.id)) continue;
+      seen.add(n.id);
+      ordered.push(n);
+      (adj.get(n.id) || []).forEach((tid) => {
+        const node = nodes.get(tid);
+        if (node && !seen.has(tid)) queue.push(node);
+      });
+    }
+    // append any unseen
+    nodes.forEach((n) => { if (!seen.has(n.id)) ordered.push(n); });
+  } else {
+    ordered = Array.from(nodes.values()).sort((a, b) => a.y - b.y || a.x - b.x);
+  }
+
+  return ordered.map((n, i) => {
+    const parts = n.label.split(/\s*[\|:•·]\s*|\s+—\s+/);
+    const sub = parts[0]?.slice(0, 60) || `Step ${i + 1}`;
+    const desc = parts.slice(1).join(" — ") || n.label;
+    return {
+      ...newStep(),
+      id: `S-${String(i + 1).padStart(2, "0")}`,
+      stepNumber: i + 1,
+      subProcess: sub,
+      description: desc,
+    };
+  });
+
 function newAssetFromSystem(id: string, source: string): DataAsset {
   return {
     id, source, domain: "", entities: "", accessMethod: "", businessOwner: "", technicalOwner: "",
