@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type {
   ProcessStep,
   DataAsset,
+  DownstreamAsset,
   DataQualityScore,
   DataHiveAnswers,
   TargetTOM,
@@ -14,6 +15,7 @@ export interface BlueprintState {
   context: ProcessContext;
   steps: ProcessStep[];
   assets: DataAsset[];
+  downstream: DownstreamAsset[];
   dq: DataQualityScore[];
   hive: DataHiveAnswers;
   tom: TargetTOM;
@@ -38,6 +40,7 @@ const makeInitial = (): BlueprintState => ({
   },
   steps: [],
   assets: [],
+  downstream: [],
   dq: [],
   hive: { ...DEFAULT_DATA_HIVE_ANSWERS },
   tom: { ...DEFAULT_TARGET_TOM },
@@ -65,6 +68,7 @@ function read(): BlueprintState {
       tom: { ...init.tom, ...(parsed.tom || {}) },
       steps: parsed.steps || [],
       assets: parsed.assets || [],
+      downstream: parsed.downstream || [],
       dq: parsed.dq || [],
       result: parsed.result || null,
     };
@@ -108,6 +112,7 @@ export function useBlueprint() {
       update((s) => ({ ...s, context: { ...s.context, ...c } })),
     setSteps: (steps: ProcessStep[]) => update((s) => ({ ...s, steps })),
     setAssets: (assets: DataAsset[]) => update((s) => ({ ...s, assets })),
+    setDownstream: (downstream: DownstreamAsset[]) => update((s) => ({ ...s, downstream })),
     setDq: (dq: DataQualityScore[]) => update((s) => ({ ...s, dq })),
     setHive: (h: Partial<DataHiveAnswers>) =>
       update((s) => ({ ...s, hive: { ...s.hive, ...h } })),

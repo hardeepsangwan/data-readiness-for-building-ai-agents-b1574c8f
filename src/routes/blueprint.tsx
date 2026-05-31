@@ -27,6 +27,7 @@ import {
 import type {
   ProcessStep,
   DataAsset,
+  DownstreamAsset,
   DataQualityScore,
   AutomationClass,
   DataHiveStatus,
@@ -204,10 +205,117 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
   };
 }
 
+function newDownstream(n: number): DownstreamAsset {
+  return {
+    id: `DP-${String(n).padStart(3, "0")}`,
+    name: "", destination: "", consumerDomain: "", format: "", deliveryMethod: "",
+    refreshCadence: "", qualityExpectation: "", dataContractExists: "",
+    targetHiveLayer: "", classification: "", glossaryTerm: "",
+    dataOwner: "", dataSteward: "", notes: "",
+  };
+}
+
 const JOB_STORAGE_KEY = "indurent-blueprint-job-v1";
 
+const HUB_PILLARS: { pillar: string; headline: string; bullets: string[] }[] = [
+  {
+    pillar: "Value",
+    headline: "Define the value the CoE needs to create for business domains.",
+    bullets: [
+      "Ensure our data stack can scale",
+      "Improve data readiness for AI (e.g. metadata, quality)",
+      "Enable faster data refreshes",
+      "Provide 1–2 spaces for self-serve",
+    ],
+  },
+  {
+    pillar: "Platform",
+    headline: "Build a self-serve data platform (workspaces, data, tools, guardrails, policies, monitoring, integration, data sharing).",
+    bullets: [
+      "Data Hive being built in Microsoft Fabric by the Data Engineering team (Data & AI)",
+      "Single OneLake tenant; Fabric capacities sized per domain",
+      "Standardised workspaces, guardrails and policies for all spokes",
+    ],
+  },
+  {
+    pillar: "Product",
+    headline: "Define and build reusable data products (data models, BI, AI) to support common use cases across domains.",
+    bullets: [
+      "Data Engineering starting with the Tenancy Schedule — rebuilding a well-architected Medallion Architecture in Data Hive",
+      "AI & Data Science team building reusable AI products that benefit all business domains",
+    ],
+  },
+  {
+    pillar: "Process",
+    headline: "Define and automate CoE processes to support data product creation, management and governance.",
+    bullets: [
+      "Reusable patterns for data ingestion, transformation and serving",
+      "Data contracts, metadata management and DQ tests for all data",
+    ],
+  },
+  {
+    pillar: "People",
+    headline: "Define the CoE structure for platform ops and data-product enablement.",
+    bullets: [
+      "Data & AI team almost at target state (minor capacity gaps)",
+      "Focus shifts to broader Tech — Apps / Architecture / Security / Infra alignment and capacity",
+    ],
+  },
+];
+
+const SPOKE_PILLARS: { pillar: string; requirement: string; delivery: string; deliverables: string[] }[] = [
+  {
+    pillar: "Value",
+    requirement: "Define the value the business domain needs to create for its customers (other business domains, Blackstone, tenants, partners).",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for how to define value for a business domain",
+      "Application of framework defining value for FP&A / Finance",
+    ],
+  },
+  {
+    pillar: "Platform",
+    requirement: "Define the platform requirements to support self-serve value delivery within the business domain.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework setting out typical platform requirements for self-serving adhoc analytics, BI and AI",
+      "Application of framework to identify specific FP&A / Finance platform requirements (workspaces, data, tools, guardrails, policies, monitoring, integration, data sharing)",
+    ],
+  },
+  {
+    pillar: "Product",
+    requirement: "Define and build reusable data products (data models, BI, AI) to support value delivery within the relevant business domain.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for defining product value proposition, customer requirements, data requirements, roadmap and delivery lifecycle",
+      "Apply framework for FP&A / Finance — including all existing data products e.g. derived data, reports, Anaplan",
+      "Build reusable data products to support at least 1 value proposition / use case for FP&A / Finance (Agent Factory)",
+    ],
+  },
+  {
+    pillar: "Process",
+    requirement: "Define and automate processes within the business domain leveraging data products.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for process mapping, ownership of data and processes, and reimagining processes for automation",
+      "Apply framework to define all existing FP&A / Finance processes — identify pains/gains, reimagine for automation, define ownership",
+      "Automate processes and implement ownership structures to support at least 1 use case for FP&A / Finance (Agent Factory)",
+    ],
+  },
+  {
+    pillar: "People",
+    requirement: "Define the domain structure required to support data-product development and lifecycle management within the business domain.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for defining the business-domain structure in a Data & AI-enabled world — individual skills, team capabilities, capacity, human vs agent mix",
+      "Apply framework to define specific skill, capability, capacity, human vs agent mix requirements for FP&A / Finance",
+      "Facilitate domain transformation through training, reskilling, adoption mechanisms and incentives (Change Management)",
+    ],
+  },
+];
+
 function BlueprintPage() {
-  const { state, hydrated, setContext, setSteps, setAssets, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const { state, hydrated, setContext, setSteps, setAssets, setDownstream, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
   const [tab, setTab] = useState("context");
@@ -330,6 +438,9 @@ function BlueprintPage() {
       toast.error("Add at least one process step first.");
       return;
     }
+    // Clear previous results so the "Blueprint Generated" tab shows the
+    // in-progress state instead of stale data from a prior run.
+    setResult(null);
     setBusy(true);
     setJobStatus("queued");
     try {
@@ -742,6 +853,71 @@ function BlueprintPage() {
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
+
+            {/* PART B — Downstream / produced data assets shared OUT to consumers. */}
+            <div className="mt-8 rounded-lg border border-primary/30 bg-primary/[0.03] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Downstream data — produced &amp; shared OUT</div>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
+                    Data products this domain produces and shares with downstream consumers / other business domains
+                    (e.g. Service Charge Actuals → Operations Portal). Mirrors <strong>Part B</strong> of the DataHive
+                    Blueprint Asset Map template.
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setDownstream([...state.downstream, newDownstream(state.downstream.length + 1)])}>
+                  <Plus className="mr-1 h-4 w-4" /> Add downstream asset
+                </Button>
+              </div>
+              {state.downstream.length === 0 ? (
+                <div className="mt-4 rounded-md border border-dashed border-border bg-card/40 p-6 text-center text-xs text-muted-foreground">
+                  No downstream data assets yet. Click <strong>Add downstream asset</strong> to capture each data product this domain shares with consumers.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {state.downstream.map((d, i) => {
+                    const upd = (patch: Partial<DownstreamAsset>) => {
+                      const n = [...state.downstream]; n[i] = { ...d, ...patch }; setDownstream(n);
+                    };
+                    return (
+                      <Card key={d.id}>
+                        <CardContent className="grid gap-3 p-4 md:grid-cols-12">
+                          <div className="md:col-span-2"><Label className="text-xs">Ref (DP-…)</Label><Input value={d.id} onChange={(e) => upd({ id: e.target.value })} /></div>
+                          <div className="md:col-span-5"><Label className="text-xs">Data product name</Label><Input value={d.name} onChange={(e) => upd({ name: e.target.value })} /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Destination / Consumer</Label><Input value={d.destination} onChange={(e) => upd({ destination: e.target.value })} placeholder="e.g. Operations Portal" /></div>
+                          <div className="md:col-span-2"><Label className="text-xs">Consumer domain</Label><Input value={d.consumerDomain} onChange={(e) => upd({ consumerDomain: e.target.value })} placeholder="e.g. Operations" /></div>
+                          <div className="md:col-span-2"><Label className="text-xs">Format</Label><Input value={d.format} onChange={(e) => upd({ format: e.target.value })} placeholder="JSON / Parquet / Excel" /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Delivery method</Label><Input value={d.deliveryMethod} onChange={(e) => upd({ deliveryMethod: e.target.value })} placeholder="API / SharePoint / Direct Lake" /></div>
+                          <div className="md:col-span-2"><Label className="text-xs">Refresh cadence</Label><Input value={d.refreshCadence} onChange={(e) => upd({ refreshCadence: e.target.value })} placeholder="Daily / Monthly" /></div>
+                          <div className="md:col-span-3">
+                            <Label className="text-xs">Target Hive layer</Label>
+                            <select className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm" value={d.targetHiveLayer} onChange={(e) => upd({ targetHiveLayer: e.target.value as any })}>
+                              <option value="">—</option><option>Bronze</option><option>Silver</option><option>Gold</option>
+                            </select>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label className="text-xs">Data contract</Label>
+                            <select className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm" value={d.dataContractExists} onChange={(e) => upd({ dataContractExists: e.target.value as any })}>
+                              <option value="">—</option><option>Yes</option><option>No</option><option>Planned</option>
+                            </select>
+                          </div>
+                          <div className="md:col-span-7"><Label className="text-xs">Quality / SLA expectation</Label><Input value={d.qualityExpectation} onChange={(e) => upd({ qualityExpectation: e.target.value })} placeholder="e.g. Complete; <1 day lag; no null Cost Centres" /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Classification</Label><Input value={d.classification} onChange={(e) => upd({ classification: e.target.value })} placeholder="Public / Internal / Confidential" /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Glossary term</Label><Input value={d.glossaryTerm} onChange={(e) => upd({ glossaryTerm: e.target.value })} /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Data owner</Label><Input value={d.dataOwner} onChange={(e) => upd({ dataOwner: e.target.value })} /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Data steward</Label><Input value={d.dataSteward} onChange={(e) => upd({ dataSteward: e.target.value })} /></div>
+                          <div className="md:col-span-12"><Label className="text-xs">Notes</Label><Textarea rows={2} value={d.notes} onChange={(e) => upd({ notes: e.target.value })} /></div>
+                          <div className="md:col-span-12 flex justify-end">
+                            <Button size="icon" variant="ghost" onClick={() => setDownstream(state.downstream.filter((x) => x.id !== d.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("usecases")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
           </TabsContent>
 
@@ -857,10 +1033,13 @@ function BlueprintPage() {
                 {busy && (jobStatus === "queued" || jobStatus === "running") ? (
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <div className="font-medium text-foreground">Generating your blueprint…</div>
-                    <div className="max-w-lg text-xs">
-                      This typically takes 2–5 minutes for a full process. The page will update automatically when the result is ready — you can switch tabs in the meantime.
+                    <div className="text-base font-semibold text-foreground">Blueprint generation in progress…</div>
+                    <div className="max-w-xl text-xs leading-relaxed">
+                      We've cleared your previous blueprint and started a fresh run. Sit tight — this usually takes
+                      <strong> 2–5 minutes</strong> for a full process. You can switch tabs or even close this page;
+                      your new blueprint will appear here automatically as soon as it's ready.
                     </div>
+                    <div className="mt-1 text-[11px] uppercase tracking-wider text-primary">Status: {jobStatus}</div>
                   </div>
                 ) : (
                   <>
@@ -1245,6 +1424,126 @@ function BlueprintPage() {
                           <div className="mt-2 text-sm text-foreground/80" dangerouslySetInnerHTML={{ __html: b.d }} />
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ── Use-case prioritisation parameters reference ─────────────── */}
+                <Card>
+                  <CardHeader><CardTitle>Use-case prioritisation parameters</CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="mb-3 text-sm text-muted-foreground">
+                      Every candidate use case in the backlog is scored 1–5 against the seven parameters below.
+                      The total /35 places the use case in Tier 1 (Now ≥ 28), Tier 2 (Next 22–27) or Tier 3 (Later &lt; 22).
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/40 uppercase">
+                          <tr>
+                            <th className="p-2 text-left">Parameter</th>
+                            <th className="p-2 text-left">What it measures</th>
+                            <th className="p-2 text-left">1</th>
+                            <th className="p-2 text-left">3</th>
+                            <th className="p-2 text-left">5</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {UC_PARAMS.map((p) => (
+                            <tr key={p.key} className="border-t align-top">
+                              <td className="p-2 font-semibold">{p.label}</td>
+                              <td className="p-2 text-muted-foreground">{p.definition}</td>
+                              <td className="p-2">{p.s1}</td>
+                              <td className="p-2">{p.s3}</td>
+                              <td className="p-2">{p.s5}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ── Maturity scale L0–L5 (radar interpretation legend) ───────── */}
+                <Card>
+                  <CardHeader><CardTitle>Maturity scale — L0 to L5</CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="mb-3 text-sm text-muted-foreground">
+                      The radar above plots each capability against this six-level maturity scale. Use it to interpret
+                      the current and target levels and to set realistic stretch goals per axis.
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {[
+                        { l: "L0", name: "No Capability Yet", d: "The organisation is either unaware of, or does not have, any processes, tools, or resources to support this capability." },
+                        { l: "L1", name: "Limited Awareness", d: "Some tools and processes may exist; however, there is limited awareness of the importance of managing this capability across the Data Platform." },
+                        { l: "L2", name: "Foundational", d: "The foundations of tools and technologies to manage this capability exist and are operational. There is only very limited implementation, or there are minor initiatives that demonstrate the organisation's capability to sustain this across the Data Platform." },
+                        { l: "L3", name: "Developing", d: "Comprehensive awareness exists, and tools and technology to support the capability are in place. There may be some resource constraints. However, implementation is not widely deployed. It varies between different business areas within the Data Platform and is not consistent across the enterprise, nor is it enforced by policies." },
+                        { l: "L4", name: "Established", d: "Tools, technology, processes, and resources are in place. Standards are defined, and the capability is enforced across all business areas within the Data Platform, with policies applied to all new implementations. However, the implementation has not led to transformational change, nor is it considered to be transforming other analytics areas or expanding the organisation's analytics capabilities." },
+                        { l: "L5", name: "Transformational", d: "The capability is fully implemented and enforced throughout the Data Platform. Its deployment is considered transformational for the analytical business, expanding analytics capabilities that could not have been achieved prior to this implementation." },
+                      ].map((row, i) => (
+                        <div key={row.l} className="rounded-md border border-border bg-card p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-md px-2 py-0.5 text-xs font-bold text-white" style={{ background: LEVEL_COLORS[i] }}>{row.l}</span>
+                            <span className="text-sm font-semibold">{row.name}</span>
+                          </div>
+                          <p className="mt-2 text-xs text-foreground/80 leading-relaxed">{row.d}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ── Hub & Spoke operating model — detailed by pillar ─────────── */}
+                <Card>
+                  <CardHeader><CardTitle>Hub &amp; Spoke operating model — Value, Platform, Product, Process, People</CardTitle></CardHeader>
+                  <CardContent className="space-y-6">
+                    <p className="text-sm text-muted-foreground max-w-3xl">
+                      How responsibilities split across the central Data &amp; AI CoE (<strong>Hub</strong>) and the business
+                      domain (<strong>Spoke</strong>) across the five pillars. Use this to anchor org design conversations.
+                    </p>
+
+                    <div>
+                      <div className="mb-2 inline-block rounded-md bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground">Hub — Data &amp; AI CoE</div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {HUB_PILLARS.map((p) => (
+                          <div key={p.pillar} className="rounded-md border border-border bg-card p-4">
+                            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{p.pillar}</div>
+                            <div className="mt-1 text-sm font-medium">{p.headline}</div>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-foreground/80">
+                              {p.bullets.map((b, i) => <li key={i}>{b}</li>)}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-2 inline-block rounded-md bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-wider text-secondary-foreground">Spoke — Business domain</div>
+                      <div className="overflow-x-auto rounded-md border border-border">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted/40 uppercase">
+                            <tr>
+                              <th className="p-2 text-left w-[110px]">Pillar</th>
+                              <th className="p-2 text-left w-[280px]">Requirement</th>
+                              <th className="p-2 text-left w-[140px]">Delivery mechanism</th>
+                              <th className="p-2 text-left">What KPMG delivers via the Data Blueprint</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {SPOKE_PILLARS.map((p) => (
+                              <tr key={p.pillar} className="border-t align-top">
+                                <td className="p-2 font-semibold">{p.pillar}</td>
+                                <td className="p-2 text-foreground/80">{p.requirement}</td>
+                                <td className="p-2 text-muted-foreground">{p.delivery}</td>
+                                <td className="p-2">
+                                  <ol className="list-decimal space-y-1 pl-4 text-foreground/80">
+                                    {p.deliverables.map((d, i) => <li key={i}>{d}</li>)}
+                                  </ol>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
