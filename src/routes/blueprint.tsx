@@ -208,7 +208,7 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
 const JOB_STORAGE_KEY = "indurent-blueprint-job-v1";
 
 function BlueprintPage() {
-  const { state, hydrated, setContext, setSteps, setAssets, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const { state, hydrated, setContext, setSteps, setAssets, setDownstream, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
   const [tab, setTab] = useState("context");
