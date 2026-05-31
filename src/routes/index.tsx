@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FP&A Data Blueprint — Reusable Data & AI Framework" },
-      { name: "description", content: "A reusable framework for business domains to apply Data and AI to improve operations, deliver value and meet governance standards — on Microsoft Fabric, OneLake and Agent 365, in a hub-and-spoke operating model." },
+      { title: "Data Blueprint — Reusable Data & AI Framework" },
+      { name: "description", content: "A reusable framework for business domains to apply Data and AI to improve operations, deliver value and meet governance standards — on Microsoft Fabric, OneLake and Agent 365, in a target data operating model." },
     ],
   }),
   component: Index,
