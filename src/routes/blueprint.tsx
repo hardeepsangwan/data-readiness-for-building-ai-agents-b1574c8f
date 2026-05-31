@@ -217,6 +217,103 @@ function newDownstream(n: number): DownstreamAsset {
 
 const JOB_STORAGE_KEY = "indurent-blueprint-job-v1";
 
+const HUB_PILLARS: { pillar: string; headline: string; bullets: string[] }[] = [
+  {
+    pillar: "Value",
+    headline: "Define the value the CoE needs to create for business domains.",
+    bullets: [
+      "Ensure our data stack can scale",
+      "Improve data readiness for AI (e.g. metadata, quality)",
+      "Enable faster data refreshes",
+      "Provide 1–2 spaces for self-serve",
+    ],
+  },
+  {
+    pillar: "Platform",
+    headline: "Build a self-serve data platform (workspaces, data, tools, guardrails, policies, monitoring, integration, data sharing).",
+    bullets: [
+      "Data Hive being built in Microsoft Fabric by the Data Engineering team (Data & AI)",
+      "Single OneLake tenant; Fabric capacities sized per domain",
+      "Standardised workspaces, guardrails and policies for all spokes",
+    ],
+  },
+  {
+    pillar: "Product",
+    headline: "Define and build reusable data products (data models, BI, AI) to support common use cases across domains.",
+    bullets: [
+      "Data Engineering starting with the Tenancy Schedule — rebuilding a well-architected Medallion Architecture in Data Hive",
+      "AI & Data Science team building reusable AI products that benefit all business domains",
+    ],
+  },
+  {
+    pillar: "Process",
+    headline: "Define and automate CoE processes to support data product creation, management and governance.",
+    bullets: [
+      "Reusable patterns for data ingestion, transformation and serving",
+      "Data contracts, metadata management and DQ tests for all data",
+    ],
+  },
+  {
+    pillar: "People",
+    headline: "Define the CoE structure for platform ops and data-product enablement.",
+    bullets: [
+      "Data & AI team almost at target state (minor capacity gaps)",
+      "Focus shifts to broader Tech — Apps / Architecture / Security / Infra alignment and capacity",
+    ],
+  },
+];
+
+const SPOKE_PILLARS: { pillar: string; requirement: string; delivery: string; deliverables: string[] }[] = [
+  {
+    pillar: "Value",
+    requirement: "Define the value the business domain needs to create for its customers (other business domains, Blackstone, tenants, partners).",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for how to define value for a business domain",
+      "Application of framework defining value for FP&A / Finance",
+    ],
+  },
+  {
+    pillar: "Platform",
+    requirement: "Define the platform requirements to support self-serve value delivery within the business domain.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework setting out typical platform requirements for self-serving adhoc analytics, BI and AI",
+      "Application of framework to identify specific FP&A / Finance platform requirements (workspaces, data, tools, guardrails, policies, monitoring, integration, data sharing)",
+    ],
+  },
+  {
+    pillar: "Product",
+    requirement: "Define and build reusable data products (data models, BI, AI) to support value delivery within the relevant business domain.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for defining product value proposition, customer requirements, data requirements, roadmap and delivery lifecycle",
+      "Apply framework for FP&A / Finance — including all existing data products e.g. derived data, reports, Anaplan",
+      "Build reusable data products to support at least 1 value proposition / use case for FP&A / Finance (Agent Factory)",
+    ],
+  },
+  {
+    pillar: "Process",
+    requirement: "Define and automate processes within the business domain leveraging data products.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for process mapping, ownership of data and processes, and reimagining processes for automation",
+      "Apply framework to define all existing FP&A / Finance processes — identify pains/gains, reimagine for automation, define ownership",
+      "Automate processes and implement ownership structures to support at least 1 use case for FP&A / Finance (Agent Factory)",
+    ],
+  },
+  {
+    pillar: "People",
+    requirement: "Define the domain structure required to support data-product development and lifecycle management within the business domain.",
+    delivery: "KPMG via Data Blueprint",
+    deliverables: [
+      "Generic framework for defining the business-domain structure in a Data & AI-enabled world — individual skills, team capabilities, capacity, human vs agent mix",
+      "Apply framework to define specific skill, capability, capacity, human vs agent mix requirements for FP&A / Finance",
+      "Facilitate domain transformation through training, reskilling, adoption mechanisms and incentives (Change Management)",
+    ],
+  },
+];
+
 function BlueprintPage() {
   const { state, hydrated, setContext, setSteps, setAssets, setDownstream, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
   const startJob = useServerFn(startBlueprintJob);
