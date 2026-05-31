@@ -1468,7 +1468,15 @@ const LEVEL_COLORS = [
   "oklch(0.58 0.16 160)",
   "oklch(0.50 0.18 180)",
 ];
-const LEVEL_NAMES = ["No Capability", "Initial", "Repeatable", "Defined", "Managed", "Transformational"];
+const LEVEL_NAMES = ["No Capability Yet", "Limited Awareness", "Foundational", "Developing", "Established", "Transformational"];
+const LEVEL_DESCRIPTIONS = [
+  "The organisation is either unaware of, or does not have, any processes, tools, or resources to support this capability.",
+  "Some tools and processes may exist; however, there is limited awareness of the importance of managing this capability across the Data Platform.",
+  "The foundations of tools and technologies to manage this capability exist and are operational. There is only very limited implementation, or there are minor initiatives that demonstrate the organisation's capability to sustain this across the Data Platform.",
+  "Comprehensive awareness exists, and tools and technology to support the capability are in place. There may be some resource constraints. However, implementation is not widely deployed. It varies between different business areas within the Data Platform and is not consistent across the enterprise, nor is it enforced by policies.",
+  "Tools, technology, processes, and resources are in place. Standards are defined, and the capability is enforced across all business areas within the Data Platform, with policies applied to all new implementations. However, the implementation has not led to transformational change, nor is it considered to be transforming other analytics areas or expanding the organisation's analytics capabilities.",
+  "The capability is fully implemented and enforced throughout the Data Platform. Its deployment is considered transformational for the analytical business, expanding analytics capabilities that could not have been achieved prior to this implementation.",
+];
 
 function RadarMaturityTable({ axes }: { axes: { axis: string; current: number; target: number }[] }) {
   return (
