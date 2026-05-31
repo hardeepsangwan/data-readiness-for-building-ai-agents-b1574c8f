@@ -52,6 +52,26 @@ export interface DataAsset {
   notes: string;
 }
 
+// Downstream / produced data assets (Part B of the Data Asset Map).
+// Captures data products this domain SHARES OUT to consumers / other domains.
+export interface DownstreamAsset {
+  id: string; // DP-01..
+  name: string;
+  destination: string;       // Destination / Consumer (e.g. Operations Portal)
+  consumerDomain: string;    // e.g. Operations, Finance
+  format: string;            // e.g. JSON / Excel / Parquet
+  deliveryMethod: string;    // e.g. API / SharePoint / Email
+  refreshCadence: string;    // e.g. Monthly
+  qualityExpectation: string;// SLA / DQ expectation
+  dataContractExists: "Yes" | "No" | "Planned" | "";
+  targetHiveLayer: "Bronze" | "Silver" | "Gold" | "";
+  classification: string;    // Public / Internal / Confidential
+  glossaryTerm: string;
+  dataOwner: string;
+  dataSteward: string;
+  notes: string;
+}
+
 export interface DataQualityScore {
   assetId: string;
   completeness: number; // 1-5
