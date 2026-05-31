@@ -67,22 +67,22 @@ function Index() {
               Data Hive · Microsoft Fabric · OneLake · Agent 365
             </div>
             <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              FP&amp;A Data Blueprint
+              Data Blueprint
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-white/85 md:text-xl">
               A reusable framework for business domains to apply Data &amp; AI to <strong>improve operations</strong>,
               <strong> deliver measurable value</strong> and <strong>meet governance standards</strong> — generated as a
-              hub-and-spoke blueprint on the Data Hive (Microsoft Fabric / OneLake / Agent 365) target state.
+              blueprint on the Data Hive (Microsoft Fabric / OneLake / Agent 365) target state.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 shadow-[var(--shadow-elegant)]">
-                <Link to="/blueprint">Build a Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                <Link to="/blueprint">Build a Data Blueprint for a business function and business process <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/80">
-              <Stat label="Sections" value="6" />
+              <Stat label="Sections" value="7" />
               <Stat label="DQ dimensions" value="6" />
-              <Stat label="Operating model" value="Hub · Spoke · Handshakes" />
+              <Stat label="Operating model" value="Target Data Operating Model" />
             </div>
           </div>
         </div>
