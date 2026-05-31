@@ -27,6 +27,7 @@ import {
 import type {
   ProcessStep,
   DataAsset,
+  DownstreamAsset,
   DataQualityScore,
   AutomationClass,
   DataHiveStatus,
@@ -330,6 +331,9 @@ function BlueprintPage() {
       toast.error("Add at least one process step first.");
       return;
     }
+    // Clear previous results so the "Blueprint Generated" tab shows the
+    // in-progress state instead of stale data from a prior run.
+    setResult(null);
     setBusy(true);
     setJobStatus("queued");
     try {
