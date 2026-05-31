@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FP&A Data Blueprint — Reusable Data & AI Framework" },
-      { name: "description", content: "A reusable framework for business domains to apply Data and AI to improve operations, deliver value and meet governance standards — on Microsoft Fabric, OneLake and Agent 365, in a hub-and-spoke operating model." },
+      { title: "Data Blueprint — Reusable Data & AI Framework" },
+      { name: "description", content: "A reusable framework for business domains to apply Data and AI to improve operations, deliver value and meet governance standards — on Microsoft Fabric, OneLake and Agent 365, in a target data operating model." },
     ],
   }),
   component: Index,
@@ -25,24 +25,29 @@ const SECTIONS: { n: string; name: string; icon: any; color: string; description
     outputs: ["Per-step roles & systems", "Pain points captured verbatim", "Automation opportunities flagged"],
   },
   {
-    n: "03", name: "Data Asset Map", icon: Database, color: "oklch(0.62 0.16 155)",
-    description: "Catalogue every system / data asset that feeds the value stream — domain, entities, owners, refresh, sensitivity and Bronze / Silver / Gold fit on the Data Hive.",
-    outputs: ["Source + domain + owners", "Bronze / Silver / Gold fit", "PII flagging & refresh cadence"],
+    n: "03", name: "Use Case Priority", icon: Sparkles, color: "oklch(0.60 0.18 295)",
+    description: "Identify and prioritise candidate Data & AI use cases against business impact, desirability, feasibility, solution type and data readiness.",
+    outputs: ["Use case backlog", "Scoring across criteria", "Prioritised shortlist"],
   },
   {
-    n: "04", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
+    n: "04", name: "Data Asset Map", icon: Database, color: "oklch(0.62 0.16 155)",
+    description: "Catalogue every upstream system / data asset that feeds the value stream AND every downstream system / data product produced — domain, entities, owners, refresh, sensitivity, destinations, consumers, delivery method, data contracts and Bronze / Silver / Gold fit on the Data Hive.",
+    outputs: ["Upstream sources + domain + owners", "Downstream consumers & data contracts", "Bronze / Silver / Gold fit", "PII flagging & refresh cadence"],
+  },
+  {
+    n: "05", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
     description: "Score every asset on the six DAMA dimensions using a 1–5 rubric: Completeness, Accuracy, Consistency, Timeliness, Uniqueness, Validity — with anchored criteria and evidence.",
     outputs: ["DQ score per asset", "Evidence captured", "Uplift targets & SLAs"],
   },
   {
-    n: "05", name: "Target TOM", icon: Network, color: "oklch(0.50 0.14 195)",
-    description: "Define the hub-and-spoke target operating model — what the central CoE (Hub) owns, what the business domain (Spoke) owns, the handshakes between them, mandatory controls and success metrics.",
-    outputs: ["Hub vs Spoke responsibilities", "Handshakes & data contracts", "Mandatory controls / HITL", "Success metrics"],
+    n: "06", name: "Target TOM", icon: Network, color: "oklch(0.50 0.14 195)",
+    description: "Define the target data operating model — what the central CoE owns, what the business domain owns, the handshakes between them, mandatory controls and success metrics.",
+    outputs: ["Central vs domain responsibilities", "Handshakes & data contracts", "Mandatory controls / HITL", "Success metrics"],
   },
   {
-    n: "06", name: "Blueprint", icon: Sparkles, color: "oklch(0.60 0.18 295)",
-    description: "AI-generated guidance showing exactly how Data & AI will improve operations, deliver value and meet governance — plus the activities needed to move to hub-and-spoke ways of working.",
-    outputs: ["Operations · Value · Governance framing", "Readiness radar & dimension ranking", "Per-step Data & AI interventions", "Hub-and-spoke activity backlog", "Gap register & prioritised use cases"],
+    n: "07", name: "Blueprint", icon: Sparkles, color: "oklch(0.60 0.18 295)",
+    description: "AI-generated guidance showing exactly how Data & AI will improve operations, deliver value and meet governance — plus the activities needed to move to the target data operating model.",
+    outputs: ["Operations · Value · Governance framing", "Readiness radar & dimension ranking", "Per-step Data & AI interventions", "Target operating model activity backlog", "Gap register & prioritised use cases"],
   },
 ];
 
@@ -62,22 +67,22 @@ function Index() {
               Data Hive · Microsoft Fabric · OneLake · Agent 365
             </div>
             <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              FP&amp;A Data Blueprint
+              Data Blueprint
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-white/85 md:text-xl">
               A reusable framework for business domains to apply Data &amp; AI to <strong>improve operations</strong>,
               <strong> deliver measurable value</strong> and <strong>meet governance standards</strong> — generated as a
-              hub-and-spoke blueprint on the Data Hive (Microsoft Fabric / OneLake / Agent 365) target state.
+              blueprint on the Data Hive (Microsoft Fabric / OneLake / Agent 365) target state.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 shadow-[var(--shadow-elegant)]">
-                <Link to="/blueprint">Build a Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                <Link to="/blueprint">Build a Data Blueprint for a business function and business process <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/80">
-              <Stat label="Sections" value="6" />
+              <Stat label="Sections" value="7" />
               <Stat label="DQ dimensions" value="6" />
-              <Stat label="Operating model" value="Hub · Spoke · Handshakes" />
+              <Stat label="Operating model" value="Target Data Operating Model" />
             </div>
           </div>
         </div>
@@ -87,10 +92,10 @@ function Index() {
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12 max-w-2xl">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">The blueprint</div>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Six sequential sections</h2>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Seven sequential sections</h2>
           <p className="mt-3 text-muted-foreground">
-            Each section produces an artefact that feeds the next — value stream → data asset
-            map → data quality → target TOM → AI-generated blueprint.
+            Each section produces an artefact that feeds the next — value stream → use case priority →
+            data asset map → data quality → target TOM → AI-generated blueprint.
           </p>
         </div>
 
@@ -150,7 +155,7 @@ function Index() {
             {[
               { n: "01", t: "Map", d: "Document the value stream step-by-step and the data assets feeding it." },
               { n: "02", t: "Score", d: "Rate each data asset on the six DAMA dimensions using the built-in 1–5 rubric." },
-              { n: "03", t: "Target", d: "Define the hub-and-spoke target operating model for OneLake + Fabric IQ." },
+              { n: "03", t: "Target", d: "Define the target data operating model for OneLake + Fabric IQ." },
               { n: "04", t: "Generate", d: "AI returns executive summary, radar, prioritised recommendations and AI-agent next steps." },
             ].map((s) => (
               <div key={s.n} className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
@@ -194,8 +199,8 @@ function Index() {
 
       <footer className="border-t border-border bg-card">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-6 text-xs text-muted-foreground md:flex-row">
-          <div>FP&amp;A Data Blueprint · Reusable Data &amp; AI framework · For internal advisory use</div>
-          <div>Hub-and-spoke operating model on Microsoft Fabric / OneLake / Agent 365</div>
+          <div>Data Blueprint · Reusable Data &amp; AI framework · For internal advisory use</div>
+          <div>Target data operating model on Microsoft Fabric / OneLake / Agent 365</div>
         </div>
       </footer>
     </div>
