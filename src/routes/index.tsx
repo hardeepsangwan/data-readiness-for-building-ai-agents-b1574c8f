@@ -92,10 +92,10 @@ function Index() {
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12 max-w-2xl">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">The blueprint</div>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Six sequential sections</h2>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Seven sequential sections</h2>
           <p className="mt-3 text-muted-foreground">
-            Each section produces an artefact that feeds the next — value stream → data asset
-            map → data quality → target TOM → AI-generated blueprint.
+            Each section produces an artefact that feeds the next — value stream → use case priority →
+            data asset map → data quality → target TOM → AI-generated blueprint.
           </p>
         </div>
 
