@@ -1033,10 +1033,13 @@ function BlueprintPage() {
                 {busy && (jobStatus === "queued" || jobStatus === "running") ? (
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <div className="font-medium text-foreground">Generating your blueprint…</div>
-                    <div className="max-w-lg text-xs">
-                      This typically takes 2–5 minutes for a full process. The page will update automatically when the result is ready — you can switch tabs in the meantime.
+                    <div className="text-base font-semibold text-foreground">Blueprint generation in progress…</div>
+                    <div className="max-w-xl text-xs leading-relaxed">
+                      We've cleared your previous blueprint and started a fresh run. Sit tight — this usually takes
+                      <strong> 2–5 minutes</strong> for a full process. You can switch tabs or even close this page;
+                      your new blueprint will appear here automatically as soon as it's ready.
                     </div>
+                    <div className="mt-1 text-[11px] uppercase tracking-wider text-primary">Status: {jobStatus}</div>
                   </div>
                 ) : (
                   <>
