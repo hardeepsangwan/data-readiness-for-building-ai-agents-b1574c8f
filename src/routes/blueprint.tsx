@@ -1055,6 +1055,10 @@ function BlueprintPage() {
               </CardContent></Card>
             ) : (
               <div ref={fullRef} className="space-y-6">
+                <div className="rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow">
+                  Data Blueprint generated for <strong>{state.context.businessFunction || "—"}</strong> · <strong>{state.context.businessProcess || "—"}</strong>
+                </div>
+
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
                   <div className="text-xs text-muted-foreground">
                     Print, save or export the full blueprint — or any individual section — as PDF.
