@@ -25,9 +25,14 @@ const SECTIONS: { n: string; name: string; icon: any; color: string; description
     outputs: ["Per-step roles & systems", "Pain points captured verbatim", "Automation opportunities flagged"],
   },
   {
-    n: "03", name: "Data Asset Map", icon: Database, color: "oklch(0.62 0.16 155)",
-    description: "Catalogue every system / data asset that feeds the value stream — domain, entities, owners, refresh, sensitivity and Bronze / Silver / Gold fit on the Data Hive.",
-    outputs: ["Source + domain + owners", "Bronze / Silver / Gold fit", "PII flagging & refresh cadence"],
+    n: "03", name: "Use Case Priority", icon: Sparkles, color: "oklch(0.60 0.18 295)",
+    description: "Identify and prioritise candidate Data & AI use cases against business impact, desirability, feasibility, solution type and data readiness.",
+    outputs: ["Use case backlog", "Scoring across criteria", "Prioritised shortlist"],
+  },
+  {
+    n: "04", name: "Data Asset Map", icon: Database, color: "oklch(0.62 0.16 155)",
+    description: "Catalogue every upstream system / data asset that feeds the value stream AND every downstream system / data product produced — domain, entities, owners, refresh, sensitivity, destinations, consumers, delivery method, data contracts and Bronze / Silver / Gold fit on the Data Hive.",
+    outputs: ["Upstream sources + domain + owners", "Downstream consumers & data contracts", "Bronze / Silver / Gold fit", "PII flagging & refresh cadence"],
   },
   {
     n: "04", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
