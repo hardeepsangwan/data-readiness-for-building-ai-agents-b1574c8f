@@ -35,19 +35,19 @@ const SECTIONS: { n: string; name: string; icon: any; color: string; description
     outputs: ["Upstream sources + domain + owners", "Downstream consumers & data contracts", "Bronze / Silver / Gold fit", "PII flagging & refresh cadence"],
   },
   {
-    n: "04", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
+    n: "05", name: "Data Quality", icon: Gauge, color: "oklch(0.68 0.16 75)",
     description: "Score every asset on the six DAMA dimensions using a 1–5 rubric: Completeness, Accuracy, Consistency, Timeliness, Uniqueness, Validity — with anchored criteria and evidence.",
     outputs: ["DQ score per asset", "Evidence captured", "Uplift targets & SLAs"],
   },
   {
-    n: "05", name: "Target TOM", icon: Network, color: "oklch(0.50 0.14 195)",
-    description: "Define the hub-and-spoke target operating model — what the central CoE (Hub) owns, what the business domain (Spoke) owns, the handshakes between them, mandatory controls and success metrics.",
-    outputs: ["Hub vs Spoke responsibilities", "Handshakes & data contracts", "Mandatory controls / HITL", "Success metrics"],
+    n: "06", name: "Target TOM", icon: Network, color: "oklch(0.50 0.14 195)",
+    description: "Define the target data operating model — what the central CoE owns, what the business domain owns, the handshakes between them, mandatory controls and success metrics.",
+    outputs: ["Central vs domain responsibilities", "Handshakes & data contracts", "Mandatory controls / HITL", "Success metrics"],
   },
   {
-    n: "06", name: "Blueprint", icon: Sparkles, color: "oklch(0.60 0.18 295)",
-    description: "AI-generated guidance showing exactly how Data & AI will improve operations, deliver value and meet governance — plus the activities needed to move to hub-and-spoke ways of working.",
-    outputs: ["Operations · Value · Governance framing", "Readiness radar & dimension ranking", "Per-step Data & AI interventions", "Hub-and-spoke activity backlog", "Gap register & prioritised use cases"],
+    n: "07", name: "Blueprint", icon: Sparkles, color: "oklch(0.60 0.18 295)",
+    description: "AI-generated guidance showing exactly how Data & AI will improve operations, deliver value and meet governance — plus the activities needed to move to the target data operating model.",
+    outputs: ["Operations · Value · Governance framing", "Readiness radar & dimension ranking", "Per-step Data & AI interventions", "Target operating model activity backlog", "Gap register & prioritised use cases"],
   },
 ];
 
