@@ -205,6 +205,16 @@ function newAssetFromSystem(id: string, source: string): DataAsset {
   };
 }
 
+function newDownstream(n: number): DownstreamAsset {
+  return {
+    id: `DP-${String(n).padStart(3, "0")}`,
+    name: "", destination: "", consumerDomain: "", format: "", deliveryMethod: "",
+    refreshCadence: "", qualityExpectation: "", dataContractExists: "",
+    targetHiveLayer: "", classification: "", glossaryTerm: "",
+    dataOwner: "", dataSteward: "", notes: "",
+  };
+}
+
 const JOB_STORAGE_KEY = "indurent-blueprint-job-v1";
 
 function BlueprintPage() {
