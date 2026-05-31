@@ -199,8 +199,8 @@ function Index() {
 
       <footer className="border-t border-border bg-card">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-6 text-xs text-muted-foreground md:flex-row">
-          <div>FP&amp;A Data Blueprint · Reusable Data &amp; AI framework · For internal advisory use</div>
-          <div>Hub-and-spoke operating model on Microsoft Fabric / OneLake / Agent 365</div>
+          <div>Data Blueprint · Reusable Data &amp; AI framework · For internal advisory use</div>
+          <div>Target data operating model on Microsoft Fabric / OneLake / Agent 365</div>
         </div>
       </footer>
     </div>
