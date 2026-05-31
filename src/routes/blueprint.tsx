@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileDown, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1056,7 +1056,12 @@ function BlueprintPage() {
             ) : (
               <div ref={fullRef} className="space-y-6">
                 <div className="rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow">
-                  Data Blueprint generated for <strong>{state.context.businessFunction || "—"}</strong> · <strong>{state.context.businessProcess || "—"}</strong>
+                  <div>
+                    Data Blueprint generated for <strong>{state.context.businessFunction || "—"}</strong> · <strong>{state.context.businessProcess || "—"}</strong>
+                  </div>
+                  <div className="mt-1 text-xs font-normal text-primary-foreground/85">
+                    Generated on {new Date(state.result.generatedAt).toLocaleString()}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
@@ -1066,6 +1071,18 @@ function BlueprintPage() {
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => window.print()}>
                       <Download className="mr-1 h-4 w-4" /> Print / Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm("Reset the generated blueprint results? Your inputs (steps, assets, context) will be kept.")) {
+                          setResult(null);
+                          toast.success("Blueprint results cleared.");
+                        }
+                      }}
+                    >
+                      <RotateCcw className="mr-1 h-4 w-4" /> Reset Results
                     </Button>
                     <Button size="sm" onClick={() => exportSection(fullRef, "data-blueprint-full", "Data Blueprint — Full Report")} disabled={exporting !== null}>
                       {exporting === "data-blueprint-full" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
