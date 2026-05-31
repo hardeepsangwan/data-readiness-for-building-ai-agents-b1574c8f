@@ -746,6 +746,71 @@ function BlueprintPage() {
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
+
+            {/* PART B — Downstream / produced data assets shared OUT to consumers. */}
+            <div className="mt-8 rounded-lg border border-primary/30 bg-primary/[0.03] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Downstream data — produced &amp; shared OUT</div>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
+                    Data products this domain produces and shares with downstream consumers / other business domains
+                    (e.g. Service Charge Actuals → Operations Portal). Mirrors <strong>Part B</strong> of the DataHive
+                    Blueprint Asset Map template.
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setDownstream([...state.downstream, newDownstream(state.downstream.length + 1)])}>
+                  <Plus className="mr-1 h-4 w-4" /> Add downstream asset
+                </Button>
+              </div>
+              {state.downstream.length === 0 ? (
+                <div className="mt-4 rounded-md border border-dashed border-border bg-card/40 p-6 text-center text-xs text-muted-foreground">
+                  No downstream data assets yet. Click <strong>Add downstream asset</strong> to capture each data product this domain shares with consumers.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {state.downstream.map((d, i) => {
+                    const upd = (patch: Partial<DownstreamAsset>) => {
+                      const n = [...state.downstream]; n[i] = { ...d, ...patch }; setDownstream(n);
+                    };
+                    return (
+                      <Card key={d.id}>
+                        <CardContent className="grid gap-3 p-4 md:grid-cols-12">
+                          <div className="md:col-span-2"><Label className="text-xs">Ref (DP-…)</Label><Input value={d.id} onChange={(e) => upd({ id: e.target.value })} /></div>
+                          <div className="md:col-span-5"><Label className="text-xs">Data product name</Label><Input value={d.name} onChange={(e) => upd({ name: e.target.value })} /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Destination / Consumer</Label><Input value={d.destination} onChange={(e) => upd({ destination: e.target.value })} placeholder="e.g. Operations Portal" /></div>
+                          <div className="md:col-span-2"><Label className="text-xs">Consumer domain</Label><Input value={d.consumerDomain} onChange={(e) => upd({ consumerDomain: e.target.value })} placeholder="e.g. Operations" /></div>
+                          <div className="md:col-span-2"><Label className="text-xs">Format</Label><Input value={d.format} onChange={(e) => upd({ format: e.target.value })} placeholder="JSON / Parquet / Excel" /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Delivery method</Label><Input value={d.deliveryMethod} onChange={(e) => upd({ deliveryMethod: e.target.value })} placeholder="API / SharePoint / Direct Lake" /></div>
+                          <div className="md:col-span-2"><Label className="text-xs">Refresh cadence</Label><Input value={d.refreshCadence} onChange={(e) => upd({ refreshCadence: e.target.value })} placeholder="Daily / Monthly" /></div>
+                          <div className="md:col-span-3">
+                            <Label className="text-xs">Target Hive layer</Label>
+                            <select className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm" value={d.targetHiveLayer} onChange={(e) => upd({ targetHiveLayer: e.target.value as any })}>
+                              <option value="">—</option><option>Bronze</option><option>Silver</option><option>Gold</option>
+                            </select>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label className="text-xs">Data contract</Label>
+                            <select className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm" value={d.dataContractExists} onChange={(e) => upd({ dataContractExists: e.target.value as any })}>
+                              <option value="">—</option><option>Yes</option><option>No</option><option>Planned</option>
+                            </select>
+                          </div>
+                          <div className="md:col-span-7"><Label className="text-xs">Quality / SLA expectation</Label><Input value={d.qualityExpectation} onChange={(e) => upd({ qualityExpectation: e.target.value })} placeholder="e.g. Complete; <1 day lag; no null Cost Centres" /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Classification</Label><Input value={d.classification} onChange={(e) => upd({ classification: e.target.value })} placeholder="Public / Internal / Confidential" /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Glossary term</Label><Input value={d.glossaryTerm} onChange={(e) => upd({ glossaryTerm: e.target.value })} /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Data owner</Label><Input value={d.dataOwner} onChange={(e) => upd({ dataOwner: e.target.value })} /></div>
+                          <div className="md:col-span-3"><Label className="text-xs">Data steward</Label><Input value={d.dataSteward} onChange={(e) => upd({ dataSteward: e.target.value })} /></div>
+                          <div className="md:col-span-12"><Label className="text-xs">Notes</Label><Textarea rows={2} value={d.notes} onChange={(e) => upd({ notes: e.target.value })} /></div>
+                          <div className="md:col-span-12 flex justify-end">
+                            <Button size="icon" variant="ghost" onClick={() => setDownstream(state.downstream.filter((x) => x.id !== d.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("usecases")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
           </TabsContent>
 
