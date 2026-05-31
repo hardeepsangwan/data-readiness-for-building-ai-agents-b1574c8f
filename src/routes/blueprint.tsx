@@ -1534,6 +1534,17 @@ function RadarMaturityTable({ axes }: { axes: { axis: string; current: number; t
           })}
         </tbody>
       </table>
+      <div className="mt-6 grid gap-2 md:grid-cols-2">
+        {LEVEL_NAMES.map((n, i) => (
+          <div key={i} className="flex gap-3 rounded-md border border-border bg-card p-3">
+            <span className="h-fit rounded-md px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: LEVEL_COLORS[i] }}>L{i}</span>
+            <div>
+              <div className="text-xs font-semibold">{n}</div>
+              <div className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{LEVEL_DESCRIPTIONS[i]}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
