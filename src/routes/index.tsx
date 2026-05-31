@@ -155,7 +155,7 @@ function Index() {
             {[
               { n: "01", t: "Map", d: "Document the value stream step-by-step and the data assets feeding it." },
               { n: "02", t: "Score", d: "Rate each data asset on the six DAMA dimensions using the built-in 1–5 rubric." },
-              { n: "03", t: "Target", d: "Define the hub-and-spoke target operating model for OneLake + Fabric IQ." },
+              { n: "03", t: "Target", d: "Define the target data operating model for OneLake + Fabric IQ." },
               { n: "04", t: "Generate", d: "AI returns executive summary, radar, prioritised recommendations and AI-agent next steps." },
             ].map((s) => (
               <div key={s.n} className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
