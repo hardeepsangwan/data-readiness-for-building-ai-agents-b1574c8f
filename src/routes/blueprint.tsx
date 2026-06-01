@@ -320,6 +320,7 @@ function BlueprintPage() {
   const search = useSearch({ from: "/blueprint" });
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
+  const cancelJob = useServerFn(cancelBlueprintJob);
   const [tab, setTab] = useState<string>((search as any)?.tab || "context");
   const [busy, setBusy] = useState(false);
   const [jobStatus, setJobStatus] = useState<"idle" | "queued" | "running" | "completed" | "error">("idle");
