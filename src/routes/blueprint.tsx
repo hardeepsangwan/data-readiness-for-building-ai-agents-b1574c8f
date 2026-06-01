@@ -482,6 +482,21 @@ function BlueprintPage() {
     }
   };
 
+  const onStop = async () => {
+    if (!jobId) return;
+    try {
+      await cancelJob({ data: { jobId } });
+    } catch {
+      // ignore — local state still resets
+    }
+    localStorage.removeItem(JOB_STORAGE_KEY);
+    setJobId(null);
+    setJobStatus("idle");
+    setBusy(false);
+    setGenerationError("Blueprint generation cancelled.");
+    toast.info("Blueprint generation cancelled.");
+  };
+
   const loadExample = () => {
     loadSeed({
       context: SERVICE_CHARGE_CONTEXT,
