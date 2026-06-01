@@ -317,9 +317,10 @@ const SPOKE_PILLARS: { pillar: string; requirement: string; delivery: string; de
 
 function BlueprintPage() {
   const { state, hydrated, setContext, setSteps, setAssets, setDownstream, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const search = useSearch({ from: "/blueprint" });
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
-  const [tab, setTab] = useState("context");
+  const [tab, setTab] = useState<string>((search as any)?.tab || "context");
   const [busy, setBusy] = useState(false);
   const [jobStatus, setJobStatus] = useState<"idle" | "queued" | "running" | "completed" | "error">("idle");
   const [jobId, setJobId] = useState<string | null>(null);
