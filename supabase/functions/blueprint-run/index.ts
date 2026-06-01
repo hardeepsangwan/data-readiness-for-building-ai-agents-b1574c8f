@@ -363,25 +363,37 @@ Deno.serve(async (req) => {
 
   await supabase.from("blueprint_jobs").update({ status: "running" }).eq("id", jobId);
 
-  try {
-    const result = await runGeneration(job.input);
-    await supabase
-      .from("blueprint_jobs")
-      .update({ status: "completed", result, completed_at: new Date().toISOString(), error: null })
-      .eq("id", jobId);
-    return new Response(JSON.stringify({ ok: true, status: "completed" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  } catch (e: any) {
-    const message = e?.message || "Blueprint generation failed.";
-    await supabase
-      .from("blueprint_jobs")
-      .update({ status: "error", error: message, completed_at: new Date().toISOString() })
-      .eq("id", jobId);
-    return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+  // Run the long generation in the background so we can return immediately.
+  // Supabase Edge Functions kill the request at 150s idle; the AI call can
+  // take 2-5 minutes. EdgeRuntime.waitUntil keeps the worker alive past the
+  // HTTP response so the DB row still gets updated when generation finishes.
+  const work = (async () => {
+    try {
+      const result = await runGeneration(job.input);
+      await supabase
+        .from("blueprint_jobs")
+        .update({ status: "completed", result, completed_at: new Date().toISOString(), error: null })
+        .eq("id", jobId);
+    } catch (e: any) {
+      const message = e?.message || "Blueprint generation failed.";
+      await supabase
+        .from("blueprint_jobs")
+        .update({ status: "error", error: message, completed_at: new Date().toISOString() })
+        .eq("id", jobId);
+    }
+  })();
+
+  // @ts-ignore — EdgeRuntime is available in Supabase Edge Functions runtime.
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(work);
+  } else {
+    // Fallback: best-effort detach.
+    void work;
   }
+
+  return new Response(JSON.stringify({ ok: true, status: "running" }), {
+    status: 202,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
 });
