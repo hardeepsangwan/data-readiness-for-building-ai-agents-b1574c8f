@@ -203,7 +203,14 @@ ${data.tom.successMetrics}
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations.`;
 }
 
-async function runGeneration(input: any): Promise<any> {
+const REQUEST_TIMEOUT_MS = 120_000;
+const MAX_ATTEMPTS = 3; // 1 initial + 2 retries
+const RETRY_DELAY_MS = 3_000;
+const MAX_COMPLETION_TOKENS = 8000; // minimum that reliably fits the structured tool-call output
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function callOnce(input: any): Promise<any> {
   const apiKey = Deno.env.get("XAI_API_KEY");
   if (!apiKey) throw new Error("Azure OpenAI API key is not configured.");
   const baseUrl = Deno.env.get("XAI_BASE_URL") || "https://foundry-sc-poc-hs.openai.azure.com/openai/v1";
@@ -219,14 +226,26 @@ async function runGeneration(input: any): Promise<any> {
     tools: [{ type: "function", function: { name: "emit_blueprint", description: "Emit the executable Data Blueprint output.", parameters: TOOL_SCHEMA } }],
     tool_choice: { type: "function", function: { name: "emit_blueprint" } },
     stream: true,
+    max_completion_tokens: MAX_COMPLETION_TOKENS,
   };
 
   const url = isAzure ? azureChatCompletionsUrl(baseUrl) : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
   const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "text/event-stream" };
   if (isAzure) headers["api-key"] = apiKey; else headers["Authorization"] = `Bearer ${apiKey}`;
 
-  const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal });
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    if (e?.name === "AbortError") throw new Error(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`);
+    throw e;
+  }
   if (!resp.ok || !resp.body) {
+    clearTimeout(timeoutId);
     const text = await resp.text().catch(() => "");
     throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
   }
@@ -237,27 +256,34 @@ async function runGeneration(input: any): Promise<any> {
   let argsAccum = "";
   let toolName = "";
 
-  outer: while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let nlIdx: number;
-    while ((nlIdx = buffer.indexOf("\n")) !== -1) {
-      const rawLine = buffer.slice(0, nlIdx).trim();
-      buffer = buffer.slice(nlIdx + 1);
-      if (!rawLine || !rawLine.startsWith("data:")) continue;
-      const payload = rawLine.slice(5).trim();
-      if (payload === "[DONE]") break outer;
-      try {
-        const evt = JSON.parse(payload);
-        const delta = evt?.choices?.[0]?.delta;
-        const tc = delta?.tool_calls?.[0];
-        if (tc?.function?.name) toolName = tc.function.name;
-        if (tc?.function?.arguments) argsAccum += tc.function.arguments;
-      } catch {
-        // ignore keep-alives
+  try {
+    outer: while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nlIdx: number;
+      while ((nlIdx = buffer.indexOf("\n")) !== -1) {
+        const rawLine = buffer.slice(0, nlIdx).trim();
+        buffer = buffer.slice(nlIdx + 1);
+        if (!rawLine || !rawLine.startsWith("data:")) continue;
+        const payload = rawLine.slice(5).trim();
+        if (payload === "[DONE]") break outer;
+        try {
+          const evt = JSON.parse(payload);
+          const delta = evt?.choices?.[0]?.delta;
+          const tc = delta?.tool_calls?.[0];
+          if (tc?.function?.name) toolName = tc.function.name;
+          if (tc?.function?.arguments) argsAccum += tc.function.arguments;
+        } catch {
+          // ignore keep-alives
+        }
       }
     }
+  } catch (e: any) {
+    if (e?.name === "AbortError") throw new Error(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`);
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!argsAccum) throw new Error("AI did not return a structured response.");
@@ -278,6 +304,20 @@ async function runGeneration(input: any): Promise<any> {
     hubSpokeActivities: Array.isArray(parsed.hubSpokeActivities) ? parsed.hubSpokeActivities : [],
     radar: Array.isArray(parsed.radar) ? parsed.radar : [],
   };
+}
+
+async function runGeneration(input: any): Promise<any> {
+  let lastErr: any;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await callOnce(input);
+    } catch (e: any) {
+      lastErr = e;
+      console.error(`[blueprint-run] attempt ${attempt}/${MAX_ATTEMPTS} failed:`, e?.message || e);
+      if (attempt < MAX_ATTEMPTS) await sleep(RETRY_DELAY_MS);
+    }
+  }
+  throw lastErr ?? new Error("Blueprint generation failed.");
 }
 
 Deno.serve(async (req) => {
