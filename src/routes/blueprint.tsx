@@ -1,7 +1,7 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Square, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
