@@ -418,7 +418,7 @@ async function callStructured(prompt: string, toolName: string, schema: any, max
   const decoder = new TextDecoder();
   let buffer = "";
   let argsAccum = "";
-  let toolName = "";
+  let returnedToolName = "";
   let finishReason = "";
 
   try {
@@ -438,7 +438,7 @@ async function callStructured(prompt: string, toolName: string, schema: any, max
           const choice = evt?.choices?.[0];
           const delta = choice?.delta;
           const tc = delta?.tool_calls?.[0];
-          if (tc?.function?.name) toolName = tc.function.name;
+          if (tc?.function?.name) returnedToolName = tc.function.name;
           if (tc?.function?.arguments) argsAccum += tc.function.arguments;
           if (choice?.finish_reason) finishReason = choice.finish_reason;
         } catch {
@@ -464,7 +464,7 @@ async function callStructured(prompt: string, toolName: string, schema: any, max
     parsed = tryRepairTruncatedJson(argsAccum);
     if (!parsed) {
       const reason = finishReason ? ` (finish_reason=${finishReason})` : "";
-      throw new Error(`Failed to parse AI structured response (${toolName || "tool_call"})${reason}: ${e?.message || "invalid JSON"}`);
+      throw new Error(`Failed to parse AI structured response (${returnedToolName || toolName || "tool_call"})${reason}: ${e?.message || "invalid JSON"}`);
     }
     console.warn(`[blueprint-run] recovered truncated JSON (finish_reason=${finishReason})`);
   }
