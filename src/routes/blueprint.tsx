@@ -1,7 +1,7 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Square, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
-import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
+import { startBlueprintJob, getBlueprintJob, cancelBlueprintJob } from "@/lib/blueprint.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
@@ -320,6 +320,7 @@ function BlueprintPage() {
   const search = useSearch({ from: "/blueprint" });
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
+  const cancelJob = useServerFn(cancelBlueprintJob);
   const [tab, setTab] = useState<string>((search as any)?.tab || "context");
   const [busy, setBusy] = useState(false);
   const [jobStatus, setJobStatus] = useState<"idle" | "queued" | "running" | "completed" | "error">("idle");
@@ -479,6 +480,21 @@ function BlueprintPage() {
       setBusy(false);
       setJobStatus("error");
     }
+  };
+
+  const onStop = async () => {
+    if (!jobId) return;
+    try {
+      await cancelJob({ data: { jobId } });
+    } catch {
+      // ignore — local state still resets
+    }
+    localStorage.removeItem(JOB_STORAGE_KEY);
+    setJobId(null);
+    setJobStatus("idle");
+    setBusy(false);
+    setGenerationError("Blueprint generation cancelled.");
+    toast.info("Blueprint generation cancelled.");
   };
 
   const loadExample = () => {
@@ -1051,7 +1067,12 @@ function BlueprintPage() {
                     {generationError}
                   </div>
                 )}
-                <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button>
+                  <Button variant="destructive" onClick={onStop} disabled={!busy || !jobId}>
+                    <Square className="mr-2 h-4 w-4 fill-current" /> Stop generating
+                  </Button>
+                </div>
               </CardContent></Card>
             ) : (
               <div ref={fullRef} className="space-y-6">
