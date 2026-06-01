@@ -129,3 +129,19 @@ export const getBlueprintJob = createServerFn({ method: "POST" })
       error: (row.error as string | null) ?? null,
     };
   });
+
+// Mark an in-flight job as cancelled. The edge function continues running
+// server-side (we can't kill it mid-flight), but the client stops polling
+// and ignores any result it eventually writes.
+export const cancelBlueprintJob = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const { error } = await supabaseAdmin
+      .from("blueprint_jobs")
+      .update({ status: "error", error: "Cancelled by user", completed_at: new Date().toISOString() })
+      .eq("id", data.jobId)
+      .in("status", ["queued", "running"]);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  });
+
