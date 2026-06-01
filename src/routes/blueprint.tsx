@@ -1067,7 +1067,12 @@ function BlueprintPage() {
                     {generationError}
                   </div>
                 )}
-                <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button>
+                  <Button variant="destructive" onClick={onStop} disabled={!busy || !jobId}>
+                    <Square className="mr-2 h-4 w-4 fill-current" /> Stop generating
+                  </Button>
+                </div>
               </CardContent></Card>
             ) : (
               <div ref={fullRef} className="space-y-6">
