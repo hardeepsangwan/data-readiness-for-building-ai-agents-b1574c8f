@@ -203,7 +203,14 @@ ${data.tom.successMetrics}
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations.`;
 }
 
-async function runGeneration(input: any): Promise<any> {
+const REQUEST_TIMEOUT_MS = 120_000;
+const MAX_ATTEMPTS = 3; // 1 initial + 2 retries
+const RETRY_DELAY_MS = 3_000;
+const MAX_COMPLETION_TOKENS = 8000; // minimum that reliably fits the structured tool-call output
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function callOnce(input: any): Promise<any> {
   const apiKey = Deno.env.get("XAI_API_KEY");
   if (!apiKey) throw new Error("Azure OpenAI API key is not configured.");
   const baseUrl = Deno.env.get("XAI_BASE_URL") || "https://foundry-sc-poc-hs.openai.azure.com/openai/v1";
@@ -219,14 +226,26 @@ async function runGeneration(input: any): Promise<any> {
     tools: [{ type: "function", function: { name: "emit_blueprint", description: "Emit the executable Data Blueprint output.", parameters: TOOL_SCHEMA } }],
     tool_choice: { type: "function", function: { name: "emit_blueprint" } },
     stream: true,
+    max_completion_tokens: MAX_COMPLETION_TOKENS,
   };
 
   const url = isAzure ? azureChatCompletionsUrl(baseUrl) : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
   const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "text/event-stream" };
   if (isAzure) headers["api-key"] = apiKey; else headers["Authorization"] = `Bearer ${apiKey}`;
 
-  const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal });
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    if (e?.name === "AbortError") throw new Error(`AI request timed out after ${REQUEST_TIMEOUT_MS / 1000}s.`);
+    throw e;
+  }
   if (!resp.ok || !resp.body) {
+    clearTimeout(timeoutId);
     const text = await resp.text().catch(() => "");
     throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
   }
