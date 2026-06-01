@@ -175,56 +175,6 @@ function deploymentNameForAzure(model: string): string {
   return model.replace(/^openai\//i, "").trim();
 }
 
-function buildUserMessage(data: any): string {
-  return `BUSINESS PROCESS CONTEXT:
-Organisation: ${data.context.organisation}
-Business function: ${data.context.businessFunction}
-Business process: ${data.context.businessProcess}
-Sponsor: ${data.context.sponsor}
-Cycle volume: ${data.context.cycleVolume}
-Baseline effort: ${data.context.baselineEffort}
-Timeline: ${data.context.timeline}
-
-OPERATIONS — value drivers / pain & opportunity:
-${data.context.valueDrivers || "(not provided)"}
-
-VALUE — KPIs the blueprint must move:
-${data.context.kpis || "(not provided)"}
-
-DECISIONS the data + AI must support:
-${data.context.decisionsSupported || "(not provided)"}
-
-GOVERNANCE — compliance / sensitivity / retention constraints:
-${data.context.complianceConstraints || "(not provided)"}
-
-AS-IS PROCESS STEPS (${data.steps.length}):
-${data.steps.map((s: any) => `${s.id} [${s.subProcess}] ${s.description} | role=${s.role} | system=${s.systemTool} | in=${s.dataInput} | out=${s.dataOutput} | time=${s.time} | freq=${s.frequency} | pain=${s.painPoint ? "Y" : "N"} ${s.painPointDescription ? "→ " + s.painPointDescription : ""} | proposed=${s.automationOpportunity || "?"} | DA=${s.dataAssetRef || "—"}`).join("\n")}
-
-DATA ASSET MAP (${data.assets.length}):
-${data.assets.map((a: any) => `${a.id} ${a.source} | domain=${a.domain} | entities=${a.entities} | owner=${a.businessOwner}/${a.technicalOwner} | refresh=${a.refresh} | PII=${a.pii} | currentLayer=${a.dataHiveStatus} | RAG=${a.overallRag} | notes=${a.notes}`).join("\n")}
-
-DATA QUALITY SCORES (1-5, DAMA dimensions):
-${data.dq.map((d: any) => `${d.assetId}: comp=${d.completeness} acc=${d.accuracy} cons=${d.consistency} time=${d.timeliness} uniq=${d.uniqueness} valid=${d.validity} | ${d.evidence}`).join("\n")}
-
-TARGET TOM:
-HUB capabilities:
-${data.tom.hubCapabilities}
-
-SPOKE ownership:
-${data.tom.spokeOwnership}
-
-HANDSHAKES:
-${data.tom.handshakes}
-
-CONTROLS:
-${data.tom.controls}
-
-SUCCESS METRICS:
-${data.tom.successMetrics}
-
-Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations.`;
-}
-
 function clip(value: unknown, max = 360): string {
   const text = String(value ?? "").replace(/\s+/g, " ").trim();
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -324,7 +274,6 @@ const RETRY_DELAY_MS = 3_000;
 const STEP_BATCH_SIZE = Number(Deno.env.get("BLUEPRINT_STEP_BATCH_SIZE") || 8);
 const STEP_MAX_COMPLETION_TOKENS = Number(Deno.env.get("BLUEPRINT_STEP_MAX_TOKENS") || 9000);
 const SYNTHESIS_MAX_COMPLETION_TOKENS = Number(Deno.env.get("BLUEPRINT_SYNTHESIS_MAX_TOKENS") || 12000);
-const MAX_COMPLETION_TOKENS = Number(Deno.env.get("BLUEPRINT_MAX_TOKENS") || 12000);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
