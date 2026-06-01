@@ -209,21 +209,58 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
     ],
     tools: [{ type: "function", function: { name: "emit_blueprint", description: "Emit the executable Data Blueprint output.", parameters: TOOL_SCHEMA } }],
     tool_choice: { type: "function", function: { name: "emit_blueprint" } },
+    stream: true,
   };
 
   const url = isAzure ? azureChatCompletionsUrl(baseUrl) : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "text/event-stream" };
   if (isAzure) headers["api-key"] = apiKey; else headers["Authorization"] = `Bearer ${apiKey}`;
 
   const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  if (!resp.ok) {
+  if (!resp.ok || !resp.body) {
     const text = await resp.text().catch(() => "");
     throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
   }
-  const json: any = await resp.json();
-  const call = json?.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call?.function?.arguments) throw new Error("AI did not return a structured response.");
-  const parsed = JSON.parse(call.function.arguments);
+
+  // Stream the SSE response and accumulate tool_call arguments to avoid
+  // Cloudflare's 100s idle timeout (524) on long generations.
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let argsAccum = "";
+  let toolName = "";
+
+  outer: while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let nlIdx: number;
+    while ((nlIdx = buffer.indexOf("\n")) !== -1) {
+      const rawLine = buffer.slice(0, nlIdx).trim();
+      buffer = buffer.slice(nlIdx + 1);
+      if (!rawLine || !rawLine.startsWith("data:")) continue;
+      const payload = rawLine.slice(5).trim();
+      if (payload === "[DONE]") break outer;
+      try {
+        const evt = JSON.parse(payload);
+        const delta = evt?.choices?.[0]?.delta;
+        const tc = delta?.tool_calls?.[0];
+        if (tc?.function?.name) toolName = tc.function.name;
+        if (tc?.function?.arguments) argsAccum += tc.function.arguments;
+      } catch {
+        // ignore non-JSON keep-alives
+      }
+    }
+  }
+
+  if (!argsAccum) throw new Error("AI did not return a structured response.");
+  let parsed: any;
+  try {
+    parsed = JSON.parse(argsAccum);
+  } catch (e: any) {
+    throw new Error(`Failed to parse AI structured response (${toolName || "tool_call"}): ${e?.message || "invalid JSON"}`);
+  }
 
   return {
     generatedAt: new Date().toISOString(),
