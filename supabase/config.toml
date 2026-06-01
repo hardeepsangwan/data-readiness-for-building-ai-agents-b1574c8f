@@ -1,1 +1,4 @@
 project_id = "yflfksanbnuzpzzihnod"
+
+[functions.blueprint-run]
+verify_jwt = false
