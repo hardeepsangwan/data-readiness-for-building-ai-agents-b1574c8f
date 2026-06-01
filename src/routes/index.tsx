@@ -193,7 +193,7 @@ function Index() {
         </div>
         <div className="mt-12 flex justify-center">
           <Button asChild size="lg" className="shadow-[var(--shadow-elegant)]">
-            <Link to="/blueprint">Begin the Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            <Link to="/blueprint" search={{ tab: "result" }}>Begin the Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
