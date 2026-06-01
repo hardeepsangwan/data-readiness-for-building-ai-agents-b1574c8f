@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+
 import { ArrowRight, ArrowDown, CheckCircle2, FileText, Workflow, Database, Gauge, Network, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,7 @@ function Index() {
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 shadow-[var(--shadow-elegant)]">
-                <Link to="/blueprint">Build a Data Blueprint for a business function and business process <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                <Link to="/blueprint" search={{ tab: "result" }}>Build a Data Blueprint for a business function and business process <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/80">
@@ -192,7 +193,7 @@ function Index() {
         </div>
         <div className="mt-12 flex justify-center">
           <Button asChild size="lg" className="shadow-[var(--shadow-elegant)]">
-            <Link to="/blueprint">Begin the Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            <Link to="/blueprint" search={{ tab: "result" }}>Begin the Data Blueprint <ArrowRight className="ml-1 h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
