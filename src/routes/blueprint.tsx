@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
 import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
@@ -464,15 +465,13 @@ function BlueprintPage() {
       setJobId(newJobId);
       setJobStatus("running");
       toast.info("Blueprint generation started. Results will appear under '7. Blueprint Generated' when ready.");
-      // Fire the background runner. Don't await — it may take minutes and the
-      // gateway may 504 the client connection; the job continues server-side
-      // and the polling loop above picks up the result.
-      void fetch("/api/public/blueprint/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: newJobId }),
-        keepalive: true,
-      }).catch(() => { /* expected on long-running 504s */ });
+      // Fire the background runner in the Supabase Edge Function. Don't await —
+      // generation can take minutes; the job continues server-side and the
+      // polling loop above picks up the result. Edge Functions bypass
+      // Cloudflare's 100s 524 timeout that the previous TanStack route hit.
+      void supabase.functions
+        .invoke("blueprint-run", { body: { jobId: newJobId } })
+        .catch(() => { /* expected if connection drops during long generation */ });
     } catch (e: any) {
       setGenerationError(e?.message || "Failed to start blueprint generation.");
       toast.error(e?.message || "Failed to start blueprint generation.");

@@ -1,7 +1,23 @@
-// Server-only runner for blueprint generation. Calls the configured Azure
-// OpenAI endpoint and returns the structured BlueprintResult.
+// Supabase Edge Function: blueprint-run
+// Fire-and-forget runner that performs the long-running Azure OpenAI call
+// for blueprint generation. Avoids Cloudflare's 100s 524 timeout that the
+// previous TanStack server route hit when invoked from the Lovable frontend.
+//
+// Flow:
+//   1. Client calls startBlueprintJob (creates job row, status=queued).
+//   2. Client invokes this edge function with { jobId } (fire-and-forget).
+//   3. This function streams the AI response, then updates the job row
+//      with status=completed | error and the parsed result.
+//   4. Client polls getBlueprintJob for status/result.
 
-import type { BlueprintResult } from "./blueprint-schema";
+// deno-lint-ignore-file no-explicit-any
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const SYSTEM_PROMPT = `You are a Microsoft Chief Enterprise Data & AI Architect advising on the Data Blueprint. The TARGET STATE platform is Data Hive — built on Microsoft Fabric — with these mandatory patterns:
 
@@ -124,7 +140,7 @@ const TOOL_SCHEMA = {
   },
   required: ["executiveSummary", "stepRecommendations", "gapRegister", "useCaseBacklog", "hubSpokeActivities", "radar"],
   additionalProperties: false,
-} as const;
+};
 
 function azureChatCompletionsUrl(baseUrl: string): string {
   const trimmed = baseUrl.replace(/\/+$/, "");
@@ -137,21 +153,8 @@ function deploymentNameForAzure(model: string): string {
   return model.replace(/^openai\//i, "").trim();
 }
 
-export type BlueprintRunInput = {
-  context: any;
-  steps: any[];
-  assets: any[];
-  dq: any[];
-  hive?: any;
-  tom: any;
-};
-
-export async function runBlueprintGeneration(data: BlueprintRunInput): Promise<BlueprintResult> {
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) throw new Error("Azure OpenAI API key is not configured.");
-  const baseUrl = process.env.XAI_BASE_URL || "https://foundry-sc-poc-hs.openai.azure.com/openai/v1";
-
-  const userMessage = `BUSINESS PROCESS CONTEXT:
+function buildUserMessage(data: any): string {
+  return `BUSINESS PROCESS CONTEXT:
 Organisation: ${data.context.organisation}
 Business function: ${data.context.businessFunction}
 Business process: ${data.context.businessProcess}
@@ -198,14 +201,20 @@ SUCCESS METRICS:
 ${data.tom.successMetrics}
 
 Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in stepRecommendations.`;
+}
 
+async function runGeneration(input: any): Promise<any> {
+  const apiKey = Deno.env.get("XAI_API_KEY");
+  if (!apiKey) throw new Error("Azure OpenAI API key is not configured.");
+  const baseUrl = Deno.env.get("XAI_BASE_URL") || "https://foundry-sc-poc-hs.openai.azure.com/openai/v1";
   const isAzure = /\.azure\.com/i.test(baseUrl);
-  const model = deploymentNameForAzure(process.env.XAI_MODEL || "gpt-5.4");
+  const model = deploymentNameForAzure(Deno.env.get("XAI_MODEL") || "gpt-5.4");
+
   const body = {
     model,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMessage },
+      { role: "user", content: buildUserMessage(input) },
     ],
     tools: [{ type: "function", function: { name: "emit_blueprint", description: "Emit the executable Data Blueprint output.", parameters: TOOL_SCHEMA } }],
     tool_choice: { type: "function", function: { name: "emit_blueprint" } },
@@ -222,8 +231,6 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
     throw new Error(`AI gateway error ${resp.status}: ${text.slice(0, 400)}`);
   }
 
-  // Stream the SSE response and accumulate tool_call arguments to avoid
-  // Cloudflare's 100s idle timeout (524) on long generations.
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -234,7 +241,6 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
     const { value, done } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-
     let nlIdx: number;
     while ((nlIdx = buffer.indexOf("\n")) !== -1) {
       const rawLine = buffer.slice(0, nlIdx).trim();
@@ -249,7 +255,7 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
         if (tc?.function?.name) toolName = tc.function.name;
         if (tc?.function?.arguments) argsAccum += tc.function.arguments;
       } catch {
-        // ignore non-JSON keep-alives
+        // ignore keep-alives
       }
     }
   }
@@ -273,3 +279,69 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
     radar: Array.isArray(parsed.radar) ? parsed.radar : [],
   };
 }
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  let jobId: string | undefined;
+  try {
+    const body = await req.json();
+    jobId = body?.jobId;
+  } catch {
+    // ignore
+  }
+  if (!jobId || typeof jobId !== "string") {
+    return new Response(JSON.stringify({ ok: false, error: "Missing jobId" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data: job, error: fetchErr } = await supabase
+    .from("blueprint_jobs")
+    .select("input, status")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (fetchErr || !job) {
+    return new Response(JSON.stringify({ ok: false, error: fetchErr?.message || "Job not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+  if (job.status === "completed" || job.status === "running") {
+    return new Response(JSON.stringify({ ok: true, status: job.status }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
+  await supabase.from("blueprint_jobs").update({ status: "running" }).eq("id", jobId);
+
+  try {
+    const result = await runGeneration(job.input);
+    await supabase
+      .from("blueprint_jobs")
+      .update({ status: "completed", result, completed_at: new Date().toISOString(), error: null })
+      .eq("id", jobId);
+    return new Response(JSON.stringify({ ok: true, status: "completed" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (e: any) {
+    const message = e?.message || "Blueprint generation failed.";
+    await supabase
+      .from("blueprint_jobs")
+      .update({ status: "error", error: message, completed_at: new Date().toISOString() })
+      .eq("id", jobId);
+    return new Response(JSON.stringify({ ok: false, error: message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+});
