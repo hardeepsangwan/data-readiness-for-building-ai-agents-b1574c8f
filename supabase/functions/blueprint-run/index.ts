@@ -255,6 +255,7 @@ async function callOnce(input: any): Promise<any> {
   let buffer = "";
   let argsAccum = "";
   let toolName = "";
+  let finishReason = "";
 
   try {
     outer: while (true) {
@@ -270,10 +271,12 @@ async function callOnce(input: any): Promise<any> {
         if (payload === "[DONE]") break outer;
         try {
           const evt = JSON.parse(payload);
-          const delta = evt?.choices?.[0]?.delta;
+          const choice = evt?.choices?.[0];
+          const delta = choice?.delta;
           const tc = delta?.tool_calls?.[0];
           if (tc?.function?.name) toolName = tc.function.name;
           if (tc?.function?.arguments) argsAccum += tc.function.arguments;
+          if (choice?.finish_reason) finishReason = choice.finish_reason;
         } catch {
           // ignore keep-alives
         }
@@ -291,7 +294,15 @@ async function callOnce(input: any): Promise<any> {
   try {
     parsed = JSON.parse(argsAccum);
   } catch (e: any) {
-    throw new Error(`Failed to parse AI structured response (${toolName || "tool_call"}): ${e?.message || "invalid JSON"}`);
+    // Output was truncated (commonly finish_reason === "length"). Try to
+    // salvage the partial JSON by trimming to the last complete array/object
+    // element so the user still gets usable results instead of a hard failure.
+    parsed = tryRepairTruncatedJson(argsAccum);
+    if (!parsed) {
+      const reason = finishReason ? ` (finish_reason=${finishReason})` : "";
+      throw new Error(`Failed to parse AI structured response (${toolName || "tool_call"})${reason}: ${e?.message || "invalid JSON"}`);
+    }
+    console.warn(`[blueprint-run] recovered truncated JSON (finish_reason=${finishReason})`);
   }
 
   return {
