@@ -374,23 +374,23 @@ function tryRepairTruncatedJson(src: string): any | null {
   }
 }
 
-async function callOnce(input: any): Promise<any> {
+async function callStructured(prompt: string, toolName: string, schema: any, maxTokens: number): Promise<any> {
   const apiKey = Deno.env.get("XAI_API_KEY");
   if (!apiKey) throw new Error("Azure OpenAI API key is not configured.");
   const baseUrl = Deno.env.get("XAI_BASE_URL") || "https://foundry-sc-poc-hs.openai.azure.com/openai/v1";
   const isAzure = /\.azure\.com/i.test(baseUrl);
-  const model = deploymentNameForAzure(Deno.env.get("XAI_MODEL") || "gpt-5.4");
+  const model = currentModel();
 
   const body = {
     model,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserMessage(input) },
+      { role: "user", content: prompt },
     ],
-    tools: [{ type: "function", function: { name: "emit_blueprint", description: "Emit the executable Data Blueprint output.", parameters: TOOL_SCHEMA } }],
-    tool_choice: { type: "function", function: { name: "emit_blueprint" } },
+    tools: [{ type: "function", function: { name: toolName, description: "Emit structured Data Blueprint output.", parameters: schema } }],
+    tool_choice: { type: "function", function: { name: toolName } },
     stream: true,
-    max_completion_tokens: MAX_COMPLETION_TOKENS,
+    max_completion_tokens: maxTokens,
   };
 
   const url = isAzure ? azureChatCompletionsUrl(baseUrl) : `${baseUrl.replace(/\/$/, "")}/chat/completions`;
@@ -469,30 +469,73 @@ async function callOnce(input: any): Promise<any> {
     console.warn(`[blueprint-run] recovered truncated JSON (finish_reason=${finishReason})`);
   }
 
-  return {
-    generatedAt: new Date().toISOString(),
-    model,
-    executiveSummary: String(parsed.executiveSummary || ""),
-    stepRecommendations: Array.isArray(parsed.stepRecommendations) ? parsed.stepRecommendations : [],
-    gapRegister: Array.isArray(parsed.gapRegister) ? parsed.gapRegister : [],
-    useCaseBacklog: Array.isArray(parsed.useCaseBacklog) ? parsed.useCaseBacklog : [],
-    hubSpokeActivities: Array.isArray(parsed.hubSpokeActivities) ? parsed.hubSpokeActivities : [],
-    radar: Array.isArray(parsed.radar) ? parsed.radar : [],
-  };
+  return parsed;
 }
 
-async function runGeneration(input: any): Promise<any> {
+async function withRetries<T>(label: string, fn: () => Promise<T>): Promise<T> {
   let lastErr: any;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      return await callOnce(input);
+      return await fn();
     } catch (e: any) {
       lastErr = e;
-      console.error(`[blueprint-run] attempt ${attempt}/${MAX_ATTEMPTS} failed:`, e?.message || e);
+      console.error(`[blueprint-run] ${label} attempt ${attempt}/${MAX_ATTEMPTS} failed:`, e?.message || e);
       if (attempt < MAX_ATTEMPTS) await sleep(RETRY_DELAY_MS);
     }
   }
-  throw lastErr ?? new Error("Blueprint generation failed.");
+  throw lastErr ?? new Error(`${label} failed.`);
+}
+
+async function runGeneration(input: any): Promise<any> {
+  const steps = Array.isArray(input.steps) ? input.steps : [];
+  const batches: any[][] = [];
+  for (let i = 0; i < steps.length; i += STEP_BATCH_SIZE) batches.push(steps.slice(i, i + STEP_BATCH_SIZE));
+
+  const stepRecommendations: any[] = [];
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    try {
+      const parsed = await withRetries(`step batch ${i + 1}/${batches.length}`, () =>
+        callStructured(
+          buildStepBatchMessage(input, batch, i + 1, batches.length),
+          "emit_step_recommendations",
+          STEP_RECOMMENDATIONS_SCHEMA,
+          STEP_MAX_COMPLETION_TOKENS,
+        )
+      );
+      if (Array.isArray(parsed.stepRecommendations)) stepRecommendations.push(...parsed.stepRecommendations);
+    } catch (e: any) {
+      console.error(`[blueprint-run] using deterministic fallback for step batch ${i + 1}/${batches.length}:`, e?.message || e);
+      stepRecommendations.push(...fallbackRecommendations(batch));
+    }
+  }
+
+  const coveredStepRecommendations = ensureStepCoverage(input, stepRecommendations);
+  let synthesis: any;
+  try {
+    synthesis = await withRetries("synthesis", () =>
+      callStructured(
+        buildSynthesisMessage(input, coveredStepRecommendations),
+        "emit_blueprint_synthesis",
+        SYNTHESIS_SCHEMA,
+        SYNTHESIS_MAX_COMPLETION_TOKENS,
+      )
+    );
+  } catch (e: any) {
+    console.error("[blueprint-run] using deterministic fallback synthesis:", e?.message || e);
+    synthesis = fallbackSynthesis(input, coveredStepRecommendations);
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    model: currentModel(),
+    executiveSummary: String(synthesis.executiveSummary || ""),
+    stepRecommendations: coveredStepRecommendations,
+    gapRegister: Array.isArray(synthesis.gapRegister) ? synthesis.gapRegister : [],
+    useCaseBacklog: Array.isArray(synthesis.useCaseBacklog) ? synthesis.useCaseBacklog : [],
+    hubSpokeActivities: Array.isArray(synthesis.hubSpokeActivities) ? synthesis.hubSpokeActivities : [],
+    radar: Array.isArray(synthesis.radar) ? synthesis.radar : [],
+  };
 }
 
 Deno.serve(async (req) => {
