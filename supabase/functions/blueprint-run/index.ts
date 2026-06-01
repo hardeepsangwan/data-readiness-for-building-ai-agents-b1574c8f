@@ -206,7 +206,7 @@ Call emit_blueprint with the structured analysis. Cover EVERY AS-IS step in step
 const REQUEST_TIMEOUT_MS = 120_000;
 const MAX_ATTEMPTS = 3; // 1 initial + 2 retries
 const RETRY_DELAY_MS = 3_000;
-const MAX_COMPLETION_TOKENS = 8000; // minimum that reliably fits the structured tool-call output
+const MAX_COMPLETION_TOKENS = 32000; // structured tool-call output for full AS-IS coverage can exceed 8k tokens
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
