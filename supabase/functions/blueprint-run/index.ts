@@ -210,6 +210,52 @@ const MAX_COMPLETION_TOKENS = 32000; // structured tool-call output for full AS-
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Best-effort repair of a JSON tool-call argument string that was cut off
+// mid-stream (typically because the model hit max_completion_tokens). We walk
+// the string and track brace/bracket/string state; when parsing fails we
+// truncate to the last position where the structure was balanced at depth 1
+// (i.e. after the last complete top-level array/object element), close any
+// open containers, and retry. Returns null if nothing usable can be recovered.
+function tryRepairTruncatedJson(src: string): any | null {
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+  let lastSafeEnd = -1; // exclusive index; everything before is valid + balanced at top level
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (ch === "\\") { esc = true; continue; }
+      if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === "{" || ch === "[") { stack.push(ch); continue; }
+    if (ch === "}" || ch === "]") {
+      stack.pop();
+      if (stack.length === 1) lastSafeEnd = i + 1; // just closed a top-level element
+      continue;
+    }
+  }
+  if (lastSafeEnd <= 0) return null;
+  // Rebuild: take everything up to the last safe boundary, then close the
+  // outer container(s) that were open at that point. Since we only record
+  // lastSafeEnd when stack.length === 1, exactly one outer container is open.
+  // Detect whether the root is an object or array from src[0].
+  const root = src.trimStart()[0];
+  if (root !== "{" && root !== "[") return null;
+  const closer = root === "{" ? "}" : "]";
+  let candidate = src.slice(0, lastSafeEnd);
+  // Strip any trailing comma between the last complete element and the closer.
+  candidate = candidate.replace(/,\s*$/, "");
+  candidate += closer;
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return null;
+  }
+}
+
 async function callOnce(input: any): Promise<any> {
   const apiKey = Deno.env.get("XAI_API_KEY");
   if (!apiKey) throw new Error("Azure OpenAI API key is not configured.");
