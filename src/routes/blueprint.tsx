@@ -372,18 +372,26 @@ function BlueprintPage() {
   }, [state.steps]);
 
   const syncAssets = () => {
-    const existing = new Map(state.assets.map((a) => [a.source.toLowerCase(), a]));
+    // One data asset per process step (1:1 mapping).
+    const existingById = new Map(state.assets.map((a) => [a.id, a]));
     const next: DataAsset[] = [];
-    uniqueSystems.forEach((src, i) => {
-      const hit = existing.get(src.toLowerCase());
-      if (hit) next.push(hit);
-      else next.push(newAssetFromSystem(`DA-${String(next.length + 1).padStart(2, "0")}`, src));
-    });
-    state.assets.forEach((a) => {
-      if (!uniqueSystems.some((s) => s.toLowerCase() === a.source.toLowerCase())) next.push(a);
+    const updatedSteps = [...state.steps];
+    state.steps.forEach((s, i) => {
+      const assetId = `DA-${String(i + 1).padStart(3, "0")}`;
+      const source = s.systemTool?.trim() || s.subProcess?.trim() || `Step ${s.stepNumber || i + 1}`;
+      const hit = existingById.get(assetId);
+      if (hit) {
+        next.push({ ...hit, source: hit.source || source });
+      } else {
+        next.push(newAssetFromSystem(assetId, source));
+      }
+      if (updatedSteps[i].dataAssetRef !== assetId) {
+        updatedSteps[i] = { ...updatedSteps[i], dataAssetRef: assetId };
+      }
     });
     setAssets(next);
-    toast.success(`Synced ${next.length} data assets from process steps.`);
+    setSteps(updatedSteps);
+    toast.success(`Synced ${next.length} data assets — one per process step.`);
   };
 
   // Poll an active job until it completes or errors.
@@ -827,7 +835,7 @@ function BlueprintPage() {
 
           <TabsContent value="assets" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Data assets feed each step. Use <strong>Sync from steps</strong> to auto-create rows for every System/Tool you entered.</p>
+              <p className="text-sm text-muted-foreground">One data asset per value-stream step. Use <strong>Sync from steps</strong> to auto-create one row for every step you entered in section 2 (e.g. 168 steps → 168 assets).</p>
               <Button size="sm" variant="outline" onClick={syncAssets}><Wand2 className="mr-1 h-4 w-4" /> Sync from steps</Button>
             </div>
             <div className="space-y-3">
@@ -865,7 +873,7 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
               ))}
-              <Button size="sm" variant="outline" onClick={() => setAssets([...state.assets, newAssetFromSystem(`DA-${String(state.assets.length + 1).padStart(2, "0")}`, "")])}>
+              <Button size="sm" variant="outline" onClick={() => setAssets([...state.assets, newAssetFromSystem(`DA-${String(state.assets.length + 1).padStart(3, "0")}`, "")])}>
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
