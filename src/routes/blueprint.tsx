@@ -873,7 +873,7 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
               ))}
-              <Button size="sm" variant="outline" onClick={() => setAssets([...state.assets, newAssetFromSystem(`DA-${String(state.assets.length + 1).padStart(2, "0")}`, "")])}>
+              <Button size="sm" variant="outline" onClick={() => setAssets([...state.assets, newAssetFromSystem(`DA-${String(state.assets.length + 1).padStart(3, "0")}`, "")])}>
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
