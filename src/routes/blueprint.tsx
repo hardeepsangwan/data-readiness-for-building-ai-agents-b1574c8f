@@ -372,18 +372,26 @@ function BlueprintPage() {
   }, [state.steps]);
 
   const syncAssets = () => {
-    const existing = new Map(state.assets.map((a) => [a.source.toLowerCase(), a]));
+    // One data asset per process step (1:1 mapping).
+    const existingById = new Map(state.assets.map((a) => [a.id, a]));
     const next: DataAsset[] = [];
-    uniqueSystems.forEach((src, i) => {
-      const hit = existing.get(src.toLowerCase());
-      if (hit) next.push(hit);
-      else next.push(newAssetFromSystem(`DA-${String(next.length + 1).padStart(2, "0")}`, src));
-    });
-    state.assets.forEach((a) => {
-      if (!uniqueSystems.some((s) => s.toLowerCase() === a.source.toLowerCase())) next.push(a);
+    const updatedSteps = [...state.steps];
+    state.steps.forEach((s, i) => {
+      const assetId = `DA-${String(i + 1).padStart(3, "0")}`;
+      const source = s.systemTool?.trim() || s.subProcess?.trim() || `Step ${s.stepNumber || i + 1}`;
+      const hit = existingById.get(assetId);
+      if (hit) {
+        next.push({ ...hit, source: hit.source || source });
+      } else {
+        next.push(newAssetFromSystem(assetId, source));
+      }
+      if (updatedSteps[i].dataAssetRef !== assetId) {
+        updatedSteps[i] = { ...updatedSteps[i], dataAssetRef: assetId };
+      }
     });
     setAssets(next);
-    toast.success(`Synced ${next.length} data assets from process steps.`);
+    setSteps(updatedSteps);
+    toast.success(`Synced ${next.length} data assets — one per process step.`);
   };
 
   // Poll an active job until it completes or errors.
