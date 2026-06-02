@@ -78,6 +78,12 @@ jobs:
         with:
           creds: '{"clientId":"39ce4085-4dec-4af5-a794-0b5707aa180b","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"35c7c256-febc-4c53-82a5-71e8573a3c24","tenantId":"d69d99c1-2f5a-482f-b0ea-d8173b4b38bd"}'
 
+      - name: Disable Oryx build on Azure (use pre-built artifact)
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'webapp-data-blueprint'
+          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false","slotSetting":false},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22","slotSetting":false}]'
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
