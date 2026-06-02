@@ -32,16 +32,25 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
+      - name: List build output (debug)
+        run: |
+          echo "=== dist/ ===" && ls -la dist/ 2>/dev/null || echo "dist/ not found"
+          echo "=== .output/ ===" && ls -la .output/ 2>/dev/null || echo ".output/ not found"
+          echo "=== build/ ===" && ls -la build/ 2>/dev/null || echo "build/ not found"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: |
             dist/
+            .output/
+            build/
             server.mjs
             web.config
             package.json
             package-lock.json
+          if-no-files-found: warn
           retention-days: 1
 
   deploy:
