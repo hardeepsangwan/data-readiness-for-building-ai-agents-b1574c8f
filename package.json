@@ -1,10 +1,11 @@
 {
   "name": "tanstack_start_ts",
   "private": true,
-  "sideEffects": false,
   "type": "module",
   "engines": {
-    "node": "22.22.3"},
+    "node": ">=22.0.0"
+  },
+  "sideEffects": false,
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
