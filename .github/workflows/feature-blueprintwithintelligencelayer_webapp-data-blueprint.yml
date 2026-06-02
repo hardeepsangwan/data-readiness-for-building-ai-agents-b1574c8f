@@ -42,12 +42,12 @@ jobs:
             web.config
             package.json
             package-lock.json
+          retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write
       contents: read
 
     steps:
@@ -67,9 +67,7 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9F832D51E03E4935B794125C9A052F42 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_072B458E542C4CD691760FD13DEB380B }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F934FAA4F7B9462B8F9A4375249292A4 }}
+          creds: '{"clientId":"39ce4085-4dec-4af5-a794-0b5707aa180b","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"35c7c256-febc-4c53-82a5-71e8573a3c24","tenantId":"d69d99c1-2f5a-482f-b0ea-d8173b4b38bd"}'
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
