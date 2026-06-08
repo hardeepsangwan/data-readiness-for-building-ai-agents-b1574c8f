@@ -94,3 +94,6 @@ jobs:
           app-name: 'webapp-data-blueprint'
           slot-name: 'Production'
           package: .
+
+      - name: Restart Web App (ensure new build is picked up)
+        run: az webapp restart --name webapp-data-blueprint --resource-group rg-hsangwan-training-001
