@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Square, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
-import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
+import { startBlueprintJob, getBlueprintJob, cancelBlueprintJob } from "@/lib/blueprint.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
@@ -316,9 +317,11 @@ const SPOKE_PILLARS: { pillar: string; requirement: string; delivery: string; de
 
 function BlueprintPage() {
   const { state, hydrated, setContext, setSteps, setAssets, setDownstream, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const search = useSearch({ from: "/blueprint" });
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
-  const [tab, setTab] = useState("context");
+  const cancelJob = useServerFn(cancelBlueprintJob);
+  const [tab, setTab] = useState<string>((search as any)?.tab || "context");
   const [busy, setBusy] = useState(false);
   const [jobStatus, setJobStatus] = useState<"idle" | "queued" | "running" | "completed" | "error">("idle");
   const [jobId, setJobId] = useState<string | null>(null);
@@ -369,18 +372,26 @@ function BlueprintPage() {
   }, [state.steps]);
 
   const syncAssets = () => {
-    const existing = new Map(state.assets.map((a) => [a.source.toLowerCase(), a]));
+    // One data asset per process step (1:1 mapping).
+    const existingById = new Map(state.assets.map((a) => [a.id, a]));
     const next: DataAsset[] = [];
-    uniqueSystems.forEach((src, i) => {
-      const hit = existing.get(src.toLowerCase());
-      if (hit) next.push(hit);
-      else next.push(newAssetFromSystem(`DA-${String(next.length + 1).padStart(2, "0")}`, src));
-    });
-    state.assets.forEach((a) => {
-      if (!uniqueSystems.some((s) => s.toLowerCase() === a.source.toLowerCase())) next.push(a);
+    const updatedSteps = [...state.steps];
+    state.steps.forEach((s, i) => {
+      const assetId = `DA-${String(i + 1).padStart(3, "0")}`;
+      const source = s.systemTool?.trim() || s.subProcess?.trim() || `Step ${s.stepNumber || i + 1}`;
+      const hit = existingById.get(assetId);
+      if (hit) {
+        next.push({ ...hit, source: hit.source || source });
+      } else {
+        next.push(newAssetFromSystem(assetId, source));
+      }
+      if (updatedSteps[i].dataAssetRef !== assetId) {
+        updatedSteps[i] = { ...updatedSteps[i], dataAssetRef: assetId };
+      }
     });
     setAssets(next);
-    toast.success(`Synced ${next.length} data assets from process steps.`);
+    setSteps(updatedSteps);
+    toast.success(`Synced ${next.length} data assets — one per process step.`);
   };
 
   // Poll an active job until it completes or errors.
@@ -464,21 +475,34 @@ function BlueprintPage() {
       setJobId(newJobId);
       setJobStatus("running");
       toast.info("Blueprint generation started. Results will appear under '7. Blueprint Generated' when ready.");
-      // Fire the background runner. Don't await — it may take minutes and the
-      // gateway may 504 the client connection; the job continues server-side
-      // and the polling loop above picks up the result.
-      void fetch("/api/public/blueprint/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: newJobId }),
-        keepalive: true,
-      }).catch(() => { /* expected on long-running 504s */ });
+      // Fire the background runner in the Supabase Edge Function. Don't await —
+      // generation can take minutes; the job continues server-side and the
+      // polling loop above picks up the result. Edge Functions bypass
+      // Cloudflare's 100s 524 timeout that the previous TanStack route hit.
+      void supabase.functions
+        .invoke("blueprint-run", { body: { jobId: newJobId } })
+        .catch(() => { /* expected if connection drops during long generation */ });
     } catch (e: any) {
       setGenerationError(e?.message || "Failed to start blueprint generation.");
       toast.error(e?.message || "Failed to start blueprint generation.");
       setBusy(false);
       setJobStatus("error");
     }
+  };
+
+  const onStop = async () => {
+    if (!jobId) return;
+    try {
+      await cancelJob({ data: { jobId } });
+    } catch {
+      // ignore — local state still resets
+    }
+    localStorage.removeItem(JOB_STORAGE_KEY);
+    setJobId(null);
+    setJobStatus("idle");
+    setBusy(false);
+    setGenerationError("Blueprint generation cancelled.");
+    toast.info("Blueprint generation cancelled.");
   };
 
   const loadExample = () => {
@@ -811,7 +835,7 @@ function BlueprintPage() {
 
           <TabsContent value="assets" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Data assets feed each step. Use <strong>Sync from steps</strong> to auto-create rows for every System/Tool you entered.</p>
+              <p className="text-sm text-muted-foreground">One data asset per value-stream step. Use <strong>Sync from steps</strong> to auto-create one row for every step you entered in section 2 (e.g. 168 steps → 168 assets).</p>
               <Button size="sm" variant="outline" onClick={syncAssets}><Wand2 className="mr-1 h-4 w-4" /> Sync from steps</Button>
             </div>
             <div className="space-y-3">
@@ -849,7 +873,7 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
               ))}
-              <Button size="sm" variant="outline" onClick={() => setAssets([...state.assets, newAssetFromSystem(`DA-${String(state.assets.length + 1).padStart(2, "0")}`, "")])}>
+              <Button size="sm" variant="outline" onClick={() => setAssets([...state.assets, newAssetFromSystem(`DA-${String(state.assets.length + 1).padStart(3, "0")}`, "")])}>
                 <Plus className="mr-1 h-4 w-4" /> Add asset
               </Button>
             </div>
@@ -1051,7 +1075,12 @@ function BlueprintPage() {
                     {generationError}
                   </div>
                 )}
-                <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button>
+                  <Button variant="destructive" onClick={onStop} disabled={!busy || !jobId}>
+                    <Square className="mr-2 h-4 w-4 fill-current" /> Stop generating
+                  </Button>
+                </div>
               </CardContent></Card>
             ) : (
               <div ref={fullRef} className="space-y-6">
