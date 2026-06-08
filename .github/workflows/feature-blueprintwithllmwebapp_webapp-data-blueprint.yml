@@ -27,6 +27,9 @@ jobs:
           node-version: '22.x'
 
       - name: npm install and build
+        env:
+          VITE_SUPABASE_URL: "https://yflfksanbnuzpzzihnod.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_0qB1dL0c6z5W3G2bVn2ufQ_Wites1Bu"
         run: |
           npm install
           npm run build --if-present

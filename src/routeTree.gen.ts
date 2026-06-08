@@ -13,7 +13,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as BlueprintRouteImport } from './routes/blueprint'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPublicBlueprintRunRouteImport } from './routes/api/public/blueprint/run'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -35,25 +34,18 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicBlueprintRunRoute = ApiPublicBlueprintRunRouteImport.update({
-  id: '/api/public/blueprint/run',
-  path: '/api/public/blueprint/run',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
-  '/api/public/blueprint/run': typeof ApiPublicBlueprintRunRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
-  '/api/public/blueprint/run': typeof ApiPublicBlueprintRunRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,25 +53,13 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/blueprint': typeof BlueprintRoute
   '/login': typeof LoginRoute
-  '/api/public/blueprint/run': typeof ApiPublicBlueprintRunRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/admin'
-    | '/blueprint'
-    | '/login'
-    | '/api/public/blueprint/run'
+  fullPaths: '/' | '/admin' | '/blueprint' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/blueprint' | '/login' | '/api/public/blueprint/run'
-  id:
-    | '__root__'
-    | '/'
-    | '/admin'
-    | '/blueprint'
-    | '/login'
-    | '/api/public/blueprint/run'
+  to: '/' | '/admin' | '/blueprint' | '/login'
+  id: '__root__' | '/' | '/admin' | '/blueprint' | '/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -87,7 +67,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   BlueprintRoute: typeof BlueprintRoute
   LoginRoute: typeof LoginRoute
-  ApiPublicBlueprintRunRoute: typeof ApiPublicBlueprintRunRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -120,13 +99,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/blueprint/run': {
-      id: '/api/public/blueprint/run'
-      path: '/api/public/blueprint/run'
-      fullPath: '/api/public/blueprint/run'
-      preLoaderRoute: typeof ApiPublicBlueprintRunRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -135,8 +107,16 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   BlueprintRoute: BlueprintRoute,
   LoginRoute: LoginRoute,
-  ApiPublicBlueprintRunRoute: ApiPublicBlueprintRunRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
