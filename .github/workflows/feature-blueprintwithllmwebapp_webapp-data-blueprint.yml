@@ -28,8 +28,8 @@ jobs:
 
       - name: npm install and build
         env:
-          VITE_SUPABASE_URL: "https://yflfksanbnuzpzzihnod.supabase.co"
-          VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_0qB1dL0c6z5W3G2bVn2ufQ_Wites1Bu"
+          VITE_SUPABASE_URL: "https://icigrmwzibvegfhgaemo.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_m5spvH_Fvd6YcelgEpfkTg_sm9P4PiD"
         run: |
           npm install
           npm run build --if-present
@@ -85,7 +85,7 @@ jobs:
         uses: azure/appservice-settings@v1
         with:
           app-name: 'webapp-data-blueprint'
-          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false","slotSetting":false},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22","slotSetting":false},{"name":"SUPABASE_URL","value":"https://yflfksanbnuzpzzihnod.supabase.co","slotSetting":false},{"name":"SUPABASE_SERVICE_ROLE_KEY","value":"${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}","slotSetting":false}]'
+          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false","slotSetting":false},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22","slotSetting":false},{"name":"SUPABASE_URL","value":"https://icigrmwzibvegfhgaemo.supabase.co","slotSetting":false},{"name":"SUPABASE_SERVICE_ROLE_KEY","value":"${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}","slotSetting":false}]'
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
