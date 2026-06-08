@@ -1,59 +1,48 @@
-// Minimal Express server for Azure App Service (Linux Node).
-// Serves the built client SPA. This app stores state in localStorage and
-// uses no server functions, so a static SPA host is sufficient.
-import express from "express";
+// Node entrypoint for Azure App Service (Linux Node).
+// This is a TanStack Start SSR app: vite build emits a server fetch-handler
+// at dist/server/server.js plus static client assets at dist/client (no
+// pre-rendered index.html — pages are rendered on the fly by the SSR handler).
+// We serve static assets directly and hand everything else to the SSR handler.
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { serve } from "srvx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// The Lovable / TanStack Start + Cloudflare Vite plugin emits client assets
-// under one of these directories depending on plugin version. Pick whichever
-// exists at runtime.
-const candidates = [
-  path.join(__dirname, "dist", "client"),
-  path.join(__dirname, "dist"),
-  path.join(__dirname, ".output", "public"),
-  path.join(__dirname, "build", "client"),
-];
+const clientDir = path.join(__dirname, "dist", "client");
+const serverEntry = path.join(__dirname, "dist", "server", "server.js");
 
-const staticDir = candidates.find(
-  (p) => fs.existsSync(p) && fs.existsSync(path.join(p, "index.html")),
-);
-
-if (!staticDir) {
-  console.error(
-    "[server] No built client found. Looked in:\n" + candidates.join("\n"),
-  );
+if (!fs.existsSync(serverEntry)) {
+  console.error(`[server] Built server entry not found at ${serverEntry}`);
   process.exit(1);
 }
 
-console.log("[server] Serving static SPA from", staticDir);
+const { default: ssrServer } = await import(`file://${serverEntry}`);
 
-const app = express();
+async function fetchHandler(request) {
+  const url = new URL(request.url);
+
+  if (request.method === "GET" || request.method === "HEAD") {
+    const filePath = path.join(clientDir, decodeURIComponent(url.pathname));
+    if (filePath.startsWith(clientDir) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const headers = {};
+      if (url.pathname.startsWith("/assets/")) {
+        headers["cache-control"] = "public, max-age=31536000, immutable";
+      }
+      return new Response(fs.readFileSync(filePath), { headers });
+    }
+  }
+
+  return ssrServer.fetch(request);
+}
+
 const port = process.env.PORT || 8080;
 
-app.disable("x-powered-by");
-
-app.use(
-  express.static(staticDir, {
-    index: false,
-    maxAge: "1h",
-    setHeaders: (res, filePath) => {
-      if (/\.(?:js|css|woff2?|png|jpg|jpeg|svg|webp|ico)$/i.test(filePath)) {
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      }
-    },
-  }),
-);
-
-// SPA fallback — every non-asset GET returns index.html so client-side
-// routing (TanStack Router) can handle the URL.
-app.get(/.*/, (_req, res) => {
-  res.sendFile(path.join(staticDir, "index.html"));
+serve({
+  fetch: fetchHandler,
+  port,
+  hostname: "0.0.0.0",
 });
 
-app.listen(port, () => {
-  console.log(`[server] Listening on port ${port}`);
-});
+console.log(`[server] Listening on port ${port}, serving static assets from ${clientDir}`);
