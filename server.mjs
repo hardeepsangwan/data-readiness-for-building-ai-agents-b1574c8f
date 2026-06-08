@@ -10,6 +10,23 @@ import { serve } from "srvx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const MIME_TYPES = {
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".map": "application/json; charset=utf-8",
+};
+
 const clientDir = path.join(__dirname, "dist", "client");
 const serverEntry = path.join(__dirname, "dist", "server", "server.js");
 
@@ -27,6 +44,9 @@ async function fetchHandler(request) {
     const filePath = path.join(clientDir, decodeURIComponent(url.pathname));
     if (filePath.startsWith(clientDir) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const headers = {};
+      const ext = path.extname(filePath).toLowerCase();
+      const mime = MIME_TYPES[ext];
+      if (mime) headers["content-type"] = mime;
       if (url.pathname.startsWith("/assets/")) {
         headers["cache-control"] = "public, max-age=31536000, immutable";
       }
