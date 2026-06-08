@@ -85,7 +85,7 @@ jobs:
         uses: azure/appservice-settings@v1
         with:
           app-name: 'webapp-data-blueprint'
-          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false","slotSetting":false},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22","slotSetting":false}]'
+          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false","slotSetting":false},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22","slotSetting":false},{"name":"SUPABASE_URL","value":"https://yflfksanbnuzpzzihnod.supabase.co","slotSetting":false},{"name":"SUPABASE_SERVICE_ROLE_KEY","value":"${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}","slotSetting":false}]'
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
