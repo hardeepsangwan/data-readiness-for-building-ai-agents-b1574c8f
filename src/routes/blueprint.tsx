@@ -372,18 +372,15 @@ function BlueprintPage() {
   }, [state.steps]);
 
   const syncAssets = () => {
-    const existing = new Map(state.assets.map((a) => [a.source.toLowerCase(), a]));
-    const next: DataAsset[] = [];
-    uniqueSystems.forEach((src, i) => {
-      const hit = existing.get(src.toLowerCase());
-      if (hit) next.push(hit);
-      else next.push(newAssetFromSystem(`DA-${String(next.length + 1).padStart(2, "0")}`, src));
-    });
-    state.assets.forEach((a) => {
-      if (!uniqueSystems.some((s) => s.toLowerCase() === a.source.toLowerCase())) next.push(a);
+    const existingById = new Map(state.assets.map((a) => [a.id, a]));
+    const next: DataAsset[] = state.steps.map((s, i) => {
+      const id = `DA-${String(i + 1).padStart(2, "0")}`;
+      const hit = existingById.get(id);
+      if (hit) return { ...hit, source: s.systemTool || s.description || id };
+      return newAssetFromSystem(id, s.systemTool || s.description || id);
     });
     setAssets(next);
-    toast.success(`Synced ${next.length} data assets from process steps.`);
+    toast.success(`Synced ${next.length} data assets from As-Is Steps.`);
   };
 
   // Poll an active job until it completes or errors.
@@ -560,7 +557,7 @@ function BlueprintPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="context">1. Context</TabsTrigger>
-            <TabsTrigger value="steps">2. Value Stream</TabsTrigger>
+            <TabsTrigger value="steps">2. Value Stream Steps (As-Is Process)</TabsTrigger>
             <TabsTrigger value="assets">3. Data Asset Map</TabsTrigger>
             <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
             <TabsTrigger value="tom">5. Target data state details</TabsTrigger>
@@ -748,8 +745,8 @@ function BlueprintPage() {
 
           <TabsContent value="assets" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Data assets feed each step. Use <strong>Sync from steps</strong> to auto-create rows for every System/Tool you entered.</p>
-              <Button size="sm" variant="outline" onClick={syncAssets}><Wand2 className="mr-1 h-4 w-4" /> Sync from steps</Button>
+              <p className="text-sm text-muted-foreground">One data asset is created for each As-Is Step. Use <strong>Sync from As-Is Steps</strong> to generate or refresh assets.</p>
+              <Button size="sm" variant="outline" onClick={syncAssets}><Wand2 className="mr-1 h-4 w-4" /> Sync from As-Is Steps</Button>
             </div>
             <div className="space-y-3">
               {state.assets.map((a, i) => (
