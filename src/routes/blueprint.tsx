@@ -856,7 +856,17 @@ function BlueprintPage() {
           </TabsContent>
 
           <TabsContent value="dq" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">Score each data asset on the six DAMA DQ dimensions (1=Poor → 5=Excellent). Use the criteria below as a guide.</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Score each data asset on the six DAMA DQ dimensions (1=Poor → 5=Excellent). Use <strong>Sync from Data Assets</strong> to initialise a row for every asset.</p>
+              <Button size="sm" variant="outline" onClick={() => {
+                const next = state.assets.map((a) => {
+                  const existing = state.dq.find((d) => d.assetId === a.id);
+                  return existing ?? { assetId: a.id, completeness: 3, accuracy: 3, consistency: 3, timeliness: 3, uniqueness: 3, validity: 3, evidence: "" };
+                });
+                setDq(next);
+                toast.success(`Synced ${next.length} data quality rows from assets.`);
+              }}><Wand2 className="mr-1 h-4 w-4" /> Sync from Data Assets</Button>
+            </div>
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-base">Data Quality scoring criteria</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto p-0">
