@@ -471,9 +471,25 @@ function BlueprintPage() {
       // Fire the background runner. Don't await — it may take minutes and the
       // gateway may 504 the client connection; the job continues server-side
       // and the polling loop above picks up the result.
-      void supabase.functions.invoke("blueprint-run", {
+      supabase.functions.invoke("blueprint-run", {
         body: { jobId: newJobId },
-      }).catch(() => { /* fire-and-forget — edge function continues independently */ });
+      }).then(({ error }) => {
+        if (error) {
+          console.error("[blueprint] edge function error:", error);
+          setGenerationError(`Blueprint generation failed: ${error.message}`);
+          toast.error(`Blueprint generation failed: ${error.message}`);
+          setBusy(false);
+          setJobStatus("error");
+          localStorage.removeItem(JOB_STORAGE_KEY);
+        }
+      }).catch((e: any) => {
+        console.error("[blueprint] edge function invoke failed:", e);
+        setGenerationError(e?.message || "Failed to invoke blueprint generation.");
+        toast.error(e?.message || "Failed to invoke blueprint generation.");
+        setBusy(false);
+        setJobStatus("error");
+        localStorage.removeItem(JOB_STORAGE_KEY);
+      });
     } catch (e: any) {
       setGenerationError(e?.message || "Failed to start blueprint generation.");
       toast.error(e?.message || "Failed to start blueprint generation.");
@@ -1070,7 +1086,6 @@ function BlueprintPage() {
                 )}
                 <div className="mt-4 flex items-center justify-center gap-3">
                   <Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button>
-                  {busy && <Button variant="destructive" size="sm" onClick={onStop}><Square className="mr-2 h-3 w-3 fill-current" /> Stop</Button>}
                 </div>
               </CardContent></Card>
             ) : (
