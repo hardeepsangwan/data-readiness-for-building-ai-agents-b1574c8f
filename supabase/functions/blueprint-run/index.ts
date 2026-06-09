@@ -204,8 +204,37 @@ function relatedAssetIds(steps: any[]): Set<string> {
   return new Set(steps.map((s) => String(s?.dataAssetRef || "").trim()).filter(Boolean));
 }
 
-function formatSteps(steps: any[]): string {
+function formatSteps(steps: any[], compress = false): string {
+  if (compress) {
+    // Clip more aggressively for large step counts to reduce token usage
+    return steps.map((s: any) => `${s.id} [${clip(s.subProcess, 60)}] ${clip(s.description, 180)} | role=${clip(s.role, 60)} | system=${clip(s.systemTool, 60)} | in=${clip(s.dataInput, 80)} | out=${clip(s.dataOutput, 80)} | pain=${s.painPoint ? "Y" : "N"} ${s.painPointDescription ? "→ " + clip(s.painPointDescription, 150) : ""} | proposed=${clip(s.automationOpportunity || "?", 30)} | DA=${clip(s.dataAssetRef || "—", 20)}`).join("\n");
+  }
   return steps.map((s: any) => `${s.id} [${clip(s.subProcess, 80)}] ${clip(s.description, 260)} | role=${clip(s.role, 80)} | system=${clip(s.systemTool, 90)} | in=${clip(s.dataInput, 120)} | out=${clip(s.dataOutput, 120)} | time=${clip(s.time, 50)} | freq=${clip(s.frequency, 50)} | pain=${s.painPoint ? "Y" : "N"} ${s.painPointDescription ? "→ " + clip(s.painPointDescription, 220) : ""} | proposed=${clip(s.automationOpportunity || "?", 40)} | priority=${clip(s.priority || "?", 10)} | DA=${clip(s.dataAssetRef || "—", 30)}`).join("\n");
+}
+
+// Group steps by subProcess, then batch into chunks keeping groups together.
+function batchStepsBySubProcess(steps: any[], batchSize: number): any[][] {
+  const groups = new Map<string, any[]>();
+  for (const step of steps) {
+    const key = String(step?.subProcess || "General");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(step);
+  }
+  const batches: any[][] = [];
+  let current: any[] = [];
+  for (const [, groupSteps] of groups) {
+    if (groupSteps.length > batchSize) {
+      if (current.length > 0) { batches.push(current); current = []; }
+      for (let i = 0; i < groupSteps.length; i += batchSize) batches.push(groupSteps.slice(i, i + batchSize));
+    } else if (current.length + groupSteps.length > batchSize) {
+      if (current.length > 0) batches.push(current);
+      current = [...groupSteps];
+    } else {
+      current = [...current, ...groupSteps];
+    }
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
 }
 
 function formatAssets(assets: any[], ids?: Set<string>): string {
@@ -222,13 +251,17 @@ function tomBrief(data: any): string {
   return `Hub=${clip(data.tom?.hubCapabilities, 900)}\nSpoke=${clip(data.tom?.spokeOwnership, 900)}\nHandshakes=${clip(data.tom?.handshakes, 900)}\nControls=${clip(data.tom?.controls, 900)}\nSuccess=${clip(data.tom?.successMetrics, 900)}`;
 }
 
-function buildStepBatchMessage(data: any, batchSteps: any[], batchNumber: number, totalBatches: number): string {
+function buildStepBatchMessage(data: any, batchSteps: any[], batchNumber: number, totalBatches: number, compress = false): string {
   const ids = relatedAssetIds(batchSteps);
-  return `Generate Data Blueprint step recommendations for batch ${batchNumber}/${totalBatches}. Return ONLY the emit_step_recommendations tool call.\n\nCONTEXT:\n${contextBrief(data)}\n\nPROCESS STEPS IN THIS BATCH (${batchSteps.length}):\n${formatSteps(batchSteps)}\n\nRELATED DATA ASSETS:\n${formatAssets(data.assets || [], ids)}\n\nRELATED DATA QUALITY SCORES:\n${formatDq(data.dq || [], ids)}\n\nTARGET TOM:\n${tomBrief(data)}\n\nFor EVERY step in this batch, produce exactly one stepRecommendations item. Keep each text field concise but specific to Data Hive / Microsoft Fabric / Purview / Copilot patterns.`;
+  return `Generate Data Blueprint step recommendations for batch ${batchNumber}/${totalBatches}. Return ONLY the emit_step_recommendations tool call.\n\nCONTEXT:\n${contextBrief(data)}\n\nPROCESS STEPS IN THIS BATCH (${batchSteps.length}):\n${formatSteps(batchSteps, compress)}\n\nRELATED DATA ASSETS:\n${formatAssets(data.assets || [], ids)}\n\nRELATED DATA QUALITY SCORES:\n${formatDq(data.dq || [], ids)}\n\nTARGET TOM:\n${tomBrief(data)}\n\nFor EVERY step in this batch, produce exactly one stepRecommendations item. Keep each text field concise but specific to Data Hive / Microsoft Fabric / Purview / Copilot patterns.`;
 }
 
 function buildSynthesisMessage(data: any, stepRecommendations: any[]): string {
-  const recs = stepRecommendations.map((r: any) => `${r.stepId}: ${r.classification} | ${clip(r.dataAiIntervention, 220)} | owner=${r.hubSpoke} | assets=${Array.isArray(r.requiredAssets) ? r.requiredAssets.join(",") : ""} | dq=${Array.isArray(r.dqUplifts) ? r.dqUplifts.map((x: any) => clip(x, 80)).join("; ") : ""}`).join("\n");
+  // When there are many recommendations, summarise to top 3 fields to reduce token count
+  const recsForSynthesis = stepRecommendations.length > 80
+    ? stepRecommendations.map((r: any) => `${r.stepId}: ${r.classification} | ${clip(r.dataAiIntervention, 160)} | owner=${r.hubSpoke}`)
+    : stepRecommendations.map((r: any) => `${r.stepId}: ${r.classification} | ${clip(r.dataAiIntervention, 220)} | owner=${r.hubSpoke} | assets=${Array.isArray(r.requiredAssets) ? r.requiredAssets.join(",") : ""} | dq=${Array.isArray(r.dqUplifts) ? r.dqUplifts.map((x: any) => clip(x, 80)).join("; ") : ""}`);
+  const recs = recsForSynthesis.join("\n");
   return `Generate the remaining executive Data Blueprint synthesis. Return ONLY the emit_blueprint_synthesis tool call.\n\nCONTEXT:\n${contextBrief(data)}\n\nALL STEP RECOMMENDATIONS ALREADY GENERATED (${stepRecommendations.length}):\n${recs}\n\nDATA ASSET MAP:\n${formatAssets(data.assets || [])}\n\nDATA QUALITY SCORES:\n${formatDq(data.dq || [])}\n\nTARGET TOM:\n${tomBrief(data)}\n\nCreate: executiveSummary, gapRegister, useCaseBacklog, hubSpokeActivities, and radar. Keep the output compact enough to complete reliably while still executive-grade and specific.`;
 }
 
@@ -271,8 +304,8 @@ function fallbackSynthesis(input: any, stepRecommendations: any[]): any {
 const REQUEST_TIMEOUT_MS = Number(Deno.env.get("BLUEPRINT_AI_TIMEOUT_MS") || 8 * 60_000);
 const MAX_ATTEMPTS = 3; // 1 initial + 2 retries per AI stage
 const RETRY_DELAY_MS = 3_000;
-const STEP_BATCH_SIZE = Number(Deno.env.get("BLUEPRINT_STEP_BATCH_SIZE") || 8);
-const STEP_MAX_COMPLETION_TOKENS = Number(Deno.env.get("BLUEPRINT_STEP_MAX_TOKENS") || 9000);
+const STEP_BATCH_SIZE = Number(Deno.env.get("BLUEPRINT_STEP_BATCH_SIZE") || 12);
+const STEP_MAX_COMPLETION_TOKENS = Number(Deno.env.get("BLUEPRINT_STEP_MAX_TOKENS") || 12000);
 const SYNTHESIS_MAX_COMPLETION_TOKENS = Number(Deno.env.get("BLUEPRINT_SYNTHESIS_MAX_TOKENS") || 12000);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -437,8 +470,11 @@ async function withRetries<T>(label: string, fn: () => Promise<T>): Promise<T> {
 
 async function runGeneration(input: any): Promise<any> {
   const steps = Array.isArray(input.steps) ? input.steps : [];
-  const batches: any[][] = [];
-  for (let i = 0; i < steps.length; i += STEP_BATCH_SIZE) batches.push(steps.slice(i, i + STEP_BATCH_SIZE));
+  const compress = steps.length > 60;
+  // Group by subProcess for better batch coherence; fall back to sequential chunking
+  const batches: any[][] = steps.length > 0
+    ? batchStepsBySubProcess(steps, STEP_BATCH_SIZE)
+    : [];
 
   const stepRecommendations: any[] = [];
   for (let i = 0; i < batches.length; i++) {
@@ -446,7 +482,7 @@ async function runGeneration(input: any): Promise<any> {
     try {
       const parsed = await withRetries(`step batch ${i + 1}/${batches.length}`, () =>
         callStructured(
-          buildStepBatchMessage(input, batch, i + 1, batches.length),
+          buildStepBatchMessage(input, batch, i + 1, batches.length, compress),
           "emit_step_recommendations",
           STEP_RECOMMENDATIONS_SCHEMA,
           STEP_MAX_COMPLETION_TOKENS,

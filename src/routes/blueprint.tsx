@@ -1264,34 +1264,6 @@ function BlueprintPage() {
                   </CardContent>
                 </Card>
 
-                <Card ref={useCasesRef as any}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Prioritised use-case backlog</CardTitle>
-                    <Button size="sm" variant="outline" onClick={() => exportSection(useCasesRef, "use-case-backlog", "Use-case Backlog")} disabled={exporting !== null}>
-                      <Download className="mr-1 h-3.5 w-3.5" /> PDF
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/40 text-xs uppercase"><tr>{["#","Use case","Impact","Desirab.","Feas.","Total","Data RAG","Solution"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
-                      <tbody>
-                        {state.result.useCaseBacklog.map((u) => (
-                          <tr key={u.id} className="border-t">
-                            <td className="p-2 font-mono text-xs">{u.id}</td>
-                            <td className="p-2">{u.name}</td>
-                            <td className="p-2">{u.businessImpact}</td>
-                            <td className="p-2">{u.desirability}</td>
-                            <td className="p-2">{u.feasibility}</td>
-                            <td className="p-2 font-semibold">{u.total}</td>
-                            <td className="p-2"><Badge variant={u.dataReadiness === "Red" ? "destructive" : "secondary"}>{u.dataReadiness}</Badge></td>
-                            <td className="p-2 text-xs">{u.solutionType}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-
                 <Card>
                   <CardHeader><CardTitle>Target architecture — Data Hive on Microsoft Fabric &amp; OneLake</CardTitle></CardHeader>
                   <CardContent className="space-y-5">

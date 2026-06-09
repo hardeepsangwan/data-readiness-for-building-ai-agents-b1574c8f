@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-store";
 import { listSubmissions, deleteSubmission, type Submission } from "@/lib/submissions-store";
 import { DIMENSIONS, MATURITY_LEVELS, TOTAL_QUESTIONS } from "@/lib/assessment-data";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Facilitator Admin · Audit submissions" }] }),
@@ -17,6 +18,8 @@ function AdminPage() {
   const navigate = useNavigate();
   const [subs, setSubs] = useState<Submission[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -26,6 +29,15 @@ function AdminPage() {
   useEffect(() => {
     setSubs(listSubmissions());
   }, []);
+
+  useEffect(() => {
+    if (!user || user.role !== "facilitator") return;
+    supabase
+      .from("blueprint_jobs")
+      .select("id, status, created_at, completed_at, error, input, result")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setJobs(data); });
+  }, [user]);
 
   const selected = useMemo(() => subs.find((s) => s.id === selectedId) || null, [subs, selectedId]);
 
@@ -171,6 +183,89 @@ function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Blueprint Generations */}
+        <div className="mt-10">
+          <div className="mb-4">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Blueprint engine</div>
+            <h2 className="mt-1 text-xl font-bold tracking-tight">Blueprint Generations</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              All blueprint jobs submitted to the AI generation engine. {jobs.length} job{jobs.length === 1 ? "" : "s"}.
+            </p>
+          </div>
+          {jobs.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <p className="text-sm text-muted-foreground">No blueprint jobs yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+              <div className="space-y-2">
+                {jobs.map((j) => {
+                  const isSel = selectedJob?.id === j.id;
+                  const org = j.input?.context?.organisation || "—";
+                  const proc = j.input?.context?.businessProcess || "—";
+                  const statusColor =
+                    j.status === "completed" ? "text-emerald-600" :
+                    j.status === "error" ? "text-destructive" :
+                    j.status === "running" ? "text-primary" :
+                    "text-muted-foreground";
+                  return (
+                    <button
+                      key={j.id}
+                      onClick={() => setSelectedJob(isSel ? null : j)}
+                      className={`w-full rounded-xl border p-4 text-left transition-all ${isSel ? "border-primary bg-primary/5" : "border-border bg-card hover:border-foreground/20"}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="truncate font-medium">{org}</div>
+                        <span className={`text-[11px] font-semibold uppercase tracking-wider ${statusColor}`}>{j.status}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">{proc}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">{new Date(j.created_at).toLocaleString()}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="rounded-xl border border-border bg-card p-6">
+                {!selectedJob ? (
+                  <div className="flex h-full min-h-[280px] items-center justify-center text-sm text-muted-foreground">
+                    <div className="text-center"><Eye className="mx-auto mb-2 h-6 w-6" />Select a job to view details</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="border-b border-border pb-4">
+                      <h2 className="text-lg font-bold">{selectedJob.input?.context?.organisation || "—"}</h2>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedJob.input?.context?.businessFunction || "—"} · {selectedJob.input?.context?.businessProcess || "—"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Status: <strong>{selectedJob.status}</strong> · Created: {new Date(selectedJob.created_at).toLocaleString()}
+                        {selectedJob.completed_at && ` · Completed: ${new Date(selectedJob.completed_at).toLocaleString()}`}
+                      </p>
+                      {selectedJob.error && (
+                        <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                          {selectedJob.error}
+                        </div>
+                      )}
+                    </div>
+                    {selectedJob.result && (
+                      <div className="mt-4 space-y-3">
+                        <div className="rounded-lg border border-border bg-muted/30 p-3">
+                          <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-1">Executive summary</div>
+                          <p className="text-sm">{selectedJob.result.executiveSummary?.slice(0, 400)}{selectedJob.result.executiveSummary?.length > 400 ? "…" : ""}</p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Metric label="Step recommendations" value={String(selectedJob.result.stepRecommendations?.length ?? 0)} />
+                          <Metric label="Gap entries" value={String(selectedJob.result.gapRegister?.length ?? 0)} />
+                          <Metric label="Hub-spoke activities" value={String(selectedJob.result.hubSpokeActivities?.length ?? 0)} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
