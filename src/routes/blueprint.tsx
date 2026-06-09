@@ -15,7 +15,6 @@ import { useBlueprint } from "@/lib/blueprint-store";
 import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-store";
-import { supabase } from "@/integrations/supabase/client";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
 import { exportElementToPdf } from "@/lib/pdf-export";
