@@ -332,7 +332,6 @@ function BlueprintPage() {
   const stepsRef = useRef<HTMLDivElement>(null);
   const gapsRef = useRef<HTMLDivElement>(null);
   const hubSpokeRef = useRef<HTMLDivElement>(null);
-  const useCasesRef = useRef<HTMLDivElement>(null);
   const fullRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [useCases, setUseCases] = useState<UseCaseRow[]>([]);
@@ -467,7 +466,7 @@ function BlueprintPage() {
       localStorage.setItem(JOB_STORAGE_KEY, newJobId);
       setJobId(newJobId);
       setJobStatus("running");
-      toast.info("Blueprint generation started. Results will appear under '7. Blueprint Generated' when ready.");
+      toast.info("Blueprint generation started. Results will appear under '6. Blueprint Generated' when ready.");
       // Fire the background runner. Don't await — it may take minutes and the
       // gateway may 504 the client connection; the job continues server-side
       // and the polling loop above picks up the result.
@@ -559,14 +558,13 @@ function BlueprintPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="context">1. Context</TabsTrigger>
             <TabsTrigger value="steps">2. Value Stream</TabsTrigger>
-            <TabsTrigger value="usecases">3. Use Case Priority</TabsTrigger>
-            <TabsTrigger value="assets">4. Data Asset Map</TabsTrigger>
-            <TabsTrigger value="dq">5. Data Quality</TabsTrigger>
-            <TabsTrigger value="tom">6. Target TOM</TabsTrigger>
-            <TabsTrigger value="result">7. Blueprint Generated</TabsTrigger>
+            <TabsTrigger value="assets">3. Data Asset Map</TabsTrigger>
+            <TabsTrigger value="dq">4. Data Quality</TabsTrigger>
+            <TabsTrigger value="tom">5. Target data state details</TabsTrigger>
+            <TabsTrigger value="result">6. Blueprint Generated</TabsTrigger>
           </TabsList>
 
           <TabsContent value="context" className="mt-6">
@@ -744,100 +742,9 @@ function BlueprintPage() {
             </div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setTab("context")}>← Back</Button>
-              <Button onClick={() => setTab("usecases")}>Next: Use Case Priority →</Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="usecases" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">Score each candidate use case 1–5 against the seven parameters. Total /35 drives the tier (Tier 1 ≥28 Now · Tier 2 22–27 Next · Tier 3 &lt;22 Later).</p>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Use case scoring criteria</CardTitle></CardHeader>
-              <CardContent className="overflow-x-auto p-0">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/40 uppercase">
-                    <tr>
-                      <th className="p-2 text-left">Parameter</th>
-                      <th className="p-2 text-left">Definition</th>
-                      <th className="p-2 text-left">1</th>
-                      <th className="p-2 text-left">2</th>
-                      <th className="p-2 text-left">3</th>
-                      <th className="p-2 text-left">4</th>
-                      <th className="p-2 text-left">5</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {UC_PARAMS.map((p) => (
-                      <tr key={p.key} className="border-t align-top">
-                        <td className="p-2 font-semibold">{p.label}</td>
-                        <td className="p-2 text-muted-foreground">{p.definition}</td>
-                        <td className="p-2">{p.s1}</td>
-                        <td className="p-2">{p.s2}</td>
-                        <td className="p-2">{p.s3}</td>
-                        <td className="p-2">{p.s4}</td>
-                        <td className="p-2">{p.s5}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="overflow-x-auto p-0">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/40 text-xs uppercase">
-                    <tr>
-                      <th className="p-2 text-left">ID</th>
-                      <th className="p-2 text-left">Use case</th>
-                      <th className="p-2 text-left">Process area</th>
-                      {UC_PARAMS.map((p) => <th key={p.key} className="p-2 text-left" title={p.definition}>{p.label.split(" ")[0]}</th>)}
-                      <th className="p-2 text-left">Total</th>
-                      <th className="p-2 text-left">Tier</th>
-                      <th className="p-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {useCases.map((u, i) => {
-                      const total = ucTotal(u);
-                      const tier = ucTier(total);
-                      const update = (patch: Partial<UseCaseRow>) => {
-                        const n = [...useCases]; n[i] = { ...u, ...patch }; setUseCases(n);
-                      };
-                      return (
-                        <tr key={u.id} className="border-t align-top">
-                          <td className="p-2"><Input className="h-8 w-20 font-mono text-xs" value={u.id} onChange={(e) => update({ id: e.target.value })} /></td>
-                          <td className="p-2"><Input className="h-8 min-w-[200px]" value={u.name} onChange={(e) => update({ name: e.target.value })} placeholder="e.g. Service Charge Pack Generator" /></td>
-                          <td className="p-2"><Input className="h-8 min-w-[140px]" value={u.processArea} onChange={(e) => update({ processArea: e.target.value })} placeholder="e.g. Reconciliation" /></td>
-                          {UC_PARAMS.map((p) => (
-                            <td key={p.key} className="p-2">
-                              <select className="h-8 w-14 rounded border bg-transparent px-1 text-sm" value={u[p.key] as number} onChange={(e) => update({ [p.key]: Number(e.target.value) } as Partial<UseCaseRow>)}>
-                                {[1,2,3,4,5].map((v) => <option key={v} value={v}>{v}</option>)}
-                              </select>
-                            </td>
-                          ))}
-                          <td className="p-2 font-semibold">{total}/35</td>
-                          <td className="p-2"><Badge variant="outline" className={tier.cls}>{tier.label}</Badge></td>
-                          <td className="p-2"><Button size="icon" variant="ghost" onClick={() => setUseCases(useCases.filter((x) => x.id !== u.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
-                        </tr>
-                      );
-                    })}
-                    {useCases.length === 0 && (
-                      <tr><td colSpan={12} className="p-6 text-center text-sm text-muted-foreground">No use cases yet. Add candidates to prioritise.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-            <Button size="sm" variant="outline" onClick={() => setUseCases([...useCases, newUseCase(useCases.length + 1)])}>
-              <Plus className="mr-1 h-4 w-4" /> Add use case
-            </Button>
-
-            <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setTab("steps")}>← Back</Button>
               <Button onClick={() => setTab("assets")}>Next: Data Asset Map →</Button>
             </div>
           </TabsContent>
-
 
           <TabsContent value="assets" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -948,7 +855,7 @@ function BlueprintPage() {
               )}
             </div>
 
-            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("usecases")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
+            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("steps")}>← Back</Button><Button onClick={() => setTab("dq")}>Next: Data Quality →</Button></div>
           </TabsContent>
 
           <TabsContent value="dq" className="mt-6 space-y-4">
@@ -1011,11 +918,11 @@ function BlueprintPage() {
                 </table>
               </CardContent>
             </Card>
-            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("assets")}>← Back</Button><Button onClick={() => setTab("tom")}>Next: Target TOM →</Button></div>
+            <div className="flex justify-between"><Button variant="ghost" onClick={() => setTab("assets")}>← Back</Button><Button onClick={() => setTab("tom")}>Next: Target data state details →</Button></div>
           </TabsContent>
 
           <TabsContent value="tom" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">The hub-and-spoke target operating model. Pre-filled with the Indurent default — edit if your domain needs tweaks. This is the "target state" the AI compares against.</p>
+            <p className="text-sm text-muted-foreground">Describe your target data state. This information is used by the AI to generate a blueprint that is grounded in your actual technology choices and architectural direction.</p>
             <div className="grid gap-4 md:grid-cols-2">
               {([
                 ["hubCapabilities","Hub capabilities (central CoE)"],
@@ -1023,10 +930,17 @@ function BlueprintPage() {
                 ["handshakes","Handshakes (Hub ↔ Spoke)"],
                 ["controls","Mandatory controls / HITL"],
                 ["successMetrics","Success metrics"],
+                ["dataIngestionApproach","Data ingestion approach (e.g. batch, streaming, CDC, APIs, file drops)"],
+                ["computePlatform","Compute platform (e.g. Azure Databricks, Fabric Spark, Synapse, ADF)"],
+                ["storagePlatform","Storage platform (e.g. OneLake, ADLS Gen2, Azure SQL, Fabric Lakehouse)"],
+                ["dataGovernanceApproach","Data governance approach (e.g. Microsoft Purview, Unity Catalog, manual)"],
+                ["personaInteractions","How different personas interact with the target data platform (analysts, engineers, agents, executives)"],
+                ["architecturePattern","Target architecture pattern (Lakehouse, Data Mesh, Data Fabric, Hub-and-Spoke — rationale)"],
+                ["targetPlatformDetails","Any other target platform details (SLAs, cost model, migration timeline, hybrid/cloud split)"],
               ] as const).map(([k,label]) => (
                 <Card key={k}>
                   <CardHeader className="pb-2"><CardTitle className="text-base">{label}</CardTitle></CardHeader>
-                  <CardContent><Textarea rows={7} value={state.tom[k]} onChange={(e) => setTom({ [k]: e.target.value } as any)} /></CardContent>
+                  <CardContent><Textarea rows={4} value={state.tom[k]} onChange={(e) => setTom({ [k]: e.target.value } as any)} /></CardContent>
                 </Card>
               ))}
             </div>
@@ -1180,7 +1094,7 @@ function BlueprintPage() {
                       <p className="mt-1 text-xs text-muted-foreground">KPIs the blueprint must move</p>
                       <p className="mt-2 text-sm">{state.context.kpis || "—"}</p>
                       <div className="mt-3 text-[11px] text-muted-foreground">
-                        {state.result.useCaseBacklog.length} prioritised use cases in backlog.
+                        {state.result.stepRecommendations.filter((r) => r.classification === "AUTOMATE FULL" || r.classification === "AUTOMATE+HUMAN" || r.classification === "OPTIMISE").length} steps with improvement opportunities identified.
                       </div>
                     </div>
                     <div className="rounded-md border border-border bg-card p-4">

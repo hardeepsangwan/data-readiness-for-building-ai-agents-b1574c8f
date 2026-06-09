@@ -79,6 +79,13 @@ export const DEFAULT_TARGET_TOM: TargetTOM = {
     "Zero untracked approval queues",
     "100% of customer packs auto-generated from Gold layer",
   ].join("\n"),
+  dataIngestionApproach: "",
+  computePlatform: "",
+  storagePlatform: "",
+  dataGovernanceApproach: "",
+  personaInteractions: "",
+  architecturePattern: "",
+  targetPlatformDetails: "",
 };
 
 export const DEFAULT_DATA_HIVE_ANSWERS: DataHiveAnswers = {

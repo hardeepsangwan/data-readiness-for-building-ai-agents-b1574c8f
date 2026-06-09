@@ -93,11 +93,20 @@ export interface DataHiveAnswers {
 }
 
 export interface TargetTOM {
+  // Existing (keep for backwards compat with edge function prompt)
   hubCapabilities: string;
   spokeOwnership: string;
   handshakes: string;
   controls: string;
   successMetrics: string;
+  // New target data state fields
+  dataIngestionApproach: string;
+  computePlatform: string;
+  storagePlatform: string;
+  dataGovernanceApproach: string;
+  personaInteractions: string;
+  architecturePattern: string;
+  targetPlatformDetails: string;
 }
 
 export interface ProcessContext {
