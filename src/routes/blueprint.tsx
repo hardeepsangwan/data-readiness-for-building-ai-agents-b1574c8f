@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
+import { Download, FileDown, Loader2, Plus, RotateCcw, Sparkles, Square, Trash2, Upload, Wand2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBlueprint } from "@/lib/blueprint-store";
 import { startBlueprintJob, getBlueprintJob } from "@/lib/blueprint.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-store";
 import { supabase } from "@/integrations/supabase/client";
 import { BlueprintRadar } from "@/components/blueprint-radar";
 import { BlueprintHorizontalBars } from "@/components/blueprint-horizontal-bars";
@@ -317,6 +319,8 @@ const SPOKE_PILLARS: { pillar: string; requirement: string; delivery: string; de
 
 function BlueprintPage() {
   const { state, hydrated, setContext, setSteps, setAssets, setDownstream, setDq, setTom, setResult, loadSeed, reset } = useBlueprint();
+  const { user, hydrated: authHydrated } = useAuth();
+  const navigate = useNavigate();
   const startJob = useServerFn(startBlueprintJob);
   const fetchJob = useServerFn(getBlueprintJob);
   const [tab, setTab] = useState("context");
@@ -479,6 +483,14 @@ function BlueprintPage() {
     }
   };
 
+  const onStop = () => {
+    setBusy(false);
+    setJobStatus("error");
+    setJobId(null);
+    localStorage.removeItem(JOB_STORAGE_KEY);
+    toast.info("Blueprint generation cancelled.");
+  };
+
   const loadExample = () => {
     loadSeed({
       context: SERVICE_CHARGE_CONTEXT,
@@ -492,13 +504,18 @@ function BlueprintPage() {
     toast.success("Service Charge example loaded.");
   };
 
-  if (!hydrated) {
+  if (!hydrated || !authHydrated) {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
         <div className="p-10 text-center text-muted-foreground">Loading…</div>
       </div>
     );
+  }
+
+  if (!user) {
+    void navigate({ to: "/login" });
+    return null;
   }
 
   return (
@@ -1038,6 +1055,9 @@ function BlueprintPage() {
                       your new blueprint will appear here automatically as soon as it's ready.
                     </div>
                     <div className="mt-1 text-[11px] uppercase tracking-wider text-primary">Status: {jobStatus}</div>
+                    <Button variant="destructive" size="sm" onClick={onStop}>
+                      <Square className="mr-2 h-3 w-3 fill-current" /> Stop
+                    </Button>
                   </div>
                 ) : (
                   <>
@@ -1049,7 +1069,10 @@ function BlueprintPage() {
                     {generationError}
                   </div>
                 )}
-                <div className="mt-4"><Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button></div>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <Button onClick={onGenerate} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}Generate now</Button>
+                  {busy && <Button variant="destructive" size="sm" onClick={onStop}><Square className="mr-2 h-3 w-3 fill-current" /> Stop</Button>}
+                </div>
               </CardContent></Card>
             ) : (
               <div ref={fullRef} className="space-y-6">
