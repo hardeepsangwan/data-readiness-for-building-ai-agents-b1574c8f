@@ -25,6 +25,7 @@ import {
   SERVICE_CHARGE_CONTEXT,
   SERVICE_CHARGE_STEPS,
   SERVICE_CHARGE_ASSETS,
+  SERVICE_CHARGE_DOWNSTREAM,
 } from "@/lib/blueprint-template";
 import type {
   ProcessStep,
@@ -545,8 +546,8 @@ function BlueprintPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={loadExample}>
-              <Upload className="mr-1 h-4 w-4" /> Load Service Charge example
+            <Button size="sm" onClick={loadExample}>
+              <Upload className="mr-1 h-4 w-4" /> Load sample data for Service Charge
             </Button>
             <Button variant="ghost" size="sm" onClick={() => { if (confirm("Reset all blueprint data?")) reset(); }}>
               Reset
@@ -669,7 +670,7 @@ function BlueprintPage() {
             </div>
             {state.steps.length === 0 && (
               <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
-                No steps yet. Add manually or click "Load Service Charge example" above.
+                No steps yet. Add manually or click "Load sample data for Service Charge" above.
               </CardContent></Card>
             )}
             <div className="space-y-3">
@@ -799,9 +800,14 @@ function BlueprintPage() {
                     Blueprint Asset Map template.
                   </p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setDownstream([...state.downstream, newDownstream(state.downstream.length + 1)])}>
-                  <Plus className="mr-1 h-4 w-4" /> Add downstream asset
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => { setDownstream([...state.downstream, ...SERVICE_CHARGE_DOWNSTREAM]); toast.success("Sample downstream assets loaded."); }}>
+                    <Upload className="mr-1 h-4 w-4" /> Load sample data for downstream assets
+                  </Button>
+                  <Button size="sm" onClick={() => setDownstream([...state.downstream, newDownstream(state.downstream.length + 1)])}>
+                    <Plus className="mr-1 h-4 w-4" /> Add downstream asset
+                  </Button>
+                </div>
               </div>
               {state.downstream.length === 0 ? (
                 <div className="mt-4 rounded-md border border-dashed border-border bg-card/40 p-6 text-center text-xs text-muted-foreground">
@@ -966,7 +972,7 @@ function BlueprintPage() {
                       {jobStatus === "queued" ? "Queuing blueprint job…" : "Generating blueprint…"}
                     </div>
                     <div className="mt-1 text-xs">
-                      This can take several minutes. You can stay on this page or switch tabs — the result will appear under <strong>7. Blueprint Generated</strong> automatically.
+                      This can take several minutes. You can stay on this page or switch tabs — the result will appear under <strong>6. Blueprint Generated</strong> automatically.
                     </div>
                   </div>
                 )}
