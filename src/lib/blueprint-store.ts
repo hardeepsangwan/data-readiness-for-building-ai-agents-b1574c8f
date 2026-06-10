@@ -65,7 +65,12 @@ function read(): BlueprintState {
       ...parsed,
       context: { ...init.context, ...(parsed.context || {}) },
       hive: { ...init.hive, ...(parsed.hive || {}) },
-      tom: { ...init.tom, ...(parsed.tom || {}) },
+      tom: Object.fromEntries(
+        (Object.keys(init.tom) as (keyof TargetTOM)[]).map((k) => {
+          const v = parsed.tom?.[k];
+          return [k, typeof v === "string" && v.trim() !== "" ? v : init.tom[k]];
+        })
+      ) as TargetTOM,
       steps: parsed.steps || [],
       assets: parsed.assets || [],
       downstream: parsed.downstream || [],
